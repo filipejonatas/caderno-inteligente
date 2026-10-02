@@ -1,0 +1,47 @@
+# API
+
+A API FastAPI expõe prioridades, qualidade, feedback, execuções, casos, cenários e visibilidade B2B2C. Nenhuma rota modifica o XLSM ou a configuração oficial.
+
+## `GET /api/health`
+
+Informa disponibilidade da fonte e da persistência:
+
+- `status`: `ok` ou `degraded`;
+- `source_available`: presença do XLSM no bundle;
+- `database`: `ok` ou `unavailable`;
+- `persistence`: `sqlite` localmente ou `postgres` com `DATABASE_URL`;
+- `cache`: situação do cache do pipeline.
+
+## `GET /api/overview`
+
+As métricas de ruptura distinguem SKUs únicos de ocorrências de regras:
+
+- `rupture_sku_count`: SKUs únicos que acionaram `RUP_LEAD_TIME` ou `RUP_SAFETY_STOCK`;
+- `below_lead_time_count`: SKUs únicos abaixo do lead time;
+- `below_safety_stock_count`: SKUs únicos abaixo do estoque de segurança;
+- `rupture_signal_count`: total de ocorrências das duas regras;
+- `risk_count`: alias temporário e compatível de `rupture_sku_count`.
+
+Um SKU que aciona as duas regras contribui uma única vez para `rupture_sku_count` e duas vezes para `rupture_signal_count`.
+
+## `GET /api/b2b2c/visibility`
+
+Cada parceiro recebe uma classificação demonstrativa derivada da cobertura de SKUs com sell-out observado:
+
+- `Sem visibilidade`: 0%;
+- `Essencial`: acima de 0% e abaixo de 40%;
+- `Conectado`: de 40% até abaixo de 80%;
+- `Estratégico`: 80% ou mais.
+
+A resposta também informa `next_level`, a quantidade adicional de SKUs necessária e uma descrição do dado requerido. Essa classificação não representa acordo comercial firmado.
+
+## `GET /api/feedback` e `POST /api/feedback`
+
+Além de SKU, ação, observação e usuário, o feedback aceita:
+
+- `partner_data_effect`: `nao_utilizado`, `confirmou`, `aumentou_confianca` ou `alterou_decisao`;
+- `analysis_minutes`: número inteiro não negativo e opcional.
+
+Bancos SQLite existentes são migrados de modo aditivo. Registros anteriores recebem `partner_data_effect = "nao_utilizado"` e `analysis_minutes = null`. Em produção, o mesmo contrato é preservado pelo adaptador PostgreSQL/Supabase.
+
+O overview expõe `decision_count` e `partner_data_influenced_decision_count`. O segundo contabiliza decisões com efeito `aumentou_confianca` ou `alterou_decisao`.

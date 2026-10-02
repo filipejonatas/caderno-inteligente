@@ -1,0 +1,11 @@
+.venv/
+.venv-py314-broken/
+.pytest_cache/
+**/__pycache__/
+**/*.pyc
+frontend/
+tests/
+docs/
+runtime/
+*.ipynb
+*.docx

@@ -1,0 +1,24 @@
+# Python
+.venv/
+.venv-py314-broken/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Runtime local e artefatos gerados
+runtime/*.db
+runtime/reports/*.json
+
+# Ferramentas e sistema
+.env
+.env.*
+!.env.example
+!frontend/.env.example
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
