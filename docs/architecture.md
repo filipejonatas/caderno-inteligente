@@ -1,17 +1,128 @@
 # Arquitetura
 
-XLSM somente leitura → núcleo Python determinístico → FastAPI → React/Vite. Uma camada de persistência registra feedback, casos e snapshots em SQLite no desenvolvimento local ou PostgreSQL/Supabase quando `DATABASE_URL` está configurada.
+```text
+XLSM (somente leitura, empacotado no deploy)
+        │
+        ▼
+Núcleo Python determinístico — src/caderno_inteligente/
+  ingestão → validação → normalização → indicadores → regras → priorização
+                                         └→ previsão → recomendação operacional
+                                         └→ visão parceiro–SKU (comercial)
+        │
+        ▼
+FastAPI — backend/  (pipeline em cache, routers aditivos, segurança)
+        │                              │
+        ▼                              ▼
+React + TypeScript + Vite        SQLite local / PostgreSQL (Supabase)
+frontend/                        decisões, casos, histórico e execuções
+```
 
-O FastAPI mantém um cache em memória do pipeline normalizado. O cache é protegido contra reconstruções concorrentes e invalidado quando muda a data ou o tamanho do XLSM, do arquivo de pesos ou do arquivo de limiares.
+O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produção, altera a planilha ou grava configuração oficial.
 
-O frontend separa contratos (`types.ts`), acesso à API (`api.ts`), componentes compartilhados (`components.tsx`), páginas em módulos próprios (`pages/*.tsx`) e orquestração (`App.tsx`). O `react-router-dom` mantém uma URL por página, filtros relevantes em query parameters, histórico do navegador, rota 404 e detalhe compartilhável em `/skus/:sku`. As páginas são carregadas sob demanda com `React.lazy`. A navegação desktop usa sidebar fixa; em telas menores ela vira um drawer, sem reservar espaço do conteúdo.
+## Núcleo Python (`src/caderno_inteligente/`)
 
-A página **Previsão e recomendações** carrega `GET /api/forecasts` somente quando é aberta. A rota agrega todos os SKUs sobre o pipeline cacheado e reutiliza o mesmo cálculo de recomendação do detalhe. Filtros, indicadores e ordenação são locais; a abertura da página `/skus/:sku` solicita `GET /api/priorities/{sku}`. Assim, a listagem não produz uma chamada serverless por SKU nem aumenta o carregamento inicial das outras páginas.
+| Módulo | Responsabilidade |
+|---|---|
+| `ingestion.py`, `validation.py`, `transformations.py` | Leitura das abas com cabeçalho na linha 3, validação sem correção silenciosa e normalização em cópias internas |
+| `indicators.py` | Uma linha por SKU: cobertura, carteira, produção aberta, datas, sell-in/out, capacidade familiar ([cálculos](calculations.md)) |
+| `rules.py`, `prioritization.py` | Sete regras determinísticas e soma transparente de pesos ([regras](rules.md), [priorização](prioritization.md)) |
+| `forecasting.py`, `recommendations.py` | Previsão mensal (média móvel 3m × sazonal 12m, holdout de 3 meses) e ação/quantidade sugerida por SKU ([Semana 3](semana-3-modelo-preditivo.md)) |
+| `partner_insights.py` | Pares parceiro–SKU reais, sinais e ações comerciais ([regras comerciais](commercial-rules.md)) |
+| `validation_center.py` | Linha de base, baseline de previsão, casos congelados e comportamento seguro ([Semana 4](semana-4-validacao-v2.md)) |
+| `run_comparison.py`, `runs.py` | Snapshot versionado e comparação entre execuções |
+| `persistence.py`, `postgres_persistence.py`, `feedback.py`, `cases.py` | Mesmo contrato em SQLite e PostgreSQL |
 
-O Guia de uso, a rota 404, a listagem de previsões e o detalhe do SKU não dependem do carregamento global do dashboard. As demais páginas ainda compartilham `loadDashboard()`; a substituição por chamadas específicas está reservada para a Etapa 2 da V2.
+## Backend (`backend/`)
 
-Na publicação, frontend e backend são projetos Vercel separados. O backend é uma Function FastAPI que lê o XLSM e as configurações empacotadas no deploy, sem escrever no filesystem. A persistência usa o Transaction Pooler do Supabase e o frontend recebe somente a URL pública da API. O rewrite definido em `frontend/vercel.json` entrega `index.html` para rotas internas, preservando deep links da SPA.
+- `main.py` monta o pipeline e o mantém em **cache em memória**. O cache é protegido contra reconstruções concorrentes e invalidado quando mudam a data ou o tamanho do XLSM, dos pesos ou dos limiares.
+- Routers aditivos:
+  - `partners.py`: visão comercial;
+  - `validation.py`: Central de validação;
+  - `run_comparisons.py`: comparação de execuções.
+- `security.py` reúne:
+  - ambiente (`APP_ENV`);
+  - modo demonstração (`DEMO_MODE`);
+  - escrita desabilitável (`WRITE_ENABLED`);
+  - CORS validado;
+  - limite de corpo de 16 KB;
+  - erros genéricos em produção com `X-Request-ID`;
+  - cabeçalhos de segurança;
+  - filtro que remove `DATABASE_URL` dos logs.
+- A persistência usa SQLite em `runtime/` localmente. Quando `DATABASE_URL` existe, usa o Transaction Pooler do Supabase, com prepared statements desabilitados.
+- O contrato completo dos endpoints está em [API](api.md).
 
-A **Central de validação** (`/validacao`) consulta somente `GET /api/validation/summary`. A rota é um router aditivo (`backend/validation.py`) sobre o núcleo `validation_center.py`: recalcula o holdout de cada modelo e de uma baseline sem mudar a seleção, avalia os casos congelados de `config/validation_center.json` com as mesmas funções de regras e recomendação e executa verificações de comportamento seguro. O hash SHA-256 da planilha é recalculado apenas quando a data ou o tamanho do arquivo mudam.
+## Frontend (`frontend/src/`)
 
-A **comparação entre execuções** fica em `/execucoes?base=&alvo=` e consulta `GET /api/run-comparisons`, um router aditivo (`backend/run_comparisons.py`) sobre `run_comparison.py`. Cada `POST /api/runs` grava, além do ranking, um payload versionado (`schema_version`) com previsão e recomendação por SKU e cobertura por parceiro cadastrado, na coluna opcional `runs.comparison`. A comparação só lê snapshots gravados; seções sem dados compatíveis são recusadas com o motivo.
+- **Organização:**
+  - contratos em `types*.ts`;
+  - acesso à API em `api.ts`;
+  - componentes em `components.tsx` e `components/`;
+  - hooks em `hooks/`;
+  - uma página por arquivo em `pages/`;
+  - orquestração em `App.tsx`.
+- **Carregamento por rota:** cada página consulta só o que exibe. As páginas usam `React.lazy`, e as leituras são canceladas ao trocar de rota.
+- **Robustez:** um error boundary por rota evita tela em branco quando a página falha ou um chunk deixa de existir após um deploy.
+- **Páginas estáticas:** o Guia e a 404 não consultam a API.
+- **Modo da publicação:** o modo vem de `GET /api/system` e só é consultado em páginas com dados. Ele gera o aviso de demonstração ou de somente leitura e desabilita os formulários quando a escrita está bloqueada. O servidor continua aplicando a regra em qualquer caso.
+- **Acessibilidade:**
+  - título da aba por rota;
+  - link "Pular para o conteúdo";
+  - foco no título após cada navegação;
+  - gaveta móvel com foco e tecla Esc;
+  - contraste WCAG AA nos tokens de cor.
+
+### Mapa de rotas
+
+| URL | Página | Dados consultados |
+|---|---|---|
+| `/guia` | Guia de uso | Nenhum (funciona com a API fora do ar) |
+| `/` | Visão geral | `overview`, `priorities`, `data-quality` |
+| `/prioridades` | Prioridades — filtros `busca`, `familia`, `confianca` na URL | `priorities` |
+| `/previsoes` | Previsão e recomendações — filtros `busca`, `familia`, `acao`, `confianca`, `tendencia`, `atencao`, `ordem` | `forecasts` |
+| `/skus/:sku` | Detalhe do SKU (compartilhável) | `priorities/{sku}`, `commercial-recommendations?sku=` |
+| `/casos` | Casos | `cases`, `priorities`, `config` |
+| `/qualidade` | Qualidade dos dados | `data-quality` |
+| `/parceiros` | Parceiros e canais — filtros `regiao`, `canal`, `ordem` | `partners` |
+| `/parceiros/:codigo` | Detalhe do parceiro — filtros `sku`, `acao`, `qualidade`, `offset` | `partners/{codigo}`, `partners/{codigo}/skus` |
+| `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
+| `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |
+| `/decisoes` | Decisões (feedback do PCP) | `feedback`, `priorities`, `config` |
+| `/validacao` | Central de validação | `validation/summary` |
+| `*` | Página não encontrada | Nenhum |
+
+Códigos de SKU e de parceiro são codificados na URL com `encodeURIComponent`, por exemplo `/parceiros/Loja%20pr%C3%B3pria`.
+
+## Publicação (Vercel + Supabase)
+
+O deploy usa dois projetos Vercel do mesmo repositório.
+
+- **Backend:**
+  - Root Directory na raiz, com entrypoint `backend.main:app` (definido em `pyproject.toml`);
+  - `vercel.json` empacota `config/**`, `data/source/**` e `src/caderno_inteligente/**`;
+  - a Function não escreve no filesystem.
+- **Frontend:**
+  - Root Directory `frontend`, build `npm run build` e saída `dist`;
+  - o `frontend/vercel.json` define as regras abaixo.
+
+### Regras do `frontend/vercel.json`
+
+- **Rewrite:** `"source": "/(.*)" → "/index.html"`. Abrir ou atualizar qualquer rota interna entrega a SPA, e o React Router resolve a página. Arquivos existentes em `dist/` continuam sendo servidos diretamente.
+- **Cabeçalhos:**
+  - `Content-Security-Policy` sem `unsafe-inline` e com `connect-src 'self' https:`, porque o domínio da API varia;
+  - `X-Content-Type-Options: nosniff`;
+  - `X-Frame-Options: DENY`;
+  - `Referrer-Policy: no-referrer`;
+  - `Permissions-Policy`.
+
+O passo a passo, as variáveis e o smoke test estão em [Deploy com Vercel e Supabase](deploy-vercel-supabase.md).
+
+## Testes
+
+- **Python:** `pytest` cobre núcleo, API, persistência, segurança, contrato com o frontend e o próprio smoke test.
+- **Frontend:** `npm run check` executa, em ordem:
+  1. typecheck;
+  2. Vitest + Testing Library + axe-core (rotas, teclado, estados, acessibilidade, contraste e contratos);
+  3. testes `node --test`;
+  4. build;
+  5. varredura de segredos no bundle.
+- **Contrato entre as camadas:** `frontend/src/test/contract-keys.json` lista os campos que o frontend lê. O arquivo é validado contra as fixtures no Vitest e contra a API real no pytest.

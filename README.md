@@ -1,45 +1,46 @@
 # Caderno Inteligente
 
-Aplicação de apoio à decisão do PCP. O sistema lê uma base XLSM sem alterá-la, valida os dados, calcula indicadores e regras auditáveis, ordena SKUs para atenção e registra decisões humanas. SQLite é usado localmente; quando `DATABASE_URL` está configurada, a persistência usa PostgreSQL/Supabase.
+Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLSM sem alterá-la e, a partir dela:
 
-O ranking não é uma decisão automática de produção. Cada prioridade preserva motivos, evidências, origem dos dados, limitações e nível de confiança.
+- valida os dados e calcula indicadores e regras auditáveis;
+- ordena SKUs para atenção;
+- prevê a demanda e sugere ações operacionais (por SKU) e comerciais (por parceiro);
+- registra as decisões humanas.
+
+**Nenhuma saída é uma decisão automática.** Cada prioridade e recomendação mostra motivos, evidências, origem dos dados, limitações, nível de confiança e exige revisão humana. Dado ausente é tratado como ausente, nunca como zero, e dados globais (estoque do CD, produção, capacidade, forecast) não são distribuídos entre parceiros.
+
+## O que o protótipo responde
+
+| Pergunta do PCP | Onde |
+|---|---|
+| O que exige atenção agora e por quê? | Visão geral e Prioridades: ranking por soma transparente de pesos de sete regras |
+| Preciso produzir? Quanto? | Detalhe do SKU e Previsão: previsão de 3 meses, ação e quantidade sugerida, com o cálculo |
+| Algum parceiro tem risco ou oportunidade? | Parceiros: matriz parceiro–SKU com sell-in, sell-out, estoque estimado e sugestão comercial |
+| Quanto confiar na análise? | Qualidade e Validação: cobertura de sell-out, baseline de previsão, casos congelados e falhas conhecidas |
+| Por que a prioridade mudou? | Execuções: comparação entre snapshots, com decomposição do score |
+| O que foi decidido? | Casos e Decisões: responsável, prazo, ação, efeito do dado do parceiro e tempo de análise |
 
 ## Arquitetura
 
 ```text
-XLSM somente leitura
-        ↓
-Núcleo Python determinístico
-        ↓
-FastAPI com cache do pipeline
-        ↓
-React + TypeScript + Vite
-        ↓
-SQLite local ou PostgreSQL/Supabase em produção
+XLSM somente leitura → núcleo Python determinístico → FastAPI (cache do pipeline) → React + TypeScript + Vite
+                                                         └→ SQLite local / PostgreSQL (Supabase) em produção
 ```
+
+Detalhes, módulos, mapa de rotas, rewrite e cabeçalhos da Vercel estão em [Arquitetura](docs/architecture.md).
 
 ## Requisitos
 
-- Python 3.11, 3.12 ou 3.13 — recomendado: 3.12;
-- Node.js 18 ou superior;
-- npm.
+- Python 3.11, 3.12 ou 3.13 (recomendado: 3.12; 3.14 não é suportado);
+- Node.js 18 ou superior (recomendado: 20 ou mais recente) e npm.
 
 ## Preparar o ambiente
 
-### Backend
-
 No PowerShell, a partir da raiz do projeto:
-
-Use Python 3.12 ou 3.13. O projeto não oferece suporte a Python 3.14.
 
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-```
-
-### Frontend
-
-```powershell
 cd frontend
 npm install
 cd ..
@@ -49,108 +50,132 @@ cd ..
 
 Use dois terminais.
 
-Terminal 1 — API:
-
 ```powershell
+# Terminal 1 — API
 .\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Terminal 2 — frontend:
-
 ```powershell
+# Terminal 2 — frontend
 cd frontend
 npm run dev
 ```
 
-Acesse `http://127.0.0.1:5173`.
+Acesse `http://127.0.0.1:5173`. O Vite encaminha `/api` para `127.0.0.1:8000`.
+
+## Interface
+
+| URL | Página |
+|---|---|
+| `/guia` | Guia de uso: fluxo, glossário, perguntas frequentes e roteiro de 5 minutos. Funciona com a API fora do ar |
+| `/` | Visão geral: primeiro da fila, riscos, atalhos e qualidade da decisão |
+| `/prioridades` | Ranking oficial com filtros na URL (`busca`, `familia`, `confianca`) |
+| `/previsoes` | Previsão, erro no holdout, ação e quantidade sugerida para todos os SKUs |
+| `/skus/:sku` | Detalhe compartilhável: indicadores, sinais, cálculo da recomendação e contexto dos parceiros |
+| `/parceiros` | Parceiros e canais com cobertura medida |
+| `/parceiros/:codigo` | Matriz parceiro–SKU, sugestões comerciais e evidências mensais |
+| `/casos` | Casos com responsável, prazo e status |
+| `/qualidade` | Integridade, lacunas e cobertura de sell-out |
+| `/cenarios` | Simulação de pesos sem alterar o ranking oficial |
+| `/execucoes` | Snapshots auditáveis; `?base=&alvo=` compara duas execuções |
+| `/decisoes` | Registro da decisão humana |
+| `/validacao` | Central de validação da Semana 4, com exportação CSV e impressão |
+
+Rotas inexistentes mostram uma página 404. O `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar qualquer URL interna.
 
 ## Validar
 
-Para executar todas as verificações com um único comando, a partir da raiz:
+Tudo de uma vez, a partir da raiz:
 
 ```powershell
 .\scripts\validate.ps1
 ```
 
-O script valida as dependências instaladas, executa toda a suíte Python e roda o `npm run check` do frontend (typecheck, testes, build e verificação de segredos no bundle).
-
 Comandos individuais:
 
-Testes Python:
-
 ```powershell
+# Testes Python: núcleo, API, persistência, segurança, contrato com o frontend e smoke test
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider
 ```
 
-Frontend — typecheck, testes (Vitest + Testing Library + axe-core e testes `node --test`), build e verificação de segredos no bundle:
-
 ```powershell
+# Frontend: typecheck, Vitest + Testing Library + axe-core, testes node, build e varredura de segredos no bundle
 cd frontend
 npm run check
 ```
 
-Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend a cada alteração. Os testes usam somente fixtures sintéticas (`frontend/src/test/fixtures.ts`); o arquivo `frontend/src/test/contract-keys.json` lista os campos que o frontend lê e é validado contra a API real por `tests/test_frontend_contracts.py`.
-
-## Interface
-
-- **`/guia` — Guia de uso:** onboarding estático, disponível mesmo sem a API;
-- **`/` — Visão geral:** pulso da operação, riscos e itens mais urgentes;
-- **`/prioridades` — Prioridades:** busca e filtros por família e confiança preservados na URL;
-- **`/previsoes` — Previsão e recomendações:** forecast, confiança e ação sugerida;
-- **`/skus/:sku` — Detalhe do SKU:** página compartilhável com indicadores, riscos, valores utilizados e origem;
-- **`/casos` — Casos:** responsável, prazo e status operacional;
-- **`/qualidade` — Qualidade:** cobertura, integridade e lacunas dos dados;
-- **`/parceiros` — Visibilidade B2B2C:** cobertura de sell-out por parceiro;
-- **`/cenarios` — Cenários:** simulações que não alteram o ranking oficial;
-- **`/execucoes` — Execuções:** snapshots auditáveis da fonte, do ranking, da previsão, da recomendação e da cobertura B2B2C, com comparação entre duas execuções em `/execucoes?base=1&alvo=2`;
-- **`/decisoes` — Decisões:** feedback do PCP separado da base XLSM.
-- **`/validacao` — Validação:** comparação com o processo atual, previsão contra baseline, casos congelados, comportamento seguro, falhas e ajustes, com exportação CSV e impressão.
-
-O frontend usa rotas reais no navegador, lazy loading por página e uma rota 404. O arquivo `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar diretamente uma URL interna na Vercel.
+Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend. Os testes usam fixtures sintéticas (`frontend/src/test/fixtures.ts`). O arquivo `frontend/src/test/contract-keys.json` lista os campos que o frontend lê e é validado contra a API real por `tests/test_frontend_contracts.py`.
 
 ## Configuração
 
-- Pesos: `config/prioritization_weights.json`;
-- Limiares: `config/rule_thresholds.json`;
-- Casos congelados e linha de base da validação: `config/validation_center.json`;
-- Origem permitida pela API: variável `CORS_ORIGINS`, separada por vírgulas (origens exatas, sem caminho e sem curinga; em produção, sem valor, nenhuma origem externa é aceita);
-- Ambiente: `APP_ENV=development|production`. Em `production`, erros retornam mensagem genérica com código de referência;
-- Modo demonstração: `DEMO_MODE=true` exibe aviso de dados fictícios que podem ser apagados;
-- Escrita: `WRITE_ENABLED=false` bloqueia decisões, casos e execuções (HTTP 403), mantendo consultas e simulações;
-- Limpeza de dados de demonstração: `python scripts/reset_demo_data.py` (simulação; `--confirm` faz backup e limpa; `--postgres` usa `DATABASE_URL`);
-- Nível de log: variável `LOG_LEVEL`.
-- PostgreSQL/Supabase: variável secreta `DATABASE_URL`. Na ausência dela, o backend usa SQLite.
-- URL pública da API no frontend: `VITE_API_URL`. Na ausência dela, o frontend usa `/api`.
+| Item | Onde |
+|---|---|
+| Pesos do ranking | `config/prioritization_weights.json` |
+| Limiares das regras | `config/rule_thresholds.json` |
+| Limiares comerciais | `config/commercial_thresholds.json` |
+| Linha de base, casos congelados e histórico de ajustes da validação | `config/validation_center.json` |
 
-O cache do backend é invalidado automaticamente quando a planilha ou um dos arquivos de configuração é alterado.
+Variáveis de ambiente do backend (exemplo em `.env.example`):
 
-Copie `.env.example` e `frontend/.env.example` apenas quando precisar sobrescrever os valores locais. Nunca versione os arquivos `.env` reais.
+| Variável | Padrão | Efeito |
+|---|---|---|
+| `DATABASE_URL` | — | Secreta. PostgreSQL/Supabase pelo Transaction Pooler; sem ela, SQLite em `runtime/` |
+| `CORS_ORIGINS` | `localhost:5173` e `127.0.0.1:5173` em desenvolvimento | Origens exatas, sem caminho e sem curinga. Em produção, sem valor, nenhuma origem externa é aceita |
+| `APP_ENV` | `development` | `production` retorna erros genéricos com código de referência |
+| `DEMO_MODE` | `false` | `true` exibe aviso de dados fictícios que podem ser apagados |
+| `WRITE_ENABLED` | `true` | `false` bloqueia decisões, casos e execuções (403); consultas e simulações continuam |
+| `LOG_LEVEL` | `INFO` | Nível de log; os logs nunca imprimem `DATABASE_URL` |
+
+No frontend, `VITE_API_URL` é a URL pública da API (com `https://`). Sem ela, o frontend usa `/api`. O cache do backend é invalidado automaticamente quando a planilha ou os arquivos de pesos e limiares mudam. Nunca versione arquivos `.env` reais.
+
+**Limpeza de dados de demonstração:** `python scripts/reset_demo_data.py` apenas conta os registros. Com `--confirm`, faz backup em JSON e limpa. Com `--postgres`, usa a `DATABASE_URL` do ambiente. A planilha nunca é alterada.
 
 ## Publicar com Vercel e Supabase
 
-O deploy utiliza dois projetos Vercel ligados ao mesmo repositório:
+O deploy usa dois projetos Vercel do mesmo repositório:
 
-1. **Backend:** Root Directory na raiz, entrypoint `backend.main:app` configurado em `pyproject.toml`;
-2. **Frontend:** Root Directory em `frontend`, framework Vite e saída `dist`.
+1. **Backend:** Root Directory na raiz, entrypoint `backend.main:app` (em `pyproject.toml`);
+2. **Frontend:** Root Directory `frontend`, framework Vite e saída `dist`.
 
 Antes de publicar:
 
 1. execute `supabase/migrations/001_initial.sql` e `supabase/migrations/002_run_comparison.sql` no Supabase, nessa ordem;
-2. configure no backend a URL do **Transaction Pooler**, porta 6543, em `DATABASE_URL`;
-3. configure `CORS_ORIGINS` com o domínio exato do frontend;
-4. configure `VITE_API_URL` no frontend com a URL do backend seguida de `/api`;
-5. valide `https://URL-DO-BACKEND/api/health`.
+2. configure no backend `DATABASE_URL` (Transaction Pooler, porta 6543), `CORS_ORIGINS` com o domínio exato do frontend e `APP_ENV=production`;
+3. se for demonstração aberta, configure também `DEMO_MODE=true` e, opcionalmente, `WRITE_ENABLED=false`;
+4. configure no frontend `VITE_API_URL` com a URL do backend seguida de `/api`.
 
-Mais detalhes estão em [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md).
+Depois de publicar, rode o smoke test (somente leitura):
+
+```powershell
+.\.venv\Scripts\python.exe scripts\smoke_test.py --backend https://URL-DO-BACKEND --frontend https://URL-DO-FRONTEND --expect-environment production
+```
+
+Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md).
 
 ## Documentação
 
-- [Arquitetura](docs/architecture.md)
+**Produto e demonstração**
+
+- [Roteiro de demonstração — 5 minutos](docs/roteiro-demonstracao.md)
+- [Semana 4 — Validação da V2](docs/semana-4-validacao-v2.md)
+- [Semana 3 — Modelo preditivo](docs/semana-3-modelo-preditivo.md)
+- [Plano da V2](docs/plano-v2-prototipo-top.md)
+
+**Referência técnica**
+
+- [Arquitetura e mapa de rotas](docs/architecture.md)
 - [API](docs/api.md)
+- [Cálculos](docs/calculations.md), [regras](docs/rules.md), [priorização](docs/prioritization.md) e [regras comerciais](docs/commercial-rules.md)
 - [Decisões técnicas](docs/decisions.md)
 - [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md)
-- [Plano de melhorias](docs/plano-de-melhorias.md)
+
+**Registro das etapas da V2**
+
+- [Etapa 2 — Carregamento por página](docs/etapa-2-carregamento-por-pagina.md)
+- [Etapa 3 — Jornada visual](docs/etapa-3-jornada-visual.md)
+- [Etapa 4 — Parceiros e recomendação comercial](docs/etapa-4-parceiros-comercial.md)
 - [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)
 - [Etapa 6 — Comparação entre execuções](docs/etapa-6-comparacao-execucoes.md)
 - [Etapa 7 — Testes do frontend, acessibilidade e robustez](docs/etapa-7-testes-acessibilidade.md)
 - [Etapa 8 — Segurança e modo de demonstração](docs/etapa-8-seguranca-modo-demo.md)
+- [Etapa 9 — Documentação, deploy e demonstração](docs/etapa-9-documentacao-demo.md)

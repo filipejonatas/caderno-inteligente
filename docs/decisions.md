@@ -128,3 +128,11 @@
 - O frontend publica CSP sem `unsafe-inline` (estilos dinâmicos do React usam CSSOM) e `connect-src 'self' https:`, porque o domínio da API varia por publicação.
 - O Vite foi atualizado de 6.0.11 para 6.4.3 (mesma série), corrigindo o aviso *high* do servidor de desenvolvimento. O react-router permanece em 6.30.6, a última da série 6. O retorno do detalhe do SKU passou a aceitar só caminhos internos (`isInternalPath`).
 - Autenticação (Supabase Auth e perfis) continua fora desta etapa, como previsto no plano.
+
+## 2026-10-05 — Documentação, deploy e demonstração
+
+- A documentação de referência é a listada no README: arquitetura, API, cálculos, regras, priorização, regras comerciais, deploy e decisões. Os planos antigos (`docs/plano-*.md`) ficam como histórico.
+- O relatório da Semana 4 registra números datados, com o hash da planilha. A fonte de verdade contínua é a Central de validação.
+- O smoke test pós-deploy é um script somente leitura, sem dependências externas. A única requisição de escrita usa um SKU inexistente e precisa ser recusada, então o script pode ser rodado contra produção sem gravar dados.
+- O roteiro de demonstração segue os cinco blocos do plano e usa exemplos reais da base: CI-0041 (prioridade alta sem produção), CI-0014 (produzir após validar capacidade) e KA-01/CI-0011 (reposição no parceiro).
+- O teste moderado com usuários permanece pendente; seu protocolo está documentado.

@@ -1,4 +1,4 @@
-# Priorização transparente — Etapa 4
+# Priorização transparente
 
 A priorização é uma **ordenação de atenção**, não uma solução ótima e não uma decisão automática de produção.
 
@@ -24,3 +24,15 @@ A pontuação de cada SKU é a soma dos pesos das regras ativas. Os pesos ficam 
 Nenhum caso recebe confiança alta enquanto a cobertura de sell-out B2B permanecer parcial.
 
 Cada linha do ranking expõe score, motivos, evidências, origem dos dados e uma ressalva de uso.
+
+## Desempate e posição
+
+O ranking ordena por score decrescente e, em caso de empate, pelo código do SKU. Assim, um SKU pode mudar de posição sem mudar de score, quando outros SKUs entram, saem ou mudam de pontuação.
+
+## Prioridade não é ordem de produção
+
+A prioridade indica **o que analisar primeiro**. A quantidade vem da recomendação operacional, calculada separadamente. Na base atual, por exemplo, o primeiro da fila (CI-0041, score 33) tem cinco sinais de risco e recomendação **sem ação necessária**: o estoque e a produção aberta já cobrem a demanda do próximo mês. O risco continua exigindo análise humana.
+
+## Explicar uma mudança de prioridade
+
+Em `/execucoes?base=&alvo=`, a comparação entre duas execuções decompõe a diferença de score em sinais adicionados, sinais removidos e pesos alterados (fórmula em [cálculos](calculations.md#7-comparação-entre-execuções-run_comparisonpy)).

@@ -1,6 +1,8 @@
-# Cálculos da Etapa 2
+# Cálculos
 
-A Etapa 2 prepara uma visão interna por SKU. Ela não classifica risco, não atribui prioridade e não altera a base XLSM.
+Todos os cálculos são determinísticos, partem da planilha somente leitura e mantêm dado ausente como `null`, nunca como zero. A unidade de análise operacional é sempre o **SKU global** (`analysis_scope = "SKU global"`); nada é distribuído por parceiro, canal ou semana.
+
+## 1. Indicadores por SKU (`indicators.py`)
 
 | Indicador | Fórmula | Fontes |
 |---|---|---|
@@ -10,25 +12,85 @@ A Etapa 2 prepara uma visão interna por SKU. Ela não classifica risco, não at
 | Produção em ordem | `soma(quantidade)` por SKU | `Ordens_Producao` |
 | Primeira conclusão | `mínimo(conclusão prevista)` por SKU | `Ordens_Producao` |
 | Estoque projetado | `estoque atual + ordens - carteira` | `Estoque_Atual`, `Ordens_Producao`, `Carteira_Pedidos` |
-| Lacuna operacional | `máximo(0, carteira - estoque atual - produção aberta)` | `Estoque_Atual`, `Ordens_Producao`, `Carteira_Pedidos` |
-| Data crítica | menor data disponível entre primeira promessa e primeira conclusão prevista | `Carteira_Pedidos`, `Ordens_Producao` |
-| Sell-in acumulado | `soma(quantidade enviada)` por SKU | `Sell_In` |
-| Sell-out acumulado | `soma(quantidade vendida)` por SKU | `Sell_Out` |
-| Diferença sell-in/out | `sell-in acumulado - sell-out acumulado` | `Sell_In`, `Sell_Out` |
-| Visibilidade sell-out | há ao menos um parceiro com sell-out para o SKU | `Sell_Out` |
-| Capacidade familiar | primeira semana disponível e médias no horizonte | `Capacidade_Semanal` |
+| Lacuna operacional | `máximo(0, carteira - estoque atual - produção aberta)` | idem |
+| Data crítica | menor data disponível entre primeira promessa e primeira conclusão prevista; `critical_date_reason` informa qual foi usada | `Carteira_Pedidos`, `Ordens_Producao` |
+| Sell-in / sell-out acumulados | `soma` por SKU | `Sell_In`, `Sell_Out` |
+| Diferença sell-in/out | `sell-in - sell-out` | `Sell_In`, `Sell_Out` |
+| Visibilidade de sell-out | existe ao menos um parceiro com sell-out para o SKU | `Sell_Out` |
+| Capacidade familiar | primeira semana disponível e médias de ocupação no horizonte | `Capacidade_Semanal` |
 
-## Tratamento de ausência de sell-out
+- `has_sell_out = false` significa ausência de observação. O sell-out fica `null` e `missing_data` inclui `sell_out_quantity`.
+- A **lacuna operacional** é uma quantidade para análise, não uma ordem recomendada.
+- A **capacidade** é agregada por família e semana. A fonte não aloca pedidos ou OPs a semanas ou linhas, então ela é contexto, não viabilidade de uma ordem.
 
-`has_sell_out = false` e `sell_out_visibility = "não disponível"` significam ausência de observação. O valor de sell-out é retornado como `null` e `missing_data` inclui `sell_out_quantity`; a ausência não é interpretada como venda zero.
+## 2. Regras e priorização
 
-## Escopo e interpretação
+Sete regras geram sinais com valores usados e origem. O score é a soma dos pesos configurados dos sinais ativos. Detalhes em [regras](rules.md) e [priorização](prioritization.md).
 
-- `analysis_scope` é sempre `SKU global`: o protótipo não distribui volumes por parceiro, canal ou semana.
-- `critical_date_reason` identifica se a data crítica veio de `first_promised_date` ou `first_production_completion`.
-- `operational_gap_quantity` é uma lacuna para análise, não uma ordem recomendada ou uma decisão automática de produção.
-- Datas e valores observacionais ausentes são retornados como `null` e relacionados em `missing_data`.
+## 3. Previsão de demanda (`forecasting.py`)
 
-## Limite de capacidade
+- **Série:** faturamento mensal por SKU (`Vendas_24m`), com meses sem venda preenchidos com zero entre o primeiro e o último mês observado.
+- **Histórico mínimo:** 6 meses. Abaixo disso, `status = insufficient_data` e nenhuma previsão numérica é gerada.
+- **Candidatos:**
+  - média móvel de 3 meses, aplicada de forma recursiva;
+  - sazonal ingênuo de 12 meses (mesmo mês do ano anterior).
+- **Holdout:** os 3 últimos meses são reservados. O modelo de menor WAPE vence e, em caso de empate, a ordem alfabética do código decide.
+- **WAPE:** `Σ|real − previsto| / Σ real` nos 3 meses do holdout. Se a demanda real soma zero, o WAPE fica `null`.
+- **Confiança da previsão:**
+  - alta: WAPE ≤ 20%;
+  - média: WAPE ≤ 40%;
+  - baixa: WAPE acima de 40% ou indefinido.
+- **Tendência:** compara a média dos 3 meses recentes com a dos 3 anteriores.
+  - Variação acima de 10% → crescente; abaixo de −10% → decrescente; caso contrário, estável.
+  - Com média anterior zero: crescente se a recente for positiva, estável se também for zero.
+- **Horizonte:** 3 meses (`forecast_values`); `forecast_next_month` é o primeiro deles.
 
-A capacidade é agregada por família e semana. Como não há alocação explícita de pedidos ou OPs por semana/linha, os indicadores de capacidade são contexto operacional, não cálculo de viabilidade de uma ordem específica.
+## 4. Recomendação operacional (`recommendations.py`)
+
+```text
+demanda a cobrir   = máximo(previsão do próximo mês, carteira)     # não soma, para evitar dupla contagem
+segurança (unid.)  = venda média por dia × dias de segurança
+necessidade bruta  = máximo(0, demanda a cobrir + segurança − estoque atual − produção aberta)
+quantidade sugerida = arredondamento para cima ao múltiplo do lote mínimo
+```
+
+**Ação sugerida:**
+
+| Situação | Ação |
+|---|---|
+| Previsão insuficiente | `investigar_dados`, sem quantidade (`null`) |
+| Quantidade > 0 com `CAPACITY_CONFLICT` | `produzir_validar_capacidade` |
+| Quantidade > 0 sem conflito de capacidade | `produzir` |
+| Quantidade = 0 com `EXCESS_COVERAGE` | `monitorar_excesso` |
+| Demais casos | `sem_acao_necessaria` |
+
+**Confiança da recomendação:** parte da confiança da previsão.
+
+- Cai para baixa quando não há sell-out observado.
+- Cai de alta para média quando há pressão de capacidade.
+
+Toda recomendação tem `requires_human_review = true` e não cria nem libera ordem de produção.
+
+## 5. Visão comercial parceiro–SKU (`partner_insights.py`)
+
+Usa apenas chaves reais parceiro–SKU–mês. O estoque considerado é o estoque estimado do último sell-out do próprio parceiro, nunca o estoque do CD. Cobertura no parceiro = `estoque estimado / (média mensal de sell-out / 30)`; giro zero ou ausente gera cobertura `null`.
+
+Sinais, limiares e precedência das ações estão em [regras comerciais](commercial-rules.md).
+
+## 6. Central de validação (`validation_center.py`)
+
+- **Baseline de previsão:** repete o último mês observado antes do holdout. Não participa da seleção do modelo. O modelo selecionado só "supera" a baseline com WAPE estritamente menor; empate conta como não superou.
+- **WAPE mediano:** mediana dos WAPE por SKU.
+- **WAPE ponderado:** `Σ erros absolutos / Σ demanda real` somando os SKUs com demanda no holdout.
+- **Casos congelados:** comparam a saída obtida pelas mesmas funções de regras, previsão e recomendação com a saída esperada registrada em `config/validation_center.json`.
+- **Tempo de análise:** soma, média e mediana dos minutos informados nas decisões. Antes de 20 registros, não há comparação com a linha de base.
+
+## 7. Comparação entre execuções (`run_comparison.py`)
+
+Para cada SKU presente nas duas execuções, a diferença de score é decomposta usando os pesos gravados em cada uma:
+
+```text
+Δ score = Σ peso_alvo(sinais adicionados) − Σ peso_base(sinais removidos) + Σ (peso_alvo − peso_base)(sinais mantidos)
+```
+
+Quando a soma das parcelas difere de `Δ score`, o item é marcado como não explicado. A posição pode mudar com score igual quando outros SKUs entram, saem ou mudam de score; o desempate do ranking é por código do SKU.

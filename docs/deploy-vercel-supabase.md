@@ -5,7 +5,7 @@ Este guia pressupõe que todas as mudanças locais foram testadas. Ele não cont
 ## 1. Supabase
 
 1. Crie um projeto.
-2. Abra o SQL Editor e execute `supabase/migrations/001_initial.sql`. Em seguida, execute `supabase/migrations/002_run_comparison.sql` (aditiva; adiciona a coluna opcional `runs.comparison`).
+2. Abra o SQL Editor e execute, nesta ordem, `supabase/migrations/001_initial.sql` e `supabase/migrations/002_run_comparison.sql`. A 002 é aditiva: adiciona a coluna opcional `runs.comparison` e pode ser executada mais de uma vez.
 3. Em **Connect**, escolha **Transaction pooler**.
 4. Copie a connection string da porta `6543` e acrescente `sslmode=require` se ainda não estiver presente.
 5. Confirme no Table Editor que RLS está habilitado e que não existem políticas públicas nas quatro tabelas.
@@ -66,7 +66,9 @@ Variável do frontend:
 VITE_API_URL=https://DOMINIO-DO-BACKEND.vercel.app/api
 ```
 
-Essa variável é pública por definição e deve conter apenas a URL da API. Nunca use prefixo `VITE_` em senhas ou chaves privilegiadas.
+Essa variável é pública por definição e deve conter apenas a URL da API, sempre com `https://`, porque a CSP do frontend só permite conexões HTTPS externas. Nunca use prefixo `VITE_` em senhas ou chaves privilegiadas.
+
+O `frontend/vercel.json` já define o rewrite da SPA (`/(.*)` → `/index.html`), que permite abrir ou atualizar qualquer rota interna, e os cabeçalhos de segurança (CSP, `X-Frame-Options`, `nosniff`, `Referrer-Policy` e `Permissions-Policy`). Não é preciso configurar nada no painel.
 
 ## 4. Ajuste final de CORS
 
@@ -74,18 +76,47 @@ Após conhecer o domínio definitivo do frontend, atualize `CORS_ORIGINS` no pro
 
 Não use `*`: a API possui operações de escrita. CORS também não substitui autenticação.
 
-## 5. Smoke test
+## 5. Smoke test automatizado (somente leitura)
 
-1. Abra o health check.
-2. Carregue a Visão geral.
-3. Abra uma prioridade.
-4. Execute um cenário.
-5. Crie e atualize um caso.
-6. Registre uma decisão.
-7. Registre uma execução.
-8. Faça redeploy do backend.
-9. Confirme que casos, feedbacks e execuções continuam presentes.
-10. Revise os logs da Function e o console do navegador.
+Depois de publicar backend e frontend, rode a partir da raiz do repositório:
+
+```powershell
+.\.venv\Scripts\python.exe scripts\smoke_test.py --backend https://DOMINIO-DO-BACKEND.vercel.app --frontend https://DOMINIO-DO-FRONTEND.vercel.app --expect-environment production
+```
+
+Acrescente `--expect-readonly` se a publicação usa `WRITE_ENABLED=false` e `--expect-demo` se usa `DEMO_MODE=true`. O script usa só a biblioteca padrão do Python e verifica:
+
+- **Backend:**
+  - health, planilha empacotada e persistência;
+  - `X-Request-ID` e `nosniff`;
+  - `/api/system` sem dados de conexão e com os modos esperados.
+- **Dados:**
+  - overview e ranking sequencial;
+  - detalhe do primeiro SKU com revisão humana obrigatória;
+  - SKU inexistente → 404;
+  - uma previsão por SKU.
+- **Comercial e validação:**
+  - parceiros, detalhe e matriz parceiro–SKU;
+  - Central de validação com 8 casos e planilha igual à congelada.
+- **Segurança:**
+  - CORS aceita o frontend e recusa origem desconhecida;
+  - uma sondagem de escrita com SKU inexistente deve ser recusada (422, ou 403 em somente leitura) e **nunca grava dados**.
+- **Frontend:**
+  - rewrite da SPA em `/`, `/guia`, `/prioridades`, `/previsoes`, `/validacao`, `/execucoes?…`, `/skus/:sku`, `/parceiros/:codigo` e em uma rota inexistente;
+  - CSP, `X-Frame-Options` e `nosniff`;
+  - bundle acessível e sem segredos.
+
+O script termina com `N/N verificações aprovadas` e código de saída 0. Qualquer `FALHA` retorna código 1 e indica o item.
+
+### Conferência manual complementar
+
+1. Abra a Visão geral, uma prioridade e um parceiro no navegador e confira o console (nenhuma violação de CSP).
+2. Execute um cenário.
+3. Se a escrita estiver habilitada:
+   - crie e atualize um caso, registre uma decisão e registre uma execução;
+   - faça redeploy do backend e confirme que os registros continuam presentes;
+   - depois, limpe os dados de teste (`supabase/maintenance/reset_demo_data.sql` ou `scripts/reset_demo_data.py --postgres --confirm`).
+4. Revise os logs da Function: não devem conter a `DATABASE_URL`.
 
 ## 6. Desenvolvimento local
 

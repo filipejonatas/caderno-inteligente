@@ -1,6 +1,36 @@
 # API
 
-A API FastAPI expõe prioridades, qualidade, feedback, execuções, casos, cenários e visibilidade B2B2C. Nenhuma rota modifica o XLSM ou a configuração oficial.
+A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, qualidade, validação, feedback, casos, execuções e cenários. Nenhuma rota modifica o XLSM ou a configuração oficial. Todas as rotas novas desde a V1 são aditivas: os contratos anteriores continuam válidos.
+
+## Índice de endpoints
+
+| Método | Rota | Finalidade | Grava dados |
+|---|---|---|---|
+| GET | `/api/health` | Fonte, banco, persistência e cache | — |
+| GET | `/api/system` | Ambiente, modo demonstração, escrita habilitada e limites de texto | — |
+| GET | `/api/overview` | Indicadores da visão geral | — |
+| GET | `/api/priorities` | Ranking oficial (`family`, `confidence`, `search`) | — |
+| GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão e recomendação | — |
+| GET | `/api/forecasts` | Previsão e recomendação resumida de todos os SKUs | — |
+| GET | `/api/capacity/{family}` | Capacidade semanal da família | — |
+| GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
+| GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
+| GET | `/api/partners` | Parceiros e cobertura medida (filtros e paginação) | — |
+| GET | `/api/partners/{codigo}` | Resumo do parceiro | — |
+| GET | `/api/partners/{codigo}/skus` | Matriz parceiro–SKU com evidências mensais | — |
+| GET | `/api/commercial-recommendations` | Sugestões comerciais entre parceiros | — |
+| GET | `/api/validation/summary` | Central de validação da Semana 4 | — |
+| GET | `/api/runs` · `/api/runs/{id}` | Execuções registradas | — |
+| GET | `/api/run-comparisons?base=&target=` | Comparação entre duas execuções | — |
+| GET | `/api/config` | Pesos, limiares e listas válidas | — |
+| GET | `/api/cases` · `/api/cases/{id}/history` | Casos e histórico | — |
+| GET | `/api/feedback` | Decisões registradas | — |
+| POST | `/api/scenarios` | Simulação de pesos/limiares, sem persistência | — |
+| POST | `/api/runs` | Registra snapshot auditável | sim (403 com `WRITE_ENABLED=false`) |
+| POST | `/api/cases` · PUT `/api/cases/{id}` | Cria/atualiza caso | sim (403 com `WRITE_ENABLED=false`) |
+| POST | `/api/feedback` | Registra decisão humana | sim (403 com `WRITE_ENABLED=false`) |
+
+Respostas de erro usam `{"detail": ...}`: 404 para recurso inexistente, 403 para escrita desabilitada, 413 para corpo acima de 16 KB, 422 para validação e 500 com código de referência (`X-Request-ID`).
 
 ## `GET /api/health`
 
