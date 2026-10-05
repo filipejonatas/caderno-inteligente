@@ -4,7 +4,7 @@ import { Badge, PageIntro, PriorityTable, SectionCard } from '../components';
 import type { ScenarioResult } from '../types';
 import type { PageProps } from './shared';
 
-export default function ScenariosPage({ data, onSelect }: PageProps) {
+export default function ScenariosPage({ data, onSelect }: PageProps<'config'>) {
   const [excess, setExcess] = useState(data.config.weights.EXCESS_COVERAGE ?? 3);
   const [capacity, setCapacity] = useState(data.config.weights.CAPACITY_CONFLICT ?? 5);
   const [result, setResult] = useState<ScenarioResult>();

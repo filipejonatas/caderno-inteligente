@@ -26,7 +26,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(`${API_ROOT}${path}`, init);
-  } catch {
+  } catch (error) {
+    if (init?.signal?.aborted) throw error;
     throw new ApiError('Não foi possível conectar ao servidor. Verifique se a API está disponível.');
   }
 
@@ -63,8 +64,8 @@ export async function loadDashboard(): Promise<DashboardData> {
 }
 
 export const api = {
-  forecasts: () => request<ForecastRecommendationSummary[]>('/forecasts'),
-  skuDetail: (sku: string) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`),
+  forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
+  skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),
   createCase: (body: Record<string, unknown>) =>
     request<{ id: number }>('/cases', {
@@ -91,3 +92,19 @@ export const api = {
       body: JSON.stringify(body),
     }),
 };
+
+/** Typed, route-scoped reads. Legacy loadDashboard remains available, but is not used by the shell. */
+export const dashboardReaders = {
+  overview: (signal: AbortSignal) => request<Overview>('/overview', { signal }),
+  priorities: (signal: AbortSignal) => request<Priority[]>('/priorities', { signal }),
+  runs: (signal: AbortSignal) => request<Run[]>('/runs', { signal }),
+  cases: (signal: AbortSignal) => request<CaseItem[]>('/cases', { signal }),
+  b2b: (signal: AbortSignal) => request<B2BVisibility>('/b2b2c/visibility', { signal }),
+  config: (signal: AbortSignal) => request<AppConfig>('/config', { signal }),
+  feedback: (signal: AbortSignal) => request<FeedbackItem[]>('/feedback', { signal }),
+  quality: (signal: AbortSignal) => request<DataQuality>('/data-quality', { signal }),
+};
+export async function loadPageData<K extends keyof DashboardData>(keys: readonly K[], signal: AbortSignal): Promise<Pick<DashboardData, K>> {
+  const pairs = await Promise.all(keys.map(async key => [key, await dashboardReaders[key](signal)] as const));
+  return Object.fromEntries(pairs) as Pick<DashboardData, K>;
+}

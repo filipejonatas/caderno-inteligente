@@ -1,10 +1,11 @@
-import { Badge, PageIntro, ProgressBar } from '../components';
+import { Badge, EmptyState, PageIntro, ProgressBar } from '../components';
 import type { PageProps } from './shared';
 import { formatDate, partnerLevelTone } from './shared';
 
-export default function B2BPage({ data }: PageProps) {
+export default function B2BPage({ data }: PageProps<'b2b'>) {
   return <>
     <PageIntro eyebrow="Colaboração comercial" title="Visibilidade B2B2C" description={`Cobertura dos parceiros com referência em ${formatDate(data.b2b.reference_month)}.`} />
+    {!data.b2b.partners.length && <EmptyState title="Nenhum parceiro disponível" description="Não foram retornados parceiros neste recorte. Ausência de informação não significa venda zero." />}
     <div className="partners-grid">{data.b2b.partners.map((partner) => <article className="partner-card" key={partner.partner}>
       <div className="partner-head"><div className="partner-avatar">{partner.name.slice(0, 2).toUpperCase()}</div><div><strong>{partner.name}</strong><span>{partner.partner}</span></div><strong className="coverage-value">{Math.round(partner.coverage * 100)}%</strong></div>
       <div className="partner-level"><span>Nível demonstrativo</span><Badge tone={partnerLevelTone(partner.level)}>{partner.level}</Badge></div><ProgressBar value={partner.coverage} tone={partner.coverage < .4 ? 'red' : 'blue'} />

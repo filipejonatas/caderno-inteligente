@@ -2,7 +2,7 @@ import { Badge, Icon, MetricCard, PageIntro, PriorityTable, SectionCard } from '
 import type { PageProps } from './shared';
 import { reasonNames } from './shared';
 
-export default function OverviewPage({ data, onSelect }: PageProps) {
+export default function OverviewPage({ data, onSelect }: PageProps<'overview' | 'priorities' | 'quality'>) {
   const maxRisk = Math.max(...Object.values(data.overview.risk_distribution), 1);
   return <>
     <PageIntro eyebrow="Centro de decisão" title="O que exige atenção hoje" description="Riscos, lacunas de dados e prioridades reunidos para orientar a análise do PCP." />

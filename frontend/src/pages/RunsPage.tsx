@@ -4,7 +4,7 @@ import { Badge, EmptyState, PageIntro, SectionCard } from '../components';
 import type { PageProps } from './shared';
 import { formatDateTime } from './shared';
 
-export default function RunsPage({ data, onRefresh }: PageProps) {
+export default function RunsPage({ data, onRefresh }: PageProps<'runs'>) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   async function snapshot() { setSaving(true); setMessage(''); try { const result = await api.createRun(); await onRefresh(); setMessage(`Execução #${result.id} registrada.`); } catch (error) { setMessage(error instanceof Error ? error.message : 'Falha ao registrar execução.'); } finally { setSaving(false); } }

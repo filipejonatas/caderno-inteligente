@@ -1,7 +1,7 @@
 import type { DashboardData, SelectedSku } from '../types';
 
-export interface PageProps {
-  data: DashboardData;
+export interface PageProps<K extends keyof DashboardData = keyof DashboardData> {
+  data: Pick<DashboardData, K>;
   onSelect: (priority: SelectedSku) => void;
   onRefresh: () => Promise<void>;
 }

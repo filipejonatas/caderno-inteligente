@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
+import { useApiResource } from '../hooks/useApiResource';
 import { Badge, EmptyState, ErrorState, Icon, LoadingState, MetricCard, PageIntro, SectionCard, confidenceTone } from '../components';
 import type { ForecastRecommendationSummary, SelectedSku } from '../types';
 import { displayNumber, displayPercent } from './shared';
@@ -18,9 +19,8 @@ function recommendationTone(action: ForecastRecommendationSummary['operational_r
   return 'good';
 }
 
-export default function ForecastsPage({ onSelect }: { onSelect: (item: SelectedSku) => void }) {
-  const [items, setItems] = useState<ForecastRecommendationSummary[]>();
-  const [error, setError] = useState('');
+export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (item: SelectedSku) => void; refreshToken: number }) {
+  const { data: items, error, refresh: load } = useApiResource(api.forecasts, refreshToken);
   const [params, setParams] = useSearchParams();
   const search = params.get('busca') ?? '';
   const family = params.get('familia') ?? '';
@@ -35,14 +35,6 @@ export default function ForecastsPage({ onSelect }: { onSelect: (item: SelectedS
     if (value && value !== 'priority') next.set(key, value); else next.delete(key);
     setParams(next, { replace: true });
   };
-
-  const load = useCallback(async () => {
-    setError('');
-    try { setItems(await api.forecasts()); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Falha ao carregar previsões.'); }
-  }, []);
-
-  useEffect(() => { void load(); }, [load]);
 
   const families = useMemo(() => [...new Set((items ?? []).map((item) => item.family))].sort(), [items]);
   const filtered = useMemo(() => {

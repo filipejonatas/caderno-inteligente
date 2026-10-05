@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Icon, PageIntro, PriorityTable, SectionCard } from '../components';
 import type { PageProps } from './shared';
 
-export default function PrioritiesPage({ data, onSelect }: PageProps) {
+export default function PrioritiesPage({ data, onSelect }: PageProps<'priorities'>) {
   const [params, setParams] = useSearchParams();
   const search = params.get('busca') ?? '';
   const family = params.get('familia') ?? '';

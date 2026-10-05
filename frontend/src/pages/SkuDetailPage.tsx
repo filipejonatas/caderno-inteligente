@@ -1,25 +1,17 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { Badge, ErrorState, PageIntro, confidenceTone, severityTone } from '../components';
-import type { SkuDetail } from '../types';
+import { useApiResource } from '../hooks/useApiResource';
 import { displayNumber, displayPercent, formatDate, missingDataNames, positiveDelayDays, reasonNames } from './shared';
 
 export default function SkuDetailPage() {
   const { sku = '' } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const [detail, setDetail] = useState<SkuDetail>();
-  const [error, setError] = useState('');
+  const loader = useCallback((signal: AbortSignal) => api.skuDetail(sku, signal), [sku]);
+  const { data: detail, error, refresh: load } = useApiResource(loader);
   const backTarget = typeof location.state === 'object' && location.state && 'from' in location.state && typeof location.state.from === 'string' && location.state.from.startsWith('/') ? location.state.from : '/prioridades';
-
-  const load = useCallback(async () => {
-    setDetail(undefined); setError('');
-    try { setDetail(await api.skuDetail(sku)); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Falha ao carregar detalhe.'); }
-  }, [sku]);
-
-  useEffect(() => { void load(); }, [load]);
 
   if (error) return <div className="sku-detail-page"><PageIntro eyebrow="Detalhe compartilhável" title={sku || 'SKU não informado'} description="Não foi possível carregar as evidências deste item." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><ErrorState message={error} onRetry={() => void load()} /></div>;
   if (!detail) return <div className="sku-detail-page"><PageIntro eyebrow="Carregando análise" title={sku || 'Detalhe do SKU'} description="Buscando indicadores, previsão, recomendação e evidências." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><div className="drawer-loading"><span /><span /><span /></div></div>;

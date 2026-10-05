@@ -5,7 +5,7 @@ import { Badge, EmptyState, PageIntro, SectionCard } from '../components';
 import type { PageProps } from './shared';
 import { formatDateTime, partnerDataEffectNames, statusNames } from './shared';
 
-export default function FeedbackPage({ data, onRefresh }: PageProps) {
+export default function FeedbackPage({ data, onRefresh }: PageProps<'feedback' | 'priorities' | 'config'>) {
   const [sku, setSku] = useState(data.priorities[0]?.sku ?? '');
   const [action, setAction] = useState(data.config.actions[0] ?? 'aceita');
   const [user, setUser] = useState('');

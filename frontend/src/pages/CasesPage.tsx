@@ -5,7 +5,7 @@ import { Badge, EmptyState, PageIntro, SectionCard } from '../components';
 import type { PageProps } from './shared';
 import { formatDate, formatDateTime, statusNames } from './shared';
 
-export default function CasesPage({ data, onRefresh }: PageProps) {
+export default function CasesPage({ data, onRefresh }: PageProps<'cases' | 'priorities' | 'config'>) {
   const [sku, setSku] = useState(data.priorities[0]?.sku ?? '');
   const [owner, setOwner] = useState('');
   const [status, setStatus] = useState('novo');

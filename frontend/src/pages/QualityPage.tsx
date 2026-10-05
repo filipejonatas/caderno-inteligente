@@ -1,7 +1,7 @@
 import { Badge, MetricCard, PageIntro, SectionCard } from '../components';
 import type { PageProps } from './shared';
 
-export default function QualityPage({ data }: PageProps) {
+export default function QualityPage({ data }: PageProps<'quality'>) {
   const sheets = Object.entries(data.quality.sheets);
   const totalRecords = sheets.reduce((sum, [, sheet]) => sum + sheet.records, 0);
   const orphanCount = data.quality.foreign_keys.reduce((sum, item) => sum + item.orphan_count, 0);
