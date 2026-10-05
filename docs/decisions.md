@@ -59,3 +59,15 @@
 - O backend usa o Transaction Pooler do Supabase com prepared statements desabilitados, adequado a Functions de curta duração.
 - O frontend conhece apenas `VITE_API_URL`; senhas e connection strings nunca usam o prefixo público `VITE_`.
 - O XLSM permanece empacotado e somente leitura. Migração para Storage e autenticação ficam fora do protótipo.
+
+## 2026-10-04 — Previsão de demanda e recomendação operacional
+
+- A previsão mensal compara média móvel de três meses e sazonal ingênuo de doze meses para cada SKU.
+- Os três últimos meses são preservados como holdout e o menor WAPE escolhe o modelo; histórico insuficiente não gera previsão zero.
+- A tendência compara os três meses recentes com os três anteriores e usa uma faixa de 10% para evitar classificar pequenas oscilações.
+- A recomendação usa o maior valor entre previsão do próximo mês e carteira para reduzir dupla contagem.
+- Estoque de segurança, estoque atual, produção aberta e lote mínimo permanecem visíveis no cálculo.
+- Capacidade por família é apenas um alerta de revisão, pois a fonte não comprova viabilidade por SKU e semana.
+- O resultado é aditivo ao detalhe do SKU e não altera regras, score ou ranking oficial.
+- Toda recomendação exige revisão humana e não cria ordem de produção.
+- Feedbacks são registrados para validação, mas não retreinam o modelo automaticamente no V1.

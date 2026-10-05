@@ -20,10 +20,12 @@ from caderno_inteligente.feedback import (  # noqa: E402
     ACTIONS,
     PARTNER_DATA_EFFECTS,
 )
+from caderno_inteligente.forecasting import build_demand_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
+from caderno_inteligente.recommendations import build_operational_recommendation  # noqa: E402
 from caderno_inteligente.rules import evaluate_rules, load_rule_thresholds  # noqa: E402
 from caderno_inteligente.transformations import normalise_dataset  # noqa: E402
 from caderno_inteligente.validation import validate_dataset  # noqa: E402
@@ -88,13 +90,14 @@ def _build_pipeline():
     indicators = build_sku_indicators(dataset)
     issues = evaluate_rules(indicators, load_rule_thresholds())
     ranking = prioritize(issues, load_weights(), indicators)
+    forecasts = build_demand_forecasts(dataset["Vendas_24m"])
     logger.info(
         "pipeline_built duration_ms=%.1f skus=%s issues=%s",
         (perf_counter() - started) * 1000,
         len(indicators),
         len(issues),
     )
-    return dataset, quality, indicators, issues, ranking
+    return dataset, quality, indicators, issues, ranking, forecasts
 
 
 def pipeline():
@@ -111,7 +114,7 @@ def pipeline():
 
 
 def data():
-    _, quality, indicators, issues, ranking = pipeline()
+    _, quality, indicators, issues, ranking, _ = pipeline()
     return quality, indicators, issues, ranking
 
 
@@ -193,7 +196,7 @@ def priorities(family: str | None = None, confidence: str | None = None, search:
 
 @app.get("/api/priorities/{sku}")
 def detail(sku: str):
-    _, indicators, issues, ranking = data()
+    _, _, indicators, issues, ranking, forecasts = pipeline()
     row = indicators[indicators.SKU == sku]
     if row.empty:
         raise HTTPException(404, "SKU não encontrado")
@@ -207,11 +210,28 @@ def detail(sku: str):
         }
         for item in item_issues
     ]
+    indicator = _records(row)[0]
+    forecast_rows = forecasts[forecasts.sku == sku]
+    forecast = _records(forecast_rows)[0] if not forecast_rows.empty else {
+        "sku": sku,
+        "status": "insufficient_data",
+        "forecast_confidence": "baixa",
+        "forecast_months": [],
+        "forecast_values": [],
+        "limitation": "Não há histórico mensal disponível para este SKU.",
+    }
+    recommendation = build_operational_recommendation(
+        indicator,
+        forecast,
+        (item["code"] for item in item_issues),
+    )
     return {
-        "indicator": _records(row)[0],
+        "indicator": indicator,
         "issues": item_issues,
         "priority": _records(ranking[ranking.sku == sku]),
         "score_contributions": contributions,
+        "forecast": forecast,
+        "operational_recommendation": recommendation,
         "limitation": "A base não vincula pedidos a OPs por semana; capacidade é contexto familiar, não promessa de viabilidade individual.",
     }
 
@@ -223,7 +243,7 @@ class Scenario(BaseModel):
 
 @app.post("/api/scenarios")
 def scenario(item: Scenario):
-    dataset, _, indicators, _, _ = pipeline()
+    dataset, _, indicators, _, _, _ = pipeline()
     thresholds = {**load_rule_thresholds(), **(item.thresholds or {})}
     weights = {**load_weights(), **(item.weights or {})}
     scenario_issues = evaluate_rules(indicators, thresholds)

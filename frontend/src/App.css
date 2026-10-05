@@ -254,6 +254,14 @@ button:disabled { cursor: wait; opacity: .65; }
 .confidence-explanation { margin-top: 10px; padding: 12px; border-left: 3px solid var(--blue-700); border-radius: 4px 8px 8px 4px; background: var(--blue-50); }.confidence-explanation strong, .missing-data strong, .data-complete strong { font-size: 10.5px; }.confidence-explanation p, .missing-data p { margin: 4px 0 0; color: var(--slate-700); font-size: 10px; line-height: 1.5; }
 .missing-data { margin-top: 10px; padding: 12px; border-radius: 9px; background: var(--amber-100); color: var(--amber-700); }.missing-data ul { display: flex; flex-wrap: wrap; gap: 5px; margin: 8px 0; padding: 0; list-style: none; }.missing-data li { padding: 4px 7px; border-radius: 99px; background: rgba(255,255,255,.7); font-size: 9px; font-weight: 700; }.missing-data p { color: #74501d; }
 .data-complete { display: flex; align-items: center; gap: 9px; margin-top: 10px; padding: 11px 12px; border-radius: 9px; background: var(--green-100); color: var(--green-700); }.data-complete > span { display: grid; place-items: center; width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%; background: white; font-size: 11px; font-weight: 900; }.data-complete p { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 9px; }
+.forecast-section { border-color: #c9dbf4; background: linear-gradient(180deg, #fff, #f8fbff); }
+.forecast-metrics .metric-recommendation { background: var(--green-100); }.forecast-metrics .metric-recommendation span, .forecast-metrics .metric-recommendation strong { color: var(--green-700); }
+.trend-crescente { color: var(--green-700) !important; }.trend-decrescente { color: var(--red-700) !important; }.trend-estável, .trend-indeterminada { color: var(--slate-700) !important; }
+.forecast-months { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 9px; }.forecast-months > div { display: flex; flex-direction: column; padding: 10px; border: 1px solid var(--slate-100); border-radius: 9px; background: white; }.forecast-months span, .recommendation-card span { color: var(--slate-500); font-size: 8.5px; font-weight: 650; text-transform: uppercase; }.forecast-months strong { margin-top: 4px; font-size: 13px; }.forecast-months small { color: var(--slate-500); font-size: 8px; }
+.recommendation-card { margin-top: 10px; padding: 13px; border: 1px solid #c9e4d3; border-radius: 10px; background: #f4fbf6; }.recommendation-card > div:first-child { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }.recommendation-card > div:first-child strong { margin-right: auto; font-size: 12px; }.recommendation-card > p { margin: 9px 0; color: var(--slate-700); font-size: 9.5px; line-height: 1.5; }
+.calculation-line { display: grid; grid-template-columns: repeat(4, auto 1fr); align-items: center; gap: 4px 7px; padding-top: 9px; border-top: 1px solid #d8eadf; }.calculation-line strong { font-size: 10px; }
+.human-review { margin-top: 10px; padding: 11px 12px; border-left: 3px solid var(--amber-700); border-radius: 4px 8px 8px 4px; background: var(--amber-100); }.human-review strong, .forecast-empty strong { color: var(--amber-700); font-size: 10.5px; }.human-review p, .forecast-empty p, .forecast-limitation { margin: 4px 0 0; color: #74501d; font-size: 9.5px; line-height: 1.5; }
+.forecast-limitation { margin-top: 10px; color: var(--slate-500); }.forecast-empty { padding: 13px; border-radius: 9px; background: var(--amber-100); }.forecast-empty .badge { margin-top: 9px; }
 
 @media (max-width: 1180px) {
   .metrics-grid, .quality-metrics, .decision-metrics { grid-template-columns: repeat(2, 1fr); }
@@ -308,6 +316,7 @@ button:disabled { cursor: wait; opacity: .65; }
   .scenario-explainer h3 { font-size: 23px; }
   .drawer-summary { grid-template-columns: 1fr 1fr; }.mini-metrics { grid-template-columns: 1fr 1fr; }
   .detail-metrics-grid, .channel-grid { grid-template-columns: 1fr 1fr; }
+  .forecast-months { grid-template-columns: 1fr; }.calculation-line { grid-template-columns: auto 1fr; }
   .date-comparison { grid-template-columns: 1fr; }.date-comparison .delay-callout { grid-column: auto; }
   .drawer-body, .drawer-head { padding-left: 17px; padding-right: 17px; }
   .issue-card dl { grid-template-columns: 1fr; }

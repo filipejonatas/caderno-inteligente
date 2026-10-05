@@ -47,6 +47,7 @@ const toUtcDate = (value: string) => new Date(`${value.slice(0, 10)}T00:00:00Z`)
 const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium', timeZone: 'UTC' }).format(toUtcDate(value)) : 'Não disponível';
 const formatDateTime = (value: string) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 const displayNumber = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value) : '—';
+const displayPercent = (value: number | null) => value === null ? 'Não calculado' : new Intl.NumberFormat('pt-BR', { style: 'percent', maximumFractionDigits: 1 }).format(value);
 const missingDataNames: Record<string, string> = {
   first_promised_date: 'primeira data prometida',
   first_production_completion: 'primeira conclusão prevista',
@@ -328,6 +329,8 @@ export function SkuDrawer({ priority, onClose }: { priority: Priority | null; on
   useEffect(() => { setDetail(undefined); setError(''); if (priority) api.skuDetail(priority.sku).then(setDetail).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Falha ao carregar detalhe.')); }, [priority]);
   if (!priority) return null;
   const indicator = detail?.indicator;
+  const forecast = detail?.forecast;
+  const recommendation = detail?.operational_recommendation;
   const delayDays = indicator ? positiveDelayDays(indicator.first_promised_date, indicator.first_production_completion) : null;
   return <>
     <div className="drawer-scrim" onClick={onClose} />
@@ -372,6 +375,28 @@ export function SkuDrawer({ priority, onClose }: { priority: Priority | null; on
           <div className="confidence-explanation"><strong>Por que esta confiança?</strong><p>{priority.confidence_reason}</p></div>
           {indicator.missing_data.length > 0 ? <div className="missing-data"><strong>Dados ausentes</strong><ul>{indicator.missing_data.map((field) => <li key={field}>{missingDataNames[field] ?? field.split('_').join(' ')}</li>)}</ul><p>Ausência de dado não é interpretada como valor zero.</p></div> : <div className="data-complete"><span>✓</span><p><strong>Dados principais disponíveis</strong>Não foram identificadas ausências nos campos desta análise.</p></div>}
         </section>
+
+        {forecast && recommendation && <section className="drawer-section detail-section forecast-section">
+          <div className="drawer-section-heading"><div><span>Modelo preditivo</span><h3>Previsão e recomendação</h3></div><Badge tone={confidenceTone(recommendation.confidence)}>{recommendation.confidence}</Badge></div>
+          {forecast.status === 'insufficient_data' ? <div className="forecast-empty"><strong>Dados insuficientes</strong><p>{forecast.limitation}</p><Badge tone="medium">{recommendation.action_label}</Badge></div> : <>
+            <div className="detail-metrics-grid forecast-metrics">
+              <div><span>Tendência</span><strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong><small>{forecast.trend_change_ratio === null ? 'Sem comparação percentual' : displayPercent(forecast.trend_change_ratio)}</small></div>
+              <div><span>Modelo selecionado</span><strong>{forecast.model_label}</strong><small>{forecast.history_months} meses analisados</small></div>
+              <div><span>Erro no backtest</span><strong>{displayPercent(forecast.backtest_wape)}</strong><small>WAPE nos 3 meses reservados</small></div>
+              <div><span>Próximo mês</span><strong>{displayNumber(forecast.forecast_next_month)}</strong><small>unidades previstas</small></div>
+              <div><span>Próximos 3 meses</span><strong>{displayNumber(forecast.forecast_total_3m)}</strong><small>unidades previstas</small></div>
+              <div className={recommendation.suggested_quantity && recommendation.suggested_quantity > 0 ? 'metric-recommendation' : ''}><span>Quantidade sugerida</span><strong>{displayNumber(recommendation.suggested_quantity)}</strong><small>{recommendation.horizon}</small></div>
+            </div>
+            <div className="forecast-months">{forecast.forecast_months.map((month, index) => <div key={month}><span>{formatDate(month)}</span><strong>{displayNumber(forecast.forecast_values[index])}</strong><small>unidades</small></div>)}</div>
+            <div className="recommendation-card">
+              <div><span>Ação sugerida</span><strong>{recommendation.action_label}</strong><Badge tone={recommendation.capacity_status === 'requires_review' ? 'medium' : 'good'}>{recommendation.capacity_status === 'requires_review' ? 'Validar capacidade' : 'Contexto familiar disponível'}</Badge></div>
+              <p>{recommendation.rationale.join(' ')}</p>
+              <div className="calculation-line"><span>Demanda a cobrir</span><strong>{displayNumber(recommendation.calculation.demand_to_cover)}</strong><span>+ Segurança</span><strong>{displayNumber(recommendation.calculation.safety_stock_quantity)}</strong><span>− Estoque</span><strong>{displayNumber(recommendation.calculation.current_stock)}</strong><span>− Produção aberta</span><strong>{displayNumber(recommendation.calculation.open_production_quantity)}</strong></div>
+            </div>
+            <div className="human-review"><strong>Revisão humana obrigatória</strong><p>{recommendation.confidence_reason} A sugestão não cria nem libera ordem de produção.</p></div>
+          </>}
+          <p className="forecast-limitation">{forecast.limitation}</p>
+        </section>}
 
         <div className="drawer-section"><h3>Riscos e evidências</h3>{detail.issues.map((issue) => <article className="issue-card" key={issue.code}><div><Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge><strong>{reasonNames[issue.code] ?? issue.code}</strong></div><p>{issue.description}</p><dl>{Object.entries(issue.values_used).map(([key, value]) => <div key={key}><dt>{key.split('_').join(' ')}</dt><dd>{String(value)}</dd></div>)}</dl><small>Origem: {issue.data_origin.join(' · ')}</small></article>)}</div>
         <div className="drawer-note"><strong>Limitação conhecida</strong><p>{detail.limitation}</p></div>

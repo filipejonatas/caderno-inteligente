@@ -172,6 +172,9 @@ export interface SkuIndicator {
   current_stock: number;
   coverage_days_calculated: number;
   lead_time_days: number;
+  minimum_lot: number;
+  average_sales_per_day: number;
+  safety_stock_days: number;
   backlog_order_quantity: number;
   production_order_quantity: number;
   projected_stock_quantity: number;
@@ -182,9 +185,50 @@ export interface SkuIndicator {
   sell_out_quantity: number | null;
   sell_in_minus_sell_out_quantity: number | null;
   sell_out_partner_count: number;
+  has_sell_out: boolean;
   forecast_quantity: number | null;
   analysis_scope: 'SKU global';
   missing_data: string[];
+}
+
+export interface DemandForecast {
+  sku: string;
+  reference_month: string | null;
+  history_months: number;
+  model: 'moving_average_3' | 'seasonal_naive_12' | null;
+  model_label: string;
+  forecast_months: string[];
+  forecast_values: number[];
+  forecast_next_month: number | null;
+  forecast_total_3m: number | null;
+  trend: 'crescente' | 'estável' | 'decrescente' | 'indeterminada';
+  trend_change_ratio: number | null;
+  backtest_wape: number | null;
+  forecast_confidence: Confidence;
+  status: 'ok' | 'insufficient_data';
+  limitation: string;
+}
+
+export interface OperationalRecommendation {
+  action: 'investigar_dados' | 'produzir_validar_capacidade' | 'produzir' | 'monitorar_excesso' | 'sem_acao_necessaria';
+  action_label: string;
+  horizon: string;
+  suggested_quantity: number | null;
+  raw_quantity: number | null;
+  minimum_lot: number;
+  forecast_next_month: number | null;
+  backlog_quantity: number;
+  safety_stock_quantity: number | null;
+  current_stock: number;
+  open_production_quantity: number;
+  capacity_status: 'not_evaluated' | 'requires_review' | 'family_context_available';
+  confidence: Confidence;
+  confidence_reason: string;
+  rationale: string[];
+  calculation: Record<string, number>;
+  assumptions: string[];
+  limitations: string[];
+  requires_human_review: boolean;
 }
 
 export interface SkuDetail {
@@ -192,6 +236,8 @@ export interface SkuDetail {
   issues: SkuIssue[];
   priority: Priority[];
   score_contributions: Array<{ code: string; weight: number; description: string }>;
+  forecast: DemandForecast;
+  operational_recommendation: OperationalRecommendation;
   limitation: string;
 }
 
