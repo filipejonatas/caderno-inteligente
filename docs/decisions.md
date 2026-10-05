@@ -80,3 +80,13 @@
 - Busca, filtros e ordenação acontecem no navegador devido ao pequeno volume atual; paginação permanece fora do MVP.
 - O detalhe continua centralizado no drawer e é carregado apenas quando solicitado.
 - Quantidade sugerida permanece separada da prioridade oficial, capacidade não é tratada como garantia e revisão humana continua obrigatória.
+
+## 2026-10-05 — Rotas e modularização da V2
+
+- Cada página existente recebe uma rota real com `react-router-dom`, sem alterar contratos ou cálculos do backend.
+- O detalhe do SKU passa do drawer para `/skus/:sku`, preservando as mesmas evidências, previsão, recomendação e revisão humana.
+- Filtros relevantes usam query parameters para permitir compartilhamento e navegação pelo histórico.
+- O Guia de uso permanece estático e não depende do carregamento da API.
+- As páginas são separadas em módulos e carregadas sob demanda; o carregamento específico por rota das demais áreas fica para a Etapa 2.
+- O frontend usa rewrite de SPA na Vercel para que deep links sejam atualizáveis e compartilháveis.
+- Detalhe de parceiro e Validação continuam reservados às etapas que possuem dados e critérios próprios; nenhuma granularidade é criada apenas para preencher uma rota.

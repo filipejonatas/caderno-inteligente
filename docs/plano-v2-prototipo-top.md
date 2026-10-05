@@ -173,6 +173,8 @@ Não é necessário fragmentar cada pequeno componente. A separação deve acomp
 **Prioridade:** obrigatória, requisito do usuário  
 **Timebox para IA:** 3 a 4 horas
 
+**Status:** concluída em 05/10/2026
+
 #### Implementação
 
 - Adicionar `react-router-dom`.
@@ -184,6 +186,16 @@ Não é necessário fragmentar cada pequeno componente. A separação deve acomp
 - Criar rota 404.
 - Adicionar configuração de rewrite para deep links na Vercel.
 - Preservar o mesmo design system e comportamento responsivo.
+
+#### Resultado implementado
+
+- Rotas reais, menu com links acessíveis, histórico do navegador e 404 adicionados com `react-router-dom`.
+- Páginas existentes separadas em módulos e carregadas sob demanda.
+- Filtros de Prioridades e Previsões sincronizados com query parameters.
+- Detalhe compartilhável disponível em `/skus/:sku`, sem alterar seu contrato de API.
+- Guia de uso independente do carregamento da API.
+- Rewrite de SPA configurado em `frontend/vercel.json`.
+- As rotas `/parceiros/:codigo` e `/validacao` permanecem reservadas às etapas 4 e 8, que implementam o conteúdo correspondente sem inventar dados ou granularidade.
 
 #### Critérios de aceite
 

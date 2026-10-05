@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { NavLink } from 'react-router-dom';
 import type { PageId, Priority } from './types';
 
 type IconName =
@@ -40,20 +41,20 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name]}</svg>;
 }
 
-export const navigation: Array<{ id: PageId; label: string; description: string }> = [
-  { id: 'guide', label: 'Guia de uso', description: 'Comece por aqui' },
-  { id: 'overview', label: 'Visão geral', description: 'Pulso da operação' },
-  { id: 'priorities', label: 'Prioridades', description: 'Fila de atenção' },
-  { id: 'forecasts', label: 'Previsão e recomendações', description: 'Demanda e ação sugerida' },
-  { id: 'cases', label: 'Casos', description: 'Acompanhamento' },
-  { id: 'quality', label: 'Qualidade', description: 'Confiabilidade dos dados' },
-  { id: 'b2b', label: 'Visibilidade B2B2C', description: 'Cobertura dos parceiros' },
-  { id: 'scenarios', label: 'Cenários', description: 'Simulações seguras' },
-  { id: 'runs', label: 'Execuções', description: 'Snapshots auditáveis' },
-  { id: 'feedback', label: 'Decisões', description: 'Feedback do PCP' },
+export const navigation: Array<{ id: PageId; path: string; label: string; description: string }> = [
+  { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Comece por aqui' },
+  { id: 'overview', path: '/', label: 'Visão geral', description: 'Pulso da operação' },
+  { id: 'priorities', path: '/prioridades', label: 'Prioridades', description: 'Fila de atenção' },
+  { id: 'forecasts', path: '/previsoes', label: 'Previsão e recomendações', description: 'Demanda e ação sugerida' },
+  { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
+  { id: 'quality', path: '/qualidade', label: 'Qualidade', description: 'Confiabilidade dos dados' },
+  { id: 'b2b', path: '/parceiros', label: 'Visibilidade B2B2C', description: 'Cobertura dos parceiros' },
+  { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações seguras' },
+  { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Snapshots auditáveis' },
+  { id: 'feedback', path: '/decisoes', label: 'Decisões', description: 'Feedback do PCP' },
 ];
 
-export function Sidebar({ page, open, onNavigate, onClose }: { page: PageId; open: boolean; onNavigate: (page: PageId) => void; onClose: () => void }) {
+export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   return <>
     <div className={`sidebar-scrim ${open ? 'is-open' : ''}`} onClick={onClose} aria-hidden="true" />
     <aside className={`sidebar ${open ? 'is-open' : ''}`}>
@@ -63,10 +64,10 @@ export function Sidebar({ page, open, onNavigate, onClose }: { page: PageId; ope
         <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu"><Icon name="close" /></button>
       </div>
       <nav aria-label="Navegação principal">
-        {navigation.map((item) => <button key={item.id} className={page === item.id ? 'active' : ''} onClick={() => { onNavigate(item.id); onClose(); }} aria-current={page === item.id ? 'page' : undefined}>
+        {navigation.map((item) => <NavLink key={item.id} to={item.path} end={item.path === '/'} className={({ isActive }) => isActive ? 'active' : ''} onClick={onClose}>
           <span className="nav-icon"><Icon name={item.id} /></span>
           <span><strong>{item.label}</strong><small>{item.description}</small></span>
-        </button>)}
+        </NavLink>)}
       </nav>
       <div className="sidebar-note"><span className="status-dot" />Sistema de apoio à decisão<strong>Não libera produção automaticamente</strong></div>
     </aside>

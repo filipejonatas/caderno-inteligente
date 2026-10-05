@@ -91,15 +91,19 @@ npm run check
 
 ## Interface
 
-- **Visão geral:** pulso da operação, riscos e itens mais urgentes;
-- **Prioridades:** busca e filtros por família e confiança;
-- **Detalhe do SKU:** indicadores, riscos, valores utilizados e origem;
-- **Casos:** responsável, prazo e status operacional;
-- **Qualidade:** cobertura, integridade e lacunas dos dados;
-- **Visibilidade B2B2C:** cobertura de sell-out por parceiro;
-- **Cenários:** simulações que não alteram o ranking oficial;
-- **Execuções:** snapshots auditáveis da fonte e do ranking;
-- **Decisões:** feedback do PCP separado da base XLSM.
+- **`/guia` — Guia de uso:** onboarding estático, disponível mesmo sem a API;
+- **`/` — Visão geral:** pulso da operação, riscos e itens mais urgentes;
+- **`/prioridades` — Prioridades:** busca e filtros por família e confiança preservados na URL;
+- **`/previsoes` — Previsão e recomendações:** forecast, confiança e ação sugerida;
+- **`/skus/:sku` — Detalhe do SKU:** página compartilhável com indicadores, riscos, valores utilizados e origem;
+- **`/casos` — Casos:** responsável, prazo e status operacional;
+- **`/qualidade` — Qualidade:** cobertura, integridade e lacunas dos dados;
+- **`/parceiros` — Visibilidade B2B2C:** cobertura de sell-out por parceiro;
+- **`/cenarios` — Cenários:** simulações que não alteram o ranking oficial;
+- **`/execucoes` — Execuções:** snapshots auditáveis da fonte e do ranking;
+- **`/decisoes` — Decisões:** feedback do PCP separado da base XLSM.
+
+O frontend usa rotas reais no navegador, lazy loading por página e uma rota 404. O arquivo `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar diretamente uma URL interna na Vercel.
 
 ## Configuração
 
