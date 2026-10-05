@@ -3,6 +3,8 @@ import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router
 import { PageResource } from './components/PageResource';
 import { LoadingState, Sidebar, Topbar, navigation } from './components';
 import type { SelectedSku } from './types';
+import { PageLoadContext } from './hooks/usePageLoadStatus';
+import type { PageLoadStatus } from './hooks/usePageLoadStatus';
 import './App.css';
 
 const GuidePage = lazy(() => import('./pages/GuidePage'));
@@ -34,6 +36,8 @@ function App() {
   const navigate = useNavigate();
   const [refreshToken, setRefreshToken] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loadStatus, setLoadStatus] = useState<PageLoadStatus & { path: string }>({ path: '', loading: true, error: '', loadedAt: null });
+  const reportLoad = useCallback((status: PageLoadStatus) => setLoadStatus({ ...status, path: location.pathname }), [location.pathname]);
   const refresh = () => setRefreshToken(token => token + 1);
 
   useEffect(() => { window.scrollTo({ top: 0 }); setMenuOpen(false); }, [location.pathname]);
@@ -49,12 +53,14 @@ function App() {
   }, [location.pathname, location.search, navigate]);
 
   const isGuide = location.pathname === '/guia';
-  const isSkuDetail = Boolean(matchPath('/skus/:sku', location.pathname));
 
-  return <div className="app-shell">
+  const staticPage = isGuide || current.label === 'Página não encontrada';
+  const status = loadStatus.path === location.pathname ? loadStatus : { loading: true, error: '', loadedAt: null };
+
+  return <PageLoadContext.Provider value={reportLoad}><div className="app-shell">
     <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
     <main className="main-content">
-      <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} onRefresh={() => void refresh()} refreshing={false} showRefresh={!isGuide && !isSkuDetail && current.label !== 'Página não encontrada'} />
+      <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
       <div className="page-content">
         <Suspense fallback={<LoadingState />}>
           <Routes>
@@ -68,13 +74,13 @@ function App() {
             <Route path="/cenarios" element={<PageResource key="ScenariosPage" fields={PAGE_FIELDS.ScenariosPage} refreshToken={refreshToken}>{(dashboard, reload) => <ScenariosPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/execucoes" element={<PageResource key="RunsPage" fields={PAGE_FIELDS.RunsPage} refreshToken={refreshToken}>{(dashboard, reload) => <RunsPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/decisoes" element={<PageResource key="FeedbackPage" fields={PAGE_FIELDS.FeedbackPage} refreshToken={refreshToken}>{(dashboard, reload) => <FeedbackPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
-            <Route path="/skus/:sku" element={<SkuDetailPage key={location.pathname} />} />
+            <Route path="/skus/:sku" element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>
       </div>
     </main>
-  </div>;
+  </div></PageLoadContext.Provider>;
 }
 
 export default App;

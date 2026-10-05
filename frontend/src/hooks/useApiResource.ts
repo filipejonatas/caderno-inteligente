@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export function useApiResource<T>(loader: (signal: AbortSignal) => Promise<T>, refreshToken = 0) {
   const [data, setData] = useState<T>();
   const [error, setError] = useState('');
+  const [loadedAt, setLoadedAt] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const active = useRef<AbortController>();
   const refresh = useCallback(async () => {
@@ -13,7 +14,7 @@ export function useApiResource<T>(loader: (signal: AbortSignal) => Promise<T>, r
     setLoading(true); setError('');
     try {
       const result = await loader(controller.signal);
-      if (!controller.signal.aborted) setData(result);
+      if (!controller.signal.aborted) { setData(result); setLoadedAt(Date.now()); }
     } catch (reason) {
       if (!controller.signal.aborted) {
         setError(reason instanceof Error ? reason.message : 'Falha ao carregar esta seção.');
@@ -23,10 +24,10 @@ export function useApiResource<T>(loader: (signal: AbortSignal) => Promise<T>, r
       if (active.current === controller) setLoading(false);
     }
   }, [loader]);
-  useEffect(() => { setData(undefined); }, [loader]);
+  useEffect(() => { setData(undefined); setLoadedAt(null); }, [loader]);
   useEffect(() => {
     void refresh();
     return () => { active.current?.abort(); active.current = undefined; };
   }, [refresh, refreshToken]);
-  return { data, error, loading, refresh };
+  return { data, error, loading, loadedAt, refresh };
 }

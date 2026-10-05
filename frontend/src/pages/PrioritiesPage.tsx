@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Icon, PageIntro, PriorityTable, SectionCard } from '../components';
+import { DecisionBoundary, Icon, PageIntro, PriorityTable, SectionCard } from '../components';
 import type { PageProps } from './shared';
 
 export default function PrioritiesPage({ data, onSelect }: PageProps<'priorities'>) {
@@ -23,11 +23,12 @@ export default function PrioritiesPage({ data, onSelect }: PageProps<'priorities
 
   return <>
     <PageIntro eyebrow="Fila de atenção" title="Prioridades explicáveis" description="A pontuação ordena a análise; a decisão continua sendo humana e apoiada pelas evidências." />
-    <div className="filter-bar">
-      <label className="search-field"><span className="sr-only">Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="Buscar SKU ou produto" /></label>
+    <DecisionBoundary />
+    <div className="filter-bar" role="search" aria-label="Filtrar prioridades">
+      <label className="search-field"><span >Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="Buscar SKU ou produto" /></label>
       <label><span>Família</span><select value={family} onChange={(event) => update('familia', event.target.value)}><option value="">Todas</option>{families.map((item) => <option key={item}>{item}</option>)}</select></label>
-      <label><span>Confiança</span><select value={confidence} onChange={(event) => update('confianca', event.target.value)}><option value="">Todas</option><option value="baixa">Baixa</option><option value="média">Média</option></select></label>
-      <div className="filter-count"><strong>{filtered.length}</strong><span>resultados</span></div>
+      <label><span>Confiança</span><select value={confidence} onChange={(event) => update('confianca', event.target.value)}><option value="">Todas</option><option value="baixa">Baixa</option><option value="média">Média</option><option value="alta">Alta</option></select></label>
+      <div className="filter-count"><strong>{filtered.length}</strong><span>de {data.priorities.length} SKUs</span></div>{params.size > 0 && <button className="secondary-button" onClick={() => setParams({}, { replace: true })}>Limpar filtros</button>}
     </div>
     <SectionCard title="Ranking oficial" subtitle="Ordenado pela soma transparente dos pesos de cada sinal."><PriorityTable rows={filtered} onSelect={onSelect} /></SectionCard>
   </>;

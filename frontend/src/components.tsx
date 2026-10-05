@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import type { PageId, Priority } from './types';
@@ -55,9 +56,18 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 820px)').matches);
+  const aside = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 820px)');
+    const change = () => setMobile(media.matches);
+    media.addEventListener('change', change);
+    return () => media.removeEventListener('change', change);
+  }, []);
+  useEffect(() => { aside.current?.toggleAttribute('inert', mobile && !open); }, [mobile, open]);
   return <>
     <div className={`sidebar-scrim ${open ? 'is-open' : ''}`} onClick={onClose} aria-hidden="true" />
-    <aside className={`sidebar ${open ? 'is-open' : ''}`}>
+    <aside ref={aside} aria-hidden={mobile && !open ? true : undefined} className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand">
         <div className="brand-mark">CI</div>
         <div><strong>Caderno</strong><span>Inteligente</span></div>
@@ -74,22 +84,41 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   </>;
 }
 
-export function Topbar({ title, subtitle, onMenu, onRefresh, refreshing, showRefresh = true }: { title: string; subtitle: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean }) {
+export function Topbar({ title, subtitle, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false }: { title: string; subtitle: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean }) {
+  const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
   return <header className="topbar">
     <div className="topbar-title">
       <button className="icon-button menu-button" onClick={onMenu} aria-label="Abrir menu"><Icon name="menu" /></button>
       <div><p>{subtitle}</p><h1>{title}</h1></div>
     </div>
-    {showRefresh && <button className="secondary-button" onClick={onRefresh} disabled={refreshing}><Icon name="refresh" />{refreshing ? 'Atualizando…' : 'Atualizar dados'}</button>}
+    <div className="topbar-actions">
+      <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Última carga: ${timestamp} (Brasília)` : 'Ainda sem carga concluída'}</small></div>
+      {showRefresh && <button className="secondary-button" onClick={onRefresh} disabled={refreshing} aria-label={refreshing ? 'Atualizando dados' : 'Atualizar dados desta página'}><Icon name="refresh" /><span>{refreshing ? 'Atualizando…' : 'Atualizar'}</span></button>}
+    </div>
   </header>;
+}
+
+export function Alert({ title, children, tone = 'info', action }: { title: string; children: ReactNode; tone?: 'info' | 'warning' | 'error'; action?: ReactNode }) {
+  return <div className={`ui-alert ui-alert-${tone}`} role={tone === 'error' || tone === 'warning' ? 'alert' : 'note'}><div><strong>{title}</strong><div>{children}</div></div>{action}</div>;
+}
+
+export function Tooltip({ label, children }: { label: string; children: ReactNode }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  return <span className={`tooltip ${open ? 'is-open' : ''} ${dismissed ? 'is-dismissed' : ''}`} onMouseEnter={() => setDismissed(false)}><button type="button" className="tooltip-trigger" aria-label={label} aria-describedby={id} aria-expanded={open} onFocus={() => setDismissed(false)} onClick={() => { setDismissed(false); setOpen(value => !value); }} onBlur={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); setDismissed(true); } }}>?</button><span id={id} role="tooltip" className="tooltip-content">{children}</span></span>;
+}
+
+export function DecisionBoundary() {
+  return <Alert title="Prioridade de análise não é ordem de produção">O score indica o que investigar primeiro. A recomendação considera demanda, estoque e produção aberta. Um SKU pode ter prioridade alta e estar sem ação necessária de produção. Isso não elimina seus riscos nem dispensa revisão humana.</Alert>;
 }
 
 export function PageIntro({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
   return <div className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>{action}</div>;
 }
 
-export function Badge({ children, tone = 'neutral' }: { children: ReactNode; tone?: string }) {
-  return <span className={`badge badge-${tone}`}>{children}</span>;
+export function Badge({ children, tone = 'neutral', title }: { children: ReactNode; tone?: string; title?: string }) {
+  return <span className={`badge badge-${tone}`} title={title}>{children}</span>;
 }
 
 export function severityTone(severity: string) {
@@ -127,7 +156,7 @@ const formatQuantity = (value: number | null) => value === null
 
 export function PriorityTable({ rows, onSelect, compact = false }: { rows: Priority[]; onSelect: (row: Priority) => void; compact?: boolean }) {
   if (!rows.length) return <EmptyState title="Nenhuma prioridade encontrada" description="Ajuste os filtros ou atualize os dados." />;
-  return <div className="table-shell"><table className={`data-table priority-table ${compact ? 'is-compact' : ''}`}><thead><tr><th>Prioridade</th><th>SKU / Produto</th><th>Família</th><th>Motivo principal</th>{!compact && <><th>Data crítica</th><th>Lacuna operacional</th></>}<th>Score</th><th>Confiança</th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>{rows.map((row) => <tr key={row.sku} onClick={() => onSelect(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') onSelect(row); }}>
+  return <div className="table-shell" tabIndex={0} role="region" aria-label="Prioridades; role horizontalmente para ver todas as colunas"><table className={`data-table priority-table ${compact ? 'is-compact' : ''}`}><caption>Prioridade de análise · não é autorização de produção</caption><thead><tr><th>Prioridade</th><th>SKU / Produto</th><th>Família</th><th>Motivo principal</th>{!compact && <><th>Data crítica</th><th>Lacuna operacional</th></>}<th>Score <Tooltip label="O que significa o score?">Soma dos pesos dos sinais. Ordena a atenção, não a quantidade a produzir.</Tooltip></th><th>Confiança <Tooltip label="O que significa a confiança?">Qualidade da evidência para análise; não é garantia de atendimento ou previsão.</Tooltip></th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>{rows.map((row) => <tr key={row.sku} onClick={() => onSelect(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onSelect(row); }}>
     <td><span className={`rank ${row.priority <= 3 ? 'top' : ''}`}>{row.priority}</span></td>
     <td><strong>{row.sku}</strong><small>{row.product}</small></td>
     <td>{row.family}</td>
@@ -135,20 +164,20 @@ export function PriorityTable({ rows, onSelect, compact = false }: { rows: Prior
     {!compact && <><td><strong>{formatDate(row.critical_date)}</strong><small>{row.critical_date_reason === 'first_promised_date' ? 'Data prometida' : row.critical_date_reason === 'first_production_completion' ? 'Conclusão prevista' : 'Sem data operacional'}</small></td><td><strong>{formatQuantity(row.operational_gap_quantity)}</strong><small>Quantidade para análise</small></td></>}
     <td><strong className="score">{row.attention_score}</strong></td>
     <td><Badge tone={confidenceTone(row.confidence)}>{row.confidence}</Badge></td>
-    <td><Icon name="arrow" size={17} /></td>
+    <td><button className="icon-button table-detail-button" aria-label={`Abrir evidências de ${row.sku}`} onClick={event => { event.stopPropagation(); onSelect(row); }}><Icon name="arrow" size={17} /></button></td>
   </tr>)}</tbody></table></div>;
 }
 
 export function LoadingState() {
-  return <div className="loading-grid" aria-label="Carregando dados"><div className="skeleton hero-skeleton" />{[1, 2, 3, 4].map((item) => <div className="skeleton card-skeleton" key={item} />)}<div className="skeleton table-skeleton" /></div>;
+  return <div className="loading-grid" role="status" aria-label="Carregando dados"><div className="skeleton hero-skeleton" />{[1, 2, 3, 4].map((item) => <div className="skeleton card-skeleton" key={item} />)}<div className="skeleton table-skeleton" /></div>;
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return <div className="state-card error-state"><div className="state-icon">!</div><h2>Não foi possível carregar o painel</h2><p>{message}</p><button className="primary-button" onClick={onRetry}><Icon name="refresh" />Tentar novamente</button></div>;
+  return <div className="state-card error-state" role="alert"><div className="state-icon">!</div><h2>Não foi possível carregar o painel</h2><p>{message}</p><button className="primary-button" onClick={onRetry}><Icon name="refresh" />Tentar novamente</button></div>;
 }
 
 export function EmptyState({ title, description }: { title: string; description: string }) {
-  return <div className="empty-state"><span>○</span><strong>{title}</strong><p>{description}</p></div>;
+  return <div className="empty-state" role="status"><span>○</span><strong>{title}</strong><p>{description}</p></div>;
 }
 
 export function SectionCard({ title, subtitle, action, children, className = '' }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode; className?: string }) {
