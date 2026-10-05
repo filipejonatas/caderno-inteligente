@@ -22,7 +22,7 @@ function RunCard({ label, run }: { label: string; run: RunMeta }) {
 }
 
 function Changes({ title, changes }: { title: string; changes: KeyChange[] }) {
-  return <div className="run-compare-config"><h5>{title}</h5>{changes.length ? <ul>{changes.map((change) => <li key={change.key}><code>{change.key}</code>: {value(change.base)} → <strong>{value(change.target)}</strong></li>)}</ul> : <p className="validation-muted">Sem alteração.</p>}</div>;
+  return <div className="run-compare-config"><h4>{title}</h4>{changes.length ? <ul>{changes.map((change) => <li key={change.key}><code>{change.key}</code>: {value(change.base)} → <strong>{value(change.target)}</strong></li>)}</ul> : <p className="validation-muted">Sem alteração.</p>}</div>;
 }
 
 function FieldChanges({ changes }: { changes: FieldChange[] }) {
@@ -30,7 +30,7 @@ function FieldChanges({ changes }: { changes: FieldChange[] }) {
 }
 
 function EntryList({ title, items, empty }: { title: string; items: RankingEntry[]; empty: string }) {
-  return <div className="run-compare-list"><h5>{title} ({items.length})</h5>{items.length ? <ul>{items.map((item) => <li key={item.sku}><Link to={`/skus/${encodeURIComponent(item.sku)}`}><strong>{item.sku}</strong></Link> #{item.priority} · score {item.attention_score} · <Badge tone={confidenceTone(item.confidence)}>{item.confidence}</Badge><div className="run-compare-signals">{item.signals.map(signal)}</div></li>)}</ul> : <p className="validation-muted">{empty}</p>}</div>;
+  return <div className="run-compare-list"><h4>{title} ({items.length})</h4>{items.length ? <ul>{items.map((item) => <li key={item.sku}><Link to={`/skus/${encodeURIComponent(item.sku)}`}><strong>{item.sku}</strong></Link> #{item.priority} · score {item.attention_score} · <Badge tone={confidenceTone(item.confidence)}>{item.confidence}</Badge><div className="run-compare-signals">{item.signals.map(signal)}</div></li>)}</ul> : <p className="validation-muted">{empty}</p>}</div>;
 }
 
 function Section({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
@@ -48,7 +48,7 @@ export function RunComparisonContent({ data }: { data: RunComparison }) {
       <div className="run-compare-config-grid">
         <Changes title="Pesos" changes={context.weights_changes} />
         <Changes title="Limiares das regras" changes={context.thresholds_changes} />
-        {isUnavailable(context.commercial_thresholds) ? <div className="run-compare-config"><h5>Limiares comerciais</h5><p className="validation-muted">{context.commercial_thresholds.reason}</p></div> : <Changes title="Limiares comerciais" changes={context.commercial_thresholds.changes} />}
+        {isUnavailable(context.commercial_thresholds) ? <div className="run-compare-config"><h4>Limiares comerciais</h4><p className="validation-muted">{context.commercial_thresholds.reason}</p></div> : <Changes title="Limiares comerciais" changes={context.commercial_thresholds.changes} />}
       </div>
       {data.notes.map((note) => <p key={note} className="validation-note">{note}</p>)}
     </Section>
@@ -71,10 +71,10 @@ export function RunComparisonContent({ data }: { data: RunComparison }) {
             {!item.score_delta_explained && !!item.score_delta && <Badge tone="critical">Não explicado</Badge>}
           </summary>
           <div className="run-compare-change-body">
-            <div><h5>Por que mudou</h5><ul className="validation-list">{item.explanation.length ? item.explanation.map((line) => <li key={line}>{line}</li>) : <li>Somente valores de evidência mudaram; sinais, score e posição permaneceram.</li>}</ul></div>
-            {(item.signals_added.length > 0 || item.signals_removed.length > 0) && <div><h5>Sinais</h5>{item.signals_added.length > 0 && <p>Novos: {item.signals_added.map(signal)}</p>}{item.signals_removed.length > 0 && <p>Removidos: {item.signals_removed.map(signal)}</p>}</div>}
-            {item.score_breakdown.length > 0 && <div><h5>Decomposição do score</h5><ul className="run-compare-fields">{item.score_breakdown.map((entry) => <li key={`${entry.code}-${entry.change}`}><span>{reasonNames[entry.code] ?? entry.code} · {entry.change}</span><span>{value(entry.base_weight)} → {value(entry.target_weight)} <strong>{signed(entry.delta)}</strong></span></li>)}</ul></div>}
-            {item.evidence_changes.length > 0 && <div><h5>Valores de evidência</h5><ul className="run-compare-fields">{item.evidence_changes.map((change) => <li key={`${change.code}-${change.field}`}><span>{reasonNames[change.code] ?? change.code} · {change.field}</span><span>{value(change.base)} → <strong>{value(change.target)}</strong></span></li>)}</ul></div>}
+            <div><h4>Por que mudou</h4><ul className="validation-list">{item.explanation.length ? item.explanation.map((line) => <li key={line}>{line}</li>) : <li>Somente valores de evidência mudaram; sinais, score e posição permaneceram.</li>}</ul></div>
+            {(item.signals_added.length > 0 || item.signals_removed.length > 0) && <div><h4>Sinais</h4>{item.signals_added.length > 0 && <p>Novos: {item.signals_added.map(signal)}</p>}{item.signals_removed.length > 0 && <p>Removidos: {item.signals_removed.map(signal)}</p>}</div>}
+            {item.score_breakdown.length > 0 && <div><h4>Decomposição do score</h4><ul className="run-compare-fields">{item.score_breakdown.map((entry) => <li key={`${entry.code}-${entry.change}`}><span>{reasonNames[entry.code] ?? entry.code} · {entry.change}</span><span>{value(entry.base_weight)} → {value(entry.target_weight)} <strong>{signed(entry.delta)}</strong></span></li>)}</ul></div>}
+            {item.evidence_changes.length > 0 && <div><h4>Valores de evidência</h4><ul className="run-compare-fields">{item.evidence_changes.map((change) => <li key={`${change.code}-${change.field}`}><span>{reasonNames[change.code] ?? change.code} · {change.field}</span><span>{value(change.base)} → <strong>{value(change.target)}</strong></span></li>)}</ul></div>}
           </div>
         </details>)}</div> : <EmptyState title="Nenhum SKU mudou" description="Posição, score, confiança, sinais e evidências são iguais nas duas execuções." />}
       </>}

@@ -1,0 +1,27 @@
+import { describe, expect, it } from 'vitest';
+import * as fx from './fixtures';
+import { endpoints, keyPaths } from './contract';
+
+// Same fixtures used by the page tests; tests/test_frontend_contracts.py checks the real API against the same key list.
+const FIXTURES: Record<string, unknown> = {
+  overview: fx.overview, priorities: fx.priorities, quality: fx.quality, config: fx.config, runs: fx.runs, b2b: fx.b2b,
+  forecasts: fx.forecasts, skuDetail: fx.skuDetailOk, partners: fx.partnersPage, partnerDetail: fx.partnerDetail,
+  partnerSkus: fx.partnerRows, commercial: fx.partnerRows, validation: fx.validationSummary, runComparison: fx.runComparison,
+};
+
+describe('contratos críticos do frontend', () => {
+  it('todo endpoint do contrato tem fixture e vice-versa', () => {
+    expect(Object.keys(FIXTURES).sort()).toEqual(Object.keys(endpoints).sort());
+  });
+
+  it.each(Object.entries(endpoints))('%s: fixture contém todos os campos do contrato', (name, endpoint) => {
+    const missing = endpoint.keys.filter((key) => !keyPaths(FIXTURES[name]).has(key));
+    expect(missing).toEqual([]);
+  });
+
+  it('valores ausentes das fixtures permanecem nulos, não zero', () => {
+    expect(fx.skuDetailShort.operational_recommendation.suggested_quantity).toBeNull();
+    expect(fx.forecasts[1].forecast.forecast_next_month).toBeNull();
+    expect(fx.commercialRow.coverage_days).toBeNull();
+  });
+});

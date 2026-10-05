@@ -72,7 +72,7 @@ Para executar todas as verificações com um único comando, a partir da raiz:
 .\scripts\validate.ps1
 ```
 
-O script valida as dependências instaladas, executa toda a suíte Python e roda o typecheck e o build do frontend.
+O script valida as dependências instaladas, executa toda a suíte Python e roda o `npm run check` do frontend (typecheck, testes, build e verificação de segredos no bundle).
 
 Comandos individuais:
 
@@ -82,12 +82,14 @@ Testes Python:
 .\.venv\Scripts\python.exe -m pytest -p no:cacheprovider
 ```
 
-Tipos e build do frontend:
+Frontend — typecheck, testes (Vitest + Testing Library + axe-core e testes `node --test`), build e verificação de segredos no bundle:
 
 ```powershell
 cd frontend
 npm run check
 ```
+
+Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend a cada alteração. Os testes usam somente fixtures sintéticas (`frontend/src/test/fixtures.ts`); o arquivo `frontend/src/test/contract-keys.json` lista os campos que o frontend lê e é validado contra a API real por `tests/test_frontend_contracts.py`.
 
 ## Interface
 
@@ -146,3 +148,4 @@ Mais detalhes estão em [Deploy com Vercel e Supabase](docs/deploy-vercel-supaba
 - [Plano de melhorias](docs/plano-de-melhorias.md)
 - [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)
 - [Etapa 6 — Comparação entre execuções](docs/etapa-6-comparacao-execucoes.md)
+- [Etapa 7 — Testes do frontend, acessibilidade e robustez](docs/etapa-7-testes-acessibilidade.md)

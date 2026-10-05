@@ -162,7 +162,7 @@ export function ValidationContent({ data, error = '', onRetry }: { data: Validat
     <div className="validation-two-columns">
       <SectionCard title="Falhas conhecidas" subtitle="Mostradas como estão; não são ocultadas nem compensadas.">
         {data.known_failures.length ? <ul className="validation-list">{data.known_failures.map((item) => <li key={item.description}><Badge tone="medium">{item.area}</Badge> {item.description}</li>)}</ul> : <p className="validation-muted">Nenhuma falha detectada nesta consulta.</p>}
-        <h5>Limitações permanentes</h5>
+        <h4>Limitações permanentes</h4>
         <ul className="validation-list">{data.known_limitations.map((item) => <li key={item}>{item}</li>)}</ul>
       </SectionCard>
       <SectionCard title="Histórico de ajustes" subtitle="Mudanças feitas após testes e revisões. Nenhuma alterou pesos ou modelos.">

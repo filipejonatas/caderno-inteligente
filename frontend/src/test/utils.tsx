@@ -1,0 +1,76 @@
+import { render } from '@testing-library/react';
+import { MemoryRouter, useLocation } from 'react-router-dom';
+import { vi } from 'vitest';
+import App from '../App';
+import * as fx from './fixtures';
+
+export interface Failure { __failure: true; status: number; detail: string }
+export const fail = (status: number, detail: string): Failure => ({ __failure: true, status, detail });
+/** A response that never resolves, to observe loading states. */
+export const pending = () => new Promise<never>(() => {});
+
+type Value = unknown | ((url: URL, init?: RequestInit) => unknown);
+
+const ROUTES: Array<[string, RegExp]> = [
+  ['validation', /^\/api\/validation\/summary$/],
+  ['runComparison', /^\/api\/run-comparisons$/],
+  ['partnerSkus', /^\/api\/partners\/[^/]+\/skus$/],
+  ['partnerDetail', /^\/api\/partners\/[^/]+$/],
+  ['partners', /^\/api\/partners$/],
+  ['commercial', /^\/api\/commercial-recommendations$/],
+  ['skuDetail', /^\/api\/priorities\/.+$/],
+  ['priorities', /^\/api\/priorities$/],
+  ['overview', /^\/api\/overview$/],
+  ['forecasts', /^\/api\/forecasts$/],
+  ['runs', /^\/api\/runs$/],
+  ['cases', /^\/api\/cases$/],
+  ['feedback', /^\/api\/feedback$/],
+  ['config', /^\/api\/config$/],
+  ['quality', /^\/api\/data-quality$/],
+  ['b2b', /^\/api\/b2b2c\/visibility$/],
+  ['scenario', /^\/api\/scenarios$/],
+];
+
+const DEFAULTS: Record<string, Value> = {
+  validation: fx.validationSummary, runComparison: fx.runComparison, partnerSkus: fx.partnerRows, partnerDetail: fx.partnerDetail,
+  partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts,
+  runs: fx.runs, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
+  skuDetail: (url: URL) => decodeURIComponent(url.pathname.split('/').pop() ?? '') === fx.SKU_SHORT ? fx.skuDetailShort : fx.skuDetailOk,
+  'POST runs': { id: 3 }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
+  'POST scenario': { is_simulation: true, warning: 'Cenário hipotético.', weights: fx.config.weights, thresholds: fx.config.thresholds, ranking: fx.priorities },
+};
+
+export interface ApiCall { method: string; path: string; body: unknown }
+
+/** Routes fetch to synthetic fixtures by endpoint; override a key with a value, Failure, pending() or function. */
+export function mockApi(overrides: Record<string, Value> = {}) {
+  const calls: ApiCall[] = [];
+  const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = new URL(String(input), 'http://localhost');
+    const method = (init?.method ?? 'GET').toUpperCase();
+    calls.push({ method, path: `${url.pathname}${url.search}`, body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined });
+    const name = ROUTES.find(([, pattern]) => pattern.test(url.pathname))?.[0];
+    if (!name) return { ok: false, status: 404, json: async () => ({ detail: `Rota não simulada: ${url.pathname}` }) };
+    const key = method === 'GET' ? name : `${method} ${name}`;
+    const entry = key in overrides ? overrides[key] : DEFAULTS[key];
+    const value = typeof entry === 'function' ? await (entry as (url: URL, init?: RequestInit) => unknown)(url, init) : await entry;
+    if (value && typeof value === 'object' && '__failure' in value) {
+      const failure = value as Failure;
+      return { ok: false, status: failure.status, json: async () => ({ detail: failure.detail }) };
+    }
+    return { ok: true, status: 200, json: async () => structuredClone(value) };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  return { calls, fetchMock, gets: () => calls.filter((call) => call.method === 'GET').map((call) => call.path) };
+}
+
+function LocationProbe() {
+  const location = useLocation();
+  return <output hidden data-testid="location">{`${location.pathname}${location.search}`}</output>;
+}
+
+export const currentLocation = () => document.querySelector('[data-testid="location"]')?.textContent ?? '';
+
+export function renderApp(path = '/') {
+  return render(<MemoryRouter initialEntries={[path]}><App /><LocationProbe /></MemoryRouter>);
+}

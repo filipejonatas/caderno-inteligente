@@ -68,9 +68,17 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
     return () => media.removeEventListener('change', change);
   }, []);
   useEffect(() => { aside.current?.toggleAttribute('inert', mobile && !open); }, [mobile, open]);
+  // Mobile drawer: move focus into the menu when it opens, close with Escape and return focus to the trigger.
+  useEffect(() => {
+    if (!mobile || !open) return;
+    aside.current?.querySelector<HTMLElement>('nav a')?.focus();
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { onClose(); document.getElementById('menu-button')?.focus(); } };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [mobile, open, onClose]);
   return <>
     <div className={`sidebar-scrim ${open ? 'is-open' : ''}`} onClick={onClose} aria-hidden="true" />
-    <aside ref={aside} aria-hidden={mobile && !open ? true : undefined} className={`sidebar ${open ? 'is-open' : ''}`}>
+    <aside ref={aside} id="menu-principal" aria-label="Menu" aria-hidden={mobile && !open ? true : undefined} className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand">
         <div className="brand-mark">CI</div>
         <div><strong>Caderno</strong><span>Inteligente</span></div>
@@ -87,12 +95,12 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
   </>;
 }
 
-export function Topbar({ title, subtitle, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false }: { title: string; subtitle: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean }) {
+export function Topbar({ title, subtitle, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false }: { title: string; subtitle: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
   const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
   return <header className="topbar">
     <div className="topbar-title">
-      <button className="icon-button menu-button" onClick={onMenu} aria-label="Abrir menu"><Icon name="menu" /></button>
-      <div><p>{subtitle}</p><h1>{title}</h1></div>
+      <button id="menu-button" className="icon-button menu-button" onClick={onMenu} aria-label="Abrir menu" aria-expanded={menuOpen} aria-controls="menu-principal"><Icon name="menu" /></button>
+      <div><p>{subtitle}</p><h1 id="page-title" tabIndex={-1}>{title}</h1></div>
     </div>
     <div className="topbar-actions">
       <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Última carga: ${timestamp} (Brasília)` : 'Ainda sem carga concluída'}</small></div>
@@ -187,7 +195,7 @@ export function SectionCard({ title, subtitle, action, children, className = '' 
   return <section className={`section-card ${className}`}><div className="section-heading"><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>{action}</div>{children}</section>;
 }
 
-export function ProgressBar({ value, tone = 'blue' }: { value: number; tone?: string }) {
+export function ProgressBar({ value, tone = 'blue', label = 'Cobertura observada' }: { value: number; tone?: string; label?: string }) {
   const percent = Math.max(0, Math.min(100, value * 100));
-  return <div className="progress" aria-label={`${Math.round(percent)}%`}><span className={`progress-${tone}`} style={{ width: `${percent}%` }} /></div>;
+  return <div className="progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-valuetext={`${Math.round(percent)}%`}><span className={`progress-${tone}`} style={{ width: `${percent}%` }} /></div>;
 }

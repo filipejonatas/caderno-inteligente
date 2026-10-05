@@ -1,6 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
+import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { LoadingState, Sidebar, Topbar, navigation } from './components';
 import type { SelectedSku } from './types';
 import { PageLoadContext } from './hooks/usePageLoadStatus';
@@ -40,8 +41,16 @@ function App() {
   const [loadStatus, setLoadStatus] = useState<PageLoadStatus & { path: string }>({ path: '', loading: true, error: '', loadedAt: null });
   const reportLoad = useCallback((status: PageLoadStatus) => setLoadStatus({ ...status, path: location.pathname }), [location.pathname]);
   const refresh = () => setRefreshToken(token => token + 1);
+  const closeMenu = useCallback(() => setMenuOpen(false), []);
 
-  useEffect(() => { window.scrollTo({ top: 0 }); setMenuOpen(false); }, [location.pathname]);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+    setMenuOpen(false);
+    // Move focus to the page title after client-side navigation so screen readers announce the new page.
+    if (firstRender.current) { firstRender.current = false; return; }
+    document.getElementById('page-title')?.focus({ preventScroll: true });
+  }, [location.pathname]);
 
   const current = useMemo(() => {
     if (matchPath('/parceiros/:codigo', location.pathname)) return { label: 'Detalhe do parceiro', description: 'Evidência comercial por SKU' };
@@ -55,16 +64,18 @@ function App() {
   }, [location.pathname, location.search, navigate]);
 
   const isGuide = location.pathname === '/guia';
+  useEffect(() => { document.title = `${current.label} · Caderno Inteligente`; }, [current.label]);
 
   const staticPage = isGuide || current.label === 'Página não encontrada';
   const status = loadStatus.path === location.pathname ? loadStatus : { loading: true, error: '', loadedAt: null };
 
   return <PageLoadContext.Provider value={reportLoad}><div className="app-shell">
-    <Sidebar open={menuOpen} onClose={() => setMenuOpen(false)} />
-    <main className="main-content">
-      <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
+    <a className="skip-link" href="#conteudo" onClick={(event) => { event.preventDefault(); document.getElementById('page-title')?.focus(); }}>Pular para o conteúdo</a>
+    <Sidebar open={menuOpen} onClose={closeMenu} />
+    <main className="main-content" id="conteudo">
+      <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
       <div className="page-content">
-        <Suspense fallback={<LoadingState />}>
+        <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
             <Route path="/guia" element={<GuidePage />} />
             <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
@@ -81,7 +92,7 @@ function App() {
             <Route path="/skus/:sku" element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
-        </Suspense>
+        </Suspense></RouteErrorBoundary>
       </div>
     </main>
   </div></PageLoadContext.Provider>;

@@ -7,15 +7,26 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:node": "node --test scripts/test-page-data.mjs scripts/test-decision-journey.mjs scripts/test-validation-page.mjs scripts/test-run-comparison.mjs",
+    "check:bundle": "node scripts/check-bundle-secrets.mjs",
+    "check": "npm run typecheck && npm run test && npm run test:node && npm run build && npm run check:bundle",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "axe-core": "^4.14.0",
+    "jsdom": "^26.1.0",
     "typescript": "~6.0.2",
-    "vite": "6.0.11"
+    "vite": "6.0.11",
+    "vitest": "~3.2.7"
   },
   "dependencies": {
     "react": "^18.3.1",

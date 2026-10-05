@@ -108,3 +108,12 @@
 - A diferença de score é decomposta em sinais adicionados, removidos e pesos alterados, usando os pesos gravados em cada execução. Quando a soma não fecha, o item é marcado como não explicado em vez de ocultado.
 - A coluna `runs.comparison` é opcional. No PostgreSQL, o adaptador detecta a migração 002 e mantém o registro funcionando antes dela, sem o payload ampliado.
 - A rota de comparação é `/api/run-comparisons`, porque `/api/runs/compare` seria capturada pela rota existente `/api/runs/{run_id}`.
+
+## 2026-10-05 — Testes do frontend, acessibilidade e robustez
+
+- Vitest 3.2 foi escolhido por ser compatível com o Vite 6.0.11 já fixado; o Vitest 5 exigiria atualizar o Vite, o que ficou fora do escopo. Testing Library, jsdom e axe-core são dependências apenas de desenvolvimento e não entram no bundle.
+- `npm run check` executa typecheck, testes Vitest, testes `node --test` existentes, build e verificação de segredos no `dist/`. O build da Vercel continua sendo `npm run build`, sem executar testes.
+- Os testes usam somente fixtures sintéticas tipadas pelos contratos do frontend. Um arquivo de campos compartilhado é validado nas duas pontas: fixtures no Vitest e API real no pytest.
+- A acessibilidade é verificada com axe-core em todas as rotas, em viewport móvel e desktop, exigindo zero violações de qualquer gravidade. Como o jsdom não calcula cores nem layout, o contraste é testado a partir dos tokens do CSS e foi conferido com axe no Chromium real.
+- `--slate-500` mudou de `#718096` (4,0:1 sobre branco) para `#5b6b7f` (≥ 5:1), cumprindo WCAG AA para texto pequeno. Nenhuma outra cor foi alterada.
+- Cada rota fica dentro de um error boundary: resposta malformada ou chunk indisponível após um deploy não apagam a aplicação inteira.

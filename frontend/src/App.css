@@ -8,7 +8,7 @@
   --blue-50: #f3f7ff;
   --slate-900: #142234;
   --slate-700: #3e5065;
-  --slate-500: #718096;
+  --slate-500: #5b6b7f; /* ≥ 4.5:1 sobre branco e --slate-50 (WCAG AA) */
   --slate-300: #cbd5e1;
   --slate-200: #e2e8f0;
   --slate-100: #edf2f7;
@@ -496,7 +496,7 @@ button:disabled { cursor: wait; opacity: .65; }
 .validation-details summary { cursor: pointer; font-weight: 650; color: var(--blue-700); }
 .validation-details .table-shell { margin-top: 10px; }
 .validation-list { margin: 12px 0 0; padding-left: 18px; color: var(--slate-700); font-size: 13px; line-height: 1.6; }
-.validation-page h5 { margin: 16px 0 6px; font-size: 13px; }
+.validation-page h5, .validation-two-columns h4 { margin: 16px 0 6px; font-size: 13px; }
 .validation-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
 .validation-case { display: flex; flex-direction: column; gap: 12px; padding: 16px; border: 1px solid var(--slate-200); border-left: 4px solid var(--green-700); border-radius: var(--radius-md); background: white; }
 .validation-case.is-falhou { border-left-color: var(--red-700); }
@@ -554,7 +554,7 @@ button:disabled { cursor: wait; opacity: .65; }
 .run-compare-meta code { overflow-wrap: anywhere; font-size: 11.5px; }
 .run-compare-badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
 .run-compare-config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-.run-compare-config h5, .run-compare-list h5, .run-compare-change-body h5 { margin: 0 0 6px; font-size: 13px; }
+.run-compare-config h4, .run-compare-list h4, .run-compare-change-body h4 { margin: 0 0 6px; font-size: 13px; }
 .run-compare-config ul, .run-compare-list ul { margin: 0; padding-left: 18px; font-size: 12.5px; line-height: 1.7; }
 .run-compare-config code { overflow-wrap: anywhere; }
 .run-compare-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 16px 0; }
@@ -581,3 +581,16 @@ button:disabled { cursor: wait; opacity: .65; }
   .run-compare-form label { min-width: 100%; }
   .run-compare-change summary { grid-template-columns: 1fr; }
 }
+
+/* Etapa 7 — acessibilidade */
+.skip-link { position: absolute; top: 8px; left: 8px; z-index: 100; padding: 10px 14px; border-radius: 9px; background: var(--blue-700); color: white; font-weight: 700; text-decoration: none; transform: translateY(-150%); transition: transform .15s ease; }
+.skip-link:focus { transform: translateY(0); }
+.topbar h1:focus { outline: none; }
+.topbar h1:focus-visible { outline: 3px solid var(--blue-700); outline-offset: 3px; }
+/* Componentes com outline: none ganham indicador de foco visível no teclado. */
+.priority-table tbody tr:focus-visible { outline: 3px solid var(--blue-700); outline-offset: -3px; }
+.filter-bar input:focus-visible, .filter-bar select:focus-visible, .form-layout input:focus-visible, .form-layout select:focus-visible,
+.stack-form input:focus-visible, .stack-form select:focus-visible, .stack-form textarea:focus-visible,
+.forecast-page-filters input:focus-visible, .forecast-page-filters select:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 1px; }
+.error-boundary { max-width: 640px; }
+@media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
