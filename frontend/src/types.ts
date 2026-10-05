@@ -2,6 +2,7 @@ export type PageId =
   | 'guide'
   | 'overview'
   | 'priorities'
+  | 'forecasts'
   | 'cases'
   | 'quality'
   | 'b2b'
@@ -47,6 +48,16 @@ export interface Priority {
   reasons: Reason[];
   evidence: Evidence[];
   disclaimer: string;
+}
+
+export interface SelectedSku {
+  sku: string;
+  product: string;
+  family: string;
+  priority: number | null;
+  attention_score: number | null;
+  confidence: Confidence;
+  confidence_reason: string;
 }
 
 export interface Overview {
@@ -229,6 +240,28 @@ export interface OperationalRecommendation {
   assumptions: string[];
   limitations: string[];
   requires_human_review: boolean;
+}
+
+export interface ForecastRecommendationSummary {
+  sku: string;
+  product: string;
+  family: string;
+  priority: number | null;
+  attention_score: number | null;
+  confidence: Confidence;
+  confidence_reason: string;
+  forecast: DemandForecast;
+  operational_recommendation: Pick<
+    OperationalRecommendation,
+    | 'action'
+    | 'action_label'
+    | 'suggested_quantity'
+    | 'minimum_lot'
+    | 'capacity_status'
+    | 'confidence'
+    | 'confidence_reason'
+    | 'requires_human_review'
+  >;
 }
 
 export interface SkuDetail {

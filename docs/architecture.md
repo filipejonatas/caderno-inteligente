@@ -6,4 +6,6 @@ O FastAPI mantém um cache em memória do pipeline normalizado. O cache é prote
 
 O frontend separa contratos (`types.ts`), acesso à API (`api.ts`), componentes compartilhados (`components.tsx`), páginas (`pages.tsx`) e orquestração (`App.tsx`). A navegação desktop usa sidebar fixa; em telas menores ela vira um drawer, sem reservar espaço do conteúdo.
 
+A página **Previsão e recomendações** carrega `GET /api/forecasts` somente quando é aberta. A rota agrega todos os SKUs sobre o pipeline cacheado e reutiliza o mesmo cálculo de recomendação do detalhe. Filtros, indicadores e ordenação são locais; somente a abertura do drawer solicita `GET /api/priorities/{sku}`. Assim, a listagem não produz uma chamada serverless por SKU nem aumenta o carregamento inicial das outras páginas.
+
 Na publicação, frontend e backend são projetos Vercel separados. O backend é uma Function FastAPI que lê o XLSM e as configurações empacotadas no deploy, sem escrever no filesystem. A persistência usa o Transaction Pooler do Supabase e o frontend recebe somente a URL pública da API.

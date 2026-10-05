@@ -5,6 +5,7 @@ type IconName =
   | 'guide'
   | 'overview'
   | 'priorities'
+  | 'forecasts'
   | 'cases'
   | 'quality'
   | 'b2b'
@@ -21,6 +22,7 @@ const iconPaths: Record<IconName, ReactNode> = {
   guide: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v17h4.5A2.5 2.5 0 0 1 20 22V5.5Z"/></>,
   overview: <><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></>,
   priorities: <><path d="M4 6h16M4 12h10M4 18h7"/><path d="m17 15 3 3 3-4"/></>,
+  forecasts: <><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 2 5-6"/><path d="M16 7h3v3"/></>,
   cases: <><path d="M9 5h6l1 2h4v13H4V7h4l1-2Z"/><path d="M9 12h6M9 16h4"/></>,
   quality: <><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-5"/></>,
   b2b: <><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 2-7 5-7s5 3 5 7M14 14c3-1 6 1 7 5"/></>,
@@ -42,6 +44,7 @@ export const navigation: Array<{ id: PageId; label: string; description: string 
   { id: 'guide', label: 'Guia de uso', description: 'Comece por aqui' },
   { id: 'overview', label: 'Visão geral', description: 'Pulso da operação' },
   { id: 'priorities', label: 'Prioridades', description: 'Fila de atenção' },
+  { id: 'forecasts', label: 'Previsão e recomendações', description: 'Demanda e ação sugerida' },
   { id: 'cases', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', label: 'Qualidade', description: 'Confiabilidade dos dados' },
   { id: 'b2b', label: 'Visibilidade B2B2C', description: 'Cobertura dos parceiros' },

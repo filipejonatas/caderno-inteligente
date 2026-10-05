@@ -1,9 +1,11 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from './api';
 import {
   Badge,
   EmptyState,
+  ErrorState,
   Icon,
+  LoadingState,
   MetricCard,
   PageIntro,
   PriorityTable,
@@ -12,7 +14,7 @@ import {
   confidenceTone,
   severityTone,
 } from './components';
-import type { DashboardData, PageId, Priority, ScenarioResult, SkuDetail } from './types';
+import type { DashboardData, ForecastRecommendationSummary, PageId, ScenarioResult, SelectedSku, SkuDetail } from './types';
 
 const reasonNames: Record<string, string> = {
   RUP_LEAD_TIME: 'Cobertura abaixo do lead time',
@@ -70,11 +72,12 @@ function partnerLevelTone(level: string) {
   return 'neutral';
 }
 
-interface PageProps { data: DashboardData; onSelect: (priority: Priority) => void; onRefresh: () => Promise<void>; }
+interface PageProps { data: DashboardData; onSelect: (priority: SelectedSku) => void; onRefresh: () => Promise<void>; }
 
 const guidePages: Array<{ id: Exclude<PageId, 'guide'>; title: string; eyebrow: string; description: string }> = [
   { id: 'overview', title: 'Visão geral', eyebrow: 'Comece aqui', description: 'Veja o pulso da operação, os principais riscos e o que exige atenção hoje.' },
   { id: 'priorities', title: 'Prioridades', eyebrow: 'Ordene a análise', description: 'Consulte os SKUs ordenados por urgência e abra as evidências de cada sinal.' },
+  { id: 'forecasts', title: 'Previsão e recomendações', eyebrow: 'Planeje a demanda', description: 'Compare forecast, confiança e ação sugerida antes da validação humana.' },
   { id: 'cases', title: 'Casos', eyebrow: 'Acompanhe ações', description: 'Transforme um alerta em responsável, prazo e acompanhamento operacional.' },
   { id: 'quality', title: 'Qualidade', eyebrow: 'Valide a base', description: 'Entenda cobertura, integridade e lacunas antes de tomar uma decisão.' },
   { id: 'b2b', title: 'Visibilidade B2B2C', eyebrow: 'Observe o canal', description: 'Compare a cobertura de sell-out e o nível demonstrativo dos parceiros.' },
@@ -208,6 +211,119 @@ export function PrioritiesPage({ data, onSelect }: PageProps) {
   </>;
 }
 
+type ForecastSort = 'priority' | 'suggested_quantity' | 'forecast_next_month' | 'backtest_wape';
+
+const needsForecastAttention = (item: ForecastRecommendationSummary) =>
+  item.forecast.status === 'insufficient_data'
+  || item.operational_recommendation.action !== 'sem_acao_necessaria'
+  || item.operational_recommendation.capacity_status === 'requires_review';
+
+function recommendationTone(action: ForecastRecommendationSummary['operational_recommendation']['action']) {
+  if (action === 'investigar_dados' || action === 'produzir_validar_capacidade') return 'medium';
+  if (action === 'produzir') return 'high';
+  if (action === 'monitorar_excesso') return 'neutral';
+  return 'good';
+}
+
+export function ForecastsPage({ onSelect }: { onSelect: (item: SelectedSku) => void }) {
+  const [items, setItems] = useState<ForecastRecommendationSummary[]>();
+  const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [family, setFamily] = useState('');
+  const [action, setAction] = useState('');
+  const [confidence, setConfidence] = useState('');
+  const [trend, setTrend] = useState('');
+  const [attentionOnly, setAttentionOnly] = useState(false);
+  const [sort, setSort] = useState<ForecastSort>('priority');
+
+  const load = useCallback(async () => {
+    setError('');
+    try { setItems(await api.forecasts()); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Falha ao carregar previsões.'); }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const families = useMemo(() => [...new Set((items ?? []).map((item) => item.family))].sort(), [items]);
+  const filtered = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase('pt-BR');
+    const result = (items ?? []).filter((item) => (
+      (!query || item.sku.toLocaleLowerCase('pt-BR').includes(query) || item.product.toLocaleLowerCase('pt-BR').includes(query))
+      && (!family || item.family === family)
+      && (!action || item.operational_recommendation.action === action)
+      && (!confidence || item.forecast.forecast_confidence === confidence)
+      && (!trend || item.forecast.trend === trend)
+      && (!attentionOnly || needsForecastAttention(item))
+    ));
+    return [...result].sort((left, right) => {
+      if (sort === 'priority') return (left.priority ?? Number.MAX_SAFE_INTEGER) - (right.priority ?? Number.MAX_SAFE_INTEGER) || left.sku.localeCompare(right.sku);
+      const leftValue = sort === 'suggested_quantity' ? left.operational_recommendation.suggested_quantity : left.forecast[sort];
+      const rightValue = sort === 'suggested_quantity' ? right.operational_recommendation.suggested_quantity : right.forecast[sort];
+      if (leftValue === null && rightValue === null) return left.sku.localeCompare(right.sku);
+      if (leftValue === null) return 1;
+      if (rightValue === null) return -1;
+      return rightValue - leftValue || left.sku.localeCompare(right.sku);
+    });
+  }, [action, attentionOnly, confidence, family, items, search, sort, trend]);
+
+  const filtersActive = Boolean(search || family || action || confidence || trend || attentionOnly || sort !== 'priority');
+  const clearFilters = () => { setSearch(''); setFamily(''); setAction(''); setConfidence(''); setTrend(''); setAttentionOnly(false); setSort('priority'); };
+
+  if (!items && !error) return <LoadingState />;
+  if (!items && error) return <ErrorState message={error} onRetry={() => void load()} />;
+
+  const source = items ?? [];
+  const predicted = source.filter((item) => item.forecast.status === 'ok').length;
+  const production = source.filter((item) => ['produzir', 'produzir_validar_capacidade'].includes(item.operational_recommendation.action)).length;
+  const capacity = source.filter((item) => item.operational_recommendation.capacity_status === 'requires_review').length;
+  const investigate = source.filter((item) => item.forecast.status === 'insufficient_data' || item.operational_recommendation.action === 'investigar_dados').length;
+
+  return <div className="forecast-page">
+    <PageIntro eyebrow="Planejamento de demanda" title="Previsão e recomendações" description="Compare a demanda prevista, a confiança do modelo e a ação sugerida antes da validação humana." />
+    {error && <div className="global-warning"><span>!</span>{error}<button onClick={() => void load()}>Tentar novamente</button></div>}
+    <div className="forecast-page-warning"><div className="notice-icon">!</div><div><strong>Revisão humana obrigatória</strong><p>As quantidades são sugestões de apoio à decisão. Revise carteira, capacidade e restrições operacionais antes de agir.</p></div></div>
+    <div className="metrics-grid forecast-page-metrics">
+      <MetricCard label="SKUs previstos" value={predicted} detail={`${source.length} SKUs analisados`} tone="blue" icon="forecasts" />
+      <MetricCard label="Produção sugerida" value={production} detail="itens que pedem avaliação" tone="green" icon="forecasts" />
+      <MetricCard label="Validar capacidade" value={capacity} detail="contexto familiar pressionado" tone="amber" icon="quality" />
+      <MetricCard label="Investigar dados" value={investigate} detail="sem previsão confiável" tone={investigate ? 'red' : 'slate'} icon="search" />
+    </div>
+    <div className="forecast-page-filters">
+      <label className="search-field"><span>Buscar</span><Icon name="search" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="SKU ou produto" /></label>
+      <label><span>Família</span><select value={family} onChange={(event) => setFamily(event.target.value)}><option value="">Todas</option>{families.map((item) => <option key={item}>{item}</option>)}</select></label>
+      <label><span>Ação</span><select value={action} onChange={(event) => setAction(event.target.value)}><option value="">Todas</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>
+      <label><span>Confiança</span><select value={confidence} onChange={(event) => setConfidence(event.target.value)}><option value="">Todas</option><option value="alta">Alta</option><option value="média">Média</option><option value="baixa">Baixa</option></select></label>
+      <label><span>Tendência</span><select value={trend} onChange={(event) => setTrend(event.target.value)}><option value="">Todas</option><option value="crescente">Crescente</option><option value="estável">Estável</option><option value="decrescente">Decrescente</option><option value="indeterminada">Indeterminada</option></select></label>
+      <label><span>Ordenar por</span><select value={sort} onChange={(event) => setSort(event.target.value as ForecastSort)}><option value="priority">Prioridade oficial</option><option value="suggested_quantity">Maior quantidade sugerida</option><option value="forecast_next_month">Maior previsão do próximo mês</option><option value="backtest_wape">Maior WAPE</option></select></label>
+      <label className="forecast-page-check"><input type="checkbox" checked={attentionOnly} onChange={(event) => setAttentionOnly(event.target.checked)} /><span>Somente itens com atenção</span></label>
+      <div className="forecast-page-filter-result"><strong>{filtered.length}</strong><span>de {source.length} SKUs</span>{filtersActive && <button onClick={clearFilters}>Limpar filtros</button>}</div>
+    </div>
+    <SectionCard title="Visão operacional consolidada" subtitle="O ranking oficial permanece separado da quantidade sugerida." action={<span className="live-label"><span />Pipeline cacheado</span>}>
+      {filtered.length ? <>
+        <div className="table-shell forecast-page-table"><table className="data-table"><thead><tr><th>SKU</th><th>Prioridade</th><th>Tendência</th><th>Próximo mês</th><th>3 meses</th><th>Modelo / WAPE</th><th>Confiança</th><th>Recomendação</th><th>Quantidade</th><th>Capacidade</th><th></th></tr></thead><tbody>{filtered.map((item) => <tr key={item.sku}>
+          <td><strong>{item.sku}</strong><small>{item.product} · {item.family}</small></td>
+          <td>{item.priority === null ? <span className="forecast-page-muted">Fora do ranking</span> : <span className={`rank ${item.priority <= 3 ? 'top' : ''}`}>#{item.priority}</span>}</td>
+          <td><strong className={`trend-${item.forecast.trend}`}>{item.forecast.trend}</strong></td>
+          <td>{item.forecast.status === 'ok' ? displayNumber(item.forecast.forecast_next_month) : <Badge tone="medium">Dados insuficientes</Badge>}</td>
+          <td>{item.forecast.status === 'ok' ? displayNumber(item.forecast.forecast_total_3m) : '—'}</td>
+          <td><strong>{item.forecast.model_label}</strong><small>{displayPercent(item.forecast.backtest_wape)}</small></td>
+          <td><Badge tone={confidenceTone(item.forecast.forecast_confidence)}>{item.forecast.forecast_confidence}</Badge></td>
+          <td><Badge tone={recommendationTone(item.operational_recommendation.action)}>{item.operational_recommendation.action_label}</Badge></td>
+          <td><strong>{displayNumber(item.operational_recommendation.suggested_quantity)}</strong><small>Lote: {displayNumber(item.operational_recommendation.minimum_lot)}</small></td>
+          <td><Badge tone={item.operational_recommendation.capacity_status === 'requires_review' ? 'medium' : 'neutral'}>{item.operational_recommendation.capacity_status === 'requires_review' ? 'Validar capacidade' : 'Sem garantia individual'}</Badge></td>
+          <td><button className="forecast-page-detail-button" onClick={() => onSelect(item)}>Ver detalhes</button></td>
+        </tr>)}</tbody></table></div>
+        <div className="forecast-page-cards">{filtered.map((item) => <article key={item.sku} className="forecast-page-card">
+          <div className="forecast-page-card-head"><div><strong>{item.sku}</strong><span>{item.product}</span><small>{item.family}</small></div>{item.priority === null ? <Badge tone="neutral">Fora do ranking</Badge> : <span className={`rank ${item.priority <= 3 ? 'top' : ''}`}>#{item.priority}</span>}</div>
+          <div className="forecast-page-card-badges"><Badge tone={confidenceTone(item.forecast.forecast_confidence)}>{item.forecast.forecast_confidence}</Badge><Badge tone={recommendationTone(item.operational_recommendation.action)}>{item.operational_recommendation.action_label}</Badge>{item.operational_recommendation.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}</div>
+          <dl><div><dt>Tendência</dt><dd className={`trend-${item.forecast.trend}`}>{item.forecast.trend}</dd></div><div><dt>Próximo mês</dt><dd>{item.forecast.status === 'ok' ? displayNumber(item.forecast.forecast_next_month) : 'Dados insuficientes'}</dd></div><div><dt>Próximos 3 meses</dt><dd>{displayNumber(item.forecast.forecast_total_3m)}</dd></div><div><dt>Quantidade sugerida</dt><dd>{displayNumber(item.operational_recommendation.suggested_quantity)}</dd></div><div><dt>Modelo</dt><dd>{item.forecast.model_label}</dd></div><div><dt>WAPE</dt><dd>{displayPercent(item.forecast.backtest_wape)}</dd></div></dl>
+          <button className="secondary-button" onClick={() => onSelect(item)}>Ver detalhes</button>
+        </article>)}</div>
+      </> : <div className="forecast-page-empty"><EmptyState title="Nenhum SKU encontrado" description="Ajuste os filtros ou volte à visão completa." />{filtersActive && <button className="secondary-button" onClick={clearFilters}>Limpar filtros</button>}</div>}
+    </SectionCard>
+  </div>;
+}
+
 export function CasesPage({ data, onRefresh }: PageProps) {
   const [sku, setSku] = useState(data.priorities[0]?.sku ?? '');
   const [owner, setOwner] = useState('');
@@ -323,7 +439,7 @@ export function FeedbackPage({ data, onRefresh }: PageProps) {
   </>;
 }
 
-export function SkuDrawer({ priority, onClose }: { priority: Priority | null; onClose: () => void }) {
+export function SkuDrawer({ priority, onClose }: { priority: SelectedSku | null; onClose: () => void }) {
   const [detail, setDetail] = useState<SkuDetail>();
   const [error, setError] = useState('');
   useEffect(() => { setDetail(undefined); setError(''); if (priority) api.skuDetail(priority.sku).then(setDetail).catch((reason: unknown) => setError(reason instanceof Error ? reason.message : 'Falha ao carregar detalhe.')); }, [priority]);
@@ -331,19 +447,24 @@ export function SkuDrawer({ priority, onClose }: { priority: Priority | null; on
   const indicator = detail?.indicator;
   const forecast = detail?.forecast;
   const recommendation = detail?.operational_recommendation;
+  const rankedPriority = detail?.priority[0];
+  const priorityNumber = rankedPriority?.priority ?? priority.priority;
+  const attentionScore = rankedPriority?.attention_score ?? priority.attention_score;
+  const rankingConfidence = rankedPriority?.confidence ?? priority.confidence;
+  const rankingConfidenceReason = rankedPriority?.confidence_reason ?? priority.confidence_reason;
   const delayDays = indicator ? positiveDelayDays(indicator.first_promised_date, indicator.first_production_completion) : null;
   return <>
     <div className="drawer-scrim" onClick={onClose} />
     <aside className="detail-drawer" aria-label={`Detalhe do SKU ${priority.sku}`}>
       <div className="drawer-head">
-        <div><span>Prioridade #{priority.priority}</span><h2>{priority.sku}</h2><p>{priority.product}</p></div>
+        <div><span>{priorityNumber === null ? 'SKU fora do ranking oficial' : `Prioridade #${priorityNumber}`}</span><h2>{priority.sku}</h2><p>{priority.product}</p></div>
         <button className="icon-button" onClick={onClose} aria-label="Fechar detalhe"><Icon name="close" /></button>
       </div>
       {error ? <div className="inline-error">{error}</div> : !detail || !indicator ? <div className="drawer-loading"><span /><span /><span /></div> : <div className="drawer-body">
         <div className="drawer-summary">
-          <div><span>Score</span><strong>{priority.attention_score}</strong></div>
-          <div><span>Confiança</span><Badge tone={confidenceTone(priority.confidence)}>{priority.confidence}</Badge></div>
-          <div><span>Família</span><strong>{priority.family}</strong></div>
+          <div><span>Score</span><strong>{displayNumber(attentionScore)}</strong></div>
+          <div><span>Confiança</span><Badge tone={confidenceTone(rankingConfidence)}>{rankingConfidence}</Badge></div>
+          <div><span>Família</span><strong>{indicator.family}</strong></div>
         </div>
 
         <section className="drawer-section detail-section">
@@ -364,7 +485,7 @@ export function SkuDrawer({ priority, onClose }: { priority: Priority | null; on
         </section>
 
         <section className="drawer-section detail-section">
-          <div className="drawer-section-heading"><div><span>Qualidade da análise</span><h3>Canal e confiança</h3></div><Badge tone={confidenceTone(priority.confidence)}>{priority.confidence}</Badge></div>
+          <div className="drawer-section-heading"><div><span>Qualidade da análise</span><h3>Canal e confiança</h3></div><Badge tone={confidenceTone(rankingConfidence)}>{rankingConfidence}</Badge></div>
           <div className="detail-metrics-grid channel-grid">
             <div><span>Sell-in acumulado</span><strong>{displayNumber(indicator.sell_in_quantity)}</strong></div>
             <div><span>Sell-out acumulado</span><strong>{displayNumber(indicator.sell_out_quantity)}</strong></div>
@@ -372,7 +493,7 @@ export function SkuDrawer({ priority, onClose }: { priority: Priority | null; on
             <div><span>Parceiros com sell-out</span><strong>{displayNumber(indicator.sell_out_partner_count)}</strong></div>
             <div><span>Forecast disponível</span><strong>{displayNumber(indicator.forecast_quantity)}</strong></div>
           </div>
-          <div className="confidence-explanation"><strong>Por que esta confiança?</strong><p>{priority.confidence_reason}</p></div>
+          <div className="confidence-explanation"><strong>Por que esta confiança?</strong><p>{rankingConfidenceReason}</p></div>
           {indicator.missing_data.length > 0 ? <div className="missing-data"><strong>Dados ausentes</strong><ul>{indicator.missing_data.map((field) => <li key={field}>{missingDataNames[field] ?? field.split('_').join(' ')}</li>)}</ul><p>Ausência de dado não é interpretada como valor zero.</p></div> : <div className="data-complete"><span>✓</span><p><strong>Dados principais disponíveis</strong>Não foram identificadas ausências nos campos desta análise.</p></div>}
         </section>
 

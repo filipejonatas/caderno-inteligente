@@ -5,6 +5,7 @@ import {
   B2BPage,
   CasesPage,
   FeedbackPage,
+  ForecastsPage,
   GuidePage,
   OverviewPage,
   PrioritiesPage,
@@ -13,7 +14,7 @@ import {
   ScenariosPage,
   SkuDrawer,
 } from './pages';
-import type { DashboardData, PageId, Priority } from './types';
+import type { DashboardData, PageId, SelectedSku } from './types';
 import './App.css';
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedPriority, setSelectedPriority] = useState<Priority | null>(null);
+  const [selectedPriority, setSelectedPriority] = useState<SelectedSku | null>(null);
 
   const refresh = useCallback(async () => {
     setRefreshing(true);
@@ -56,6 +57,7 @@ function App() {
     if (!shared) return null;
     switch (page) {
       case 'priorities': return <PrioritiesPage {...shared} />;
+      case 'forecasts': return <ForecastsPage onSelect={setSelectedPriority} />;
       case 'cases': return <CasesPage {...shared} />;
       case 'quality': return <QualityPage {...shared} />;
       case 'b2b': return <B2BPage {...shared} />;

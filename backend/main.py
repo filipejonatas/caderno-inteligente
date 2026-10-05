@@ -123,6 +123,30 @@ def _records(frame):
     return frame.astype(object).where(frame.notna(), None).to_dict("records")
 
 
+def _forecast_record(forecasts, sku: str):
+    rows = forecasts[forecasts.sku == sku]
+    if not rows.empty:
+        return _records(rows)[0]
+    return {
+        "sku": sku,
+        "status": "insufficient_data",
+        "forecast_confidence": "baixa",
+        "forecast_months": [],
+        "forecast_values": [],
+        "forecast_next_month": None,
+        "forecast_total_3m": None,
+        "limitation": "Não há histórico mensal disponível para este SKU.",
+    }
+
+
+def _recommendation_for(indicator, forecast, item_issues):
+    return build_operational_recommendation(
+        indicator,
+        forecast,
+        (item["code"] for item in item_issues),
+    )
+
+
 def _rupture_summary(issues):
     """Summarize rupture rules without counting the same SKU twice."""
     rupture_codes = ("RUP_LEAD_TIME", "RUP_SAFETY_STOCK")
@@ -194,6 +218,64 @@ def priorities(family: str | None = None, confidence: str | None = None, search:
     return _records(result)
 
 
+@app.get("/api/forecasts")
+def forecast_summaries():
+    """Consolidate cached forecasts and recommendations without changing the official ranking."""
+    _, _, indicators, issues, ranking, forecasts = pipeline()
+    ranking_by_sku = {item["sku"]: item for item in _records(ranking)}
+    forecast_by_sku = {item["sku"]: item for item in _records(forecasts)}
+    issues_by_sku: dict[str, list[dict]] = {}
+    for item in issues.to_dict("records"):
+        issues_by_sku.setdefault(item["sku"], []).append(item)
+
+    result = []
+    for indicator in _records(indicators):
+        sku = indicator["SKU"]
+        ranked = ranking_by_sku.get(sku)
+        forecast = forecast_by_sku.get(sku) or _forecast_record(forecasts, sku)
+        recommendation = _recommendation_for(
+            indicator,
+            forecast,
+            issues_by_sku.get(sku, []),
+        )
+        result.append(
+            {
+                "sku": sku,
+                "product": indicator["Produto"],
+                "family": indicator["family"],
+                "priority": ranked["priority"] if ranked else None,
+                "attention_score": ranked["attention_score"] if ranked else None,
+                "confidence": ranked["confidence"] if ranked else forecast["forecast_confidence"],
+                "confidence_reason": ranked["confidence_reason"] if ranked else (
+                    "SKU fora do ranking oficial; a confiança exibida vem do backtest da previsão."
+                ),
+                "forecast": forecast,
+                "operational_recommendation": {
+                    key: recommendation[key]
+                    for key in (
+                        "action",
+                        "action_label",
+                        "suggested_quantity",
+                        "minimum_lot",
+                        "capacity_status",
+                        "confidence",
+                        "confidence_reason",
+                        "requires_human_review",
+                    )
+                },
+            }
+        )
+
+    return sorted(
+        result,
+        key=lambda item: (
+            item["priority"] is None,
+            item["priority"] if item["priority"] is not None else math.inf,
+            item["sku"],
+        ),
+    )
+
+
 @app.get("/api/priorities/{sku}")
 def detail(sku: str):
     _, _, indicators, issues, ranking, forecasts = pipeline()
@@ -211,20 +293,8 @@ def detail(sku: str):
         for item in item_issues
     ]
     indicator = _records(row)[0]
-    forecast_rows = forecasts[forecasts.sku == sku]
-    forecast = _records(forecast_rows)[0] if not forecast_rows.empty else {
-        "sku": sku,
-        "status": "insufficient_data",
-        "forecast_confidence": "baixa",
-        "forecast_months": [],
-        "forecast_values": [],
-        "limitation": "Não há histórico mensal disponível para este SKU.",
-    }
-    recommendation = build_operational_recommendation(
-        indicator,
-        forecast,
-        (item["code"] for item in item_issues),
-    )
+    forecast = _forecast_record(forecasts, sku)
+    recommendation = _recommendation_for(indicator, forecast, item_issues)
     return {
         "indicator": indicator,
         "issues": item_issues,

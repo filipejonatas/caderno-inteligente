@@ -71,3 +71,12 @@
 - O resultado é aditivo ao detalhe do SKU e não altera regras, score ou ranking oficial.
 - Toda recomendação exige revisão humana e não cria ordem de produção.
 - Feedbacks são registrados para validação, mas não retreinam o modelo automaticamente no V1.
+
+## 2026-10-04 — Visão consolidada de previsão e recomendação
+
+- A visão consolidada possui uma rota aditiva própria e somente leitura, sem ampliar o contrato do carregamento inicial do dashboard.
+- O endpoint usa o pipeline cacheado e a função existente de recomendação; fórmulas não são duplicadas no frontend ou na rota.
+- Todos os SKUs são exibidos, inclusive os não presentes no ranking, sem fabricar posição ou score.
+- Busca, filtros e ordenação acontecem no navegador devido ao pequeno volume atual; paginação permanece fora do MVP.
+- O detalhe continua centralizado no drawer e é carregado apenas quando solicitado.
+- Quantidade sugerida permanece separada da prioridade oficial, capacidade não é tratada como garantia e revisão humana continua obrigatória.

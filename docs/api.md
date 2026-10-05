@@ -24,6 +24,19 @@ As métricas de ruptura distinguem SKUs únicos de ocorrências de regras:
 
 Um SKU que aciona as duas regras contribui uma única vez para `rupture_sku_count` e duas vezes para `rupture_signal_count`.
 
+## `GET /api/forecasts`
+
+Retorna uma visão consolidada, somente leitura, com um item por SKU. A resposta combina identificação, posição e score do ranking oficial quando existentes, forecast de três meses e um resumo da recomendação operacional.
+
+- usa o mesmo pipeline em memória de prioridades e detalhe;
+- não recalcula nem altera score, ranking ou regras;
+- inclui SKUs fora do ranking, identificados por `priority = null`;
+- mantém forecast ausente como `null`, nunca como demanda zero;
+- toda recomendação retorna `requires_human_review = true`;
+- capacidade familiar é somente um contexto de validação, não garantia individual.
+
+O cálculo detalhado, as premissas e as evidências permanecem em `GET /api/priorities/{sku}`.
+
 ## `GET /api/b2b2c/visibility`
 
 Cada parceiro recebe uma classificação demonstrativa derivada da cobertura de SKUs com sell-out observado:

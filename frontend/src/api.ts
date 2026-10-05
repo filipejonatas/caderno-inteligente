@@ -5,6 +5,7 @@ import type {
   DashboardData,
   DataQuality,
   FeedbackItem,
+  ForecastRecommendationSummary,
   Overview,
   Priority,
   Run,
@@ -62,6 +63,7 @@ export async function loadDashboard(): Promise<DashboardData> {
 }
 
 export const api = {
+  forecasts: () => request<ForecastRecommendationSummary[]>('/forecasts'),
   skuDetail: (sku: string) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),
   createCase: (body: Record<string, unknown>) =>
