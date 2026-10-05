@@ -421,7 +421,7 @@ def quality():
 def create_snapshot():
     quality_report, _, _, ranking = data()
     run_id = _persistence().create_run(
-        SOURCE, load_weights(), load_rule_thresholds(), quality_report, _records(ranking)
+        SOURCE, load_weights(), load_rule_thresholds(), quality_report, _records(ranking), _comparison_payload()
     )
     return {"id": run_id}
 
@@ -553,3 +553,23 @@ app.include_router(create_validation_router(
     thresholds_file=THRESHOLDS_FILE,
     commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
 ))
+
+# Additive run comparison: snapshots preserve forecast, recommendation and partner coverage as computed.
+from backend.run_comparisons import create_run_comparison_router  # noqa: E402
+from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402
+from caderno_inteligente.run_comparison import build_comparison_payload  # noqa: E402
+
+COMMERCIAL_THRESHOLDS_FILE = ROOT / "config/commercial_thresholds.json"
+
+
+def _comparison_payload():
+    partner_result, partner_error, commercial = None, None, None
+    try:
+        commercial = load_commercial_thresholds(COMMERCIAL_THRESHOLDS_FILE)
+        partner_result = build_partner_insights(pipeline()[0], commercial)
+    except (OSError, ValueError, KeyError) as error:
+        partner_error = f"Análise comercial indisponível no registro: {error}"
+    return build_comparison_payload(forecast_summaries(), partner_result, commercial, partner_error)
+
+
+app.include_router(create_run_comparison_router(_persistence))

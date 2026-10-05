@@ -72,3 +72,11 @@ test('validation summary is a dedicated read that does not load the dashboard', 
     assert.deepEqual(calls, ['/api/validation/summary']);
   });
 });
+test('run comparison is a dedicated read with explicit base and target', async () => {
+  const calls = [];
+  const signal = new AbortController().signal;
+  await mockedFetch(async (url, init) => { calls.push(url); assert.equal(init.signal, signal); return ok({}); }, async () => {
+    await api.runComparison(3, 7, signal);
+    assert.deepEqual(calls, ['/api/run-comparisons?base=3&target=7']);
+  });
+});

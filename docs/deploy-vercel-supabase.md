@@ -5,7 +5,7 @@ Este guia pressupõe que todas as mudanças locais foram testadas. Ele não cont
 ## 1. Supabase
 
 1. Crie um projeto.
-2. Abra o SQL Editor e execute `supabase/migrations/001_initial.sql`.
+2. Abra o SQL Editor e execute `supabase/migrations/001_initial.sql`. Em seguida, execute `supabase/migrations/002_run_comparison.sql` (aditiva; adiciona a coluna opcional `runs.comparison`).
 3. Em **Connect**, escolha **Transaction pooler**.
 4. Copie a connection string da porta `6543` e acrescente `sslmode=require` se ainda não estiver presente.
 5. Confirme no Table Editor que RLS está habilitado e que não existem políticas públicas nas quatro tabelas.

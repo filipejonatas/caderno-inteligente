@@ -100,7 +100,7 @@ npm run check
 - **`/qualidade` — Qualidade:** cobertura, integridade e lacunas dos dados;
 - **`/parceiros` — Visibilidade B2B2C:** cobertura de sell-out por parceiro;
 - **`/cenarios` — Cenários:** simulações que não alteram o ranking oficial;
-- **`/execucoes` — Execuções:** snapshots auditáveis da fonte e do ranking;
+- **`/execucoes` — Execuções:** snapshots auditáveis da fonte, do ranking, da previsão, da recomendação e da cobertura B2B2C, com comparação entre duas execuções em `/execucoes?base=1&alvo=2`;
 - **`/decisoes` — Decisões:** feedback do PCP separado da base XLSM.
 - **`/validacao` — Validação:** comparação com o processo atual, previsão contra baseline, casos congelados, comportamento seguro, falhas e ajustes, com exportação CSV e impressão.
 
@@ -129,7 +129,7 @@ O deploy utiliza dois projetos Vercel ligados ao mesmo repositório:
 
 Antes de publicar:
 
-1. execute `supabase/migrations/001_initial.sql` no Supabase;
+1. execute `supabase/migrations/001_initial.sql` e `supabase/migrations/002_run_comparison.sql` no Supabase, nessa ordem;
 2. configure no backend a URL do **Transaction Pooler**, porta 6543, em `DATABASE_URL`;
 3. configure `CORS_ORIGINS` com o domínio exato do frontend;
 4. configure `VITE_API_URL` no frontend com a URL do backend seguida de `/api`;
@@ -145,3 +145,4 @@ Mais detalhes estão em [Deploy com Vercel e Supabase](docs/deploy-vercel-supaba
 - [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md)
 - [Plano de melhorias](docs/plano-de-melhorias.md)
 - [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)
+- [Etapa 6 — Comparação entre execuções](docs/etapa-6-comparacao-execucoes.md)

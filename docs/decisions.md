@@ -100,3 +100,11 @@
 - Os oito casos representativos são congelados em `config/validation_center.json` com o hash da planilha. Seis usam SKUs ou pares reais; dois são sintéticos porque a base não contém exemplo, e isso é exibido como lacuna.
 - O tempo de análise registrado não é comparado com a linha de base antes de 20 registros com minutos.
 - Exportação em CSV e impressão são feitas no navegador, sem dependência nova.
+
+## 2026-10-05 — Comparação entre execuções
+
+- Os snapshots passam a gravar um payload versionado com previsão e recomendação por SKU e cobertura por parceiro cadastrado, exatamente como calculados. Nenhum valor global é distribuído entre parceiros.
+- A comparação só lê o que cada snapshot preservou. Execuções antigas são comparáveis apenas no ranking; as demais seções são recusadas com explicação, nunca recalculadas retroativamente.
+- A diferença de score é decomposta em sinais adicionados, removidos e pesos alterados, usando os pesos gravados em cada execução. Quando a soma não fecha, o item é marcado como não explicado em vez de ocultado.
+- A coluna `runs.comparison` é opcional. No PostgreSQL, o adaptador detecta a migração 002 e mantém o registro funcionando antes dela, sem o payload ampliado.
+- A rota de comparação é `/api/run-comparisons`, porque `/api/runs/compare` seria capturada pela rota existente `/api/runs/{run_id}`.

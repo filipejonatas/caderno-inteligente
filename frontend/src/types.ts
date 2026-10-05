@@ -84,6 +84,8 @@ export interface Run {
   created_at: string;
   source_hash: string;
   prioritized_skus: number;
+  /** Absent in APIs older than Etapa 6; null for snapshots without the extended payload. */
+  comparison_schema_version?: number | null;
 }
 
 export interface CaseItem {

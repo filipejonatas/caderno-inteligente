@@ -92,3 +92,24 @@ Campos principais:
 - `known_failures`, `known_limitations`, `adjustments` e `requires_human_review=true`.
 
 Falha da persistência não derruba a rota: o tempo de análise volta vazio, com nota explicativa, e a falha é listada em `known_failures`. Configuração de validação inválida retorna 422.
+
+## Etapa 6 — Comparação entre execuções
+
+Mudanças aditivas em contratos existentes:
+
+- `POST /api/runs` continua retornando `{"id": ...}`. O snapshot passa a preservar também um payload `comparison` (versão `schema_version = 1`) com previsão e recomendação operacional por SKU, limiares comerciais e cobertura B2B2C por parceiro cadastrado.
+- `GET /api/runs` acrescenta `comparison_schema_version` (`null` em execuções anteriores).
+- `GET /api/runs/{id}` acrescenta `comparison` (`null` em execuções anteriores).
+
+### `GET /api/run-comparisons?base={id}&target={id}`
+
+Compara dois snapshots gravados, sem recalcular nada. A rota é separada de `/api/runs/{id}` para não conflitar com a validação inteira do identificador.
+
+- `base`, `target`: metadados com id, data, hash da planilha, SKUs no ranking e versão do snapshot.
+- `context`: `source_changed`, `weights_changes`, `thresholds_changes` e `commercial_thresholds` (indisponível em snapshots anteriores).
+- `ranking`: `entered`, `exited`, `changed` e `summary`. Cada item alterado traz posição e score base/alvo, `position_delta` (positivo = subiu), `score_delta`, `signals_added`, `signals_removed`, `score_breakdown` (sinal adicionado, removido ou peso alterado, com o delta), `score_delta_explained`, `explanation` e `evidence_changes` (valores de evidência dos sinais mantidos).
+- `forecasts`: mudanças por SKU em previsão e recomendação, com `delta` numérico quando aplicável.
+- `b2b_coverage`: mudanças por parceiro cadastrado em cobertura, SKUs observados e último sell-out.
+- `comparable`, `notes`, `limitations`.
+
+Seção sem dados compatíveis retorna `{"available": false, "reason": "..."}`. Isso ocorre com snapshot anterior à Etapa 6, versão de snapshot diferente, ranking sem os campos necessários ou análise comercial indisponível no registro. Base igual ao alvo ou id menor que 1 retorna 422; execução inexistente retorna 404.

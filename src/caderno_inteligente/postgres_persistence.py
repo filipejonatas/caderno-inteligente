@@ -112,27 +112,45 @@ class PostgresPersistence:
                 row = cursor.fetchone()
                 return {"decision_count": int(row["total"]), "partner_data_influenced_decision_count": int(row["influenced"])}
 
-    def create_run(self, source: str | Path, weights: dict, thresholds: dict, quality: dict, ranking: list[dict]) -> int:
+    @staticmethod
+    def _has_comparison_column(cursor) -> bool:
+        """Detect migration 002 so the API keeps working before it is applied."""
+        cursor.execute(
+            "select 1 from information_schema.columns where table_schema = 'public' and table_name = 'runs' and column_name = 'comparison'"
+        )
+        return cursor.fetchone() is not None
+
+    def create_run(self, source: str | Path, weights: dict, thresholds: dict, quality: dict, ranking: list[dict], comparison: dict | None = None) -> int:
         from psycopg.types.json import Jsonb
 
         source_hash = hashlib.sha256(Path(source).read_bytes()).hexdigest()
         with self._connect() as connection:
             with connection.cursor() as cursor:
-                cursor.execute(
-                    "insert into runs(source_hash, weights, thresholds, quality, ranking) values (%s, %s, %s, %s, %s) returning id",
-                    (source_hash, Jsonb(weights), Jsonb(thresholds), Jsonb(quality), Jsonb(ranking)),
-                )
+                if comparison is not None and self._has_comparison_column(cursor):
+                    cursor.execute(
+                        "insert into runs(source_hash, weights, thresholds, quality, ranking, comparison) values (%s, %s, %s, %s, %s, %s) returning id",
+                        (source_hash, Jsonb(weights), Jsonb(thresholds), Jsonb(quality), Jsonb(ranking), Jsonb(comparison)),
+                    )
+                else:
+                    cursor.execute(
+                        "insert into runs(source_hash, weights, thresholds, quality, ranking) values (%s, %s, %s, %s, %s) returning id",
+                        (source_hash, Jsonb(weights), Jsonb(thresholds), Jsonb(quality), Jsonb(ranking)),
+                    )
                 return int(cursor.fetchone()["id"])
 
     def list_runs(self) -> list[dict[str, Any]]:
         with self._connect() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("select id, created_at, source_hash, jsonb_array_length(ranking) as prioritized_skus from runs order by id desc")
+                version = "(comparison->>'schema_version')::int" if self._has_comparison_column(cursor) else "null::int"
+                cursor.execute(
+                    f"select id, created_at, source_hash, jsonb_array_length(ranking) as prioritized_skus, {version} as comparison_schema_version from runs order by id desc"
+                )
                 return [{key: _iso(value) for key, value in row.items()} for row in cursor.fetchall()]
 
     def get_run(self, run_id: int) -> dict[str, Any] | None:
         with self._connect() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("select id, created_at, source_hash, weights, thresholds, quality, ranking from runs where id=%s", (run_id,))
+                comparison = "comparison" if self._has_comparison_column(cursor) else "null::jsonb as comparison"
+                cursor.execute(f"select id, created_at, source_hash, weights, thresholds, quality, ranking, {comparison} from runs where id=%s", (run_id,))
                 row = cursor.fetchone()
                 return None if row is None else {key: _iso(value) for key, value in row.items()}

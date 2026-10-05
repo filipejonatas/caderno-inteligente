@@ -1,4 +1,5 @@
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
+import type { RunComparison } from './types-runs';
 import type { ValidationSummary } from './types-validation';
 import type {
   AppConfig,
@@ -73,6 +74,7 @@ export const api = {
   forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
   validationSummary: (signal?: AbortSignal) => request<ValidationSummary>('/validation/summary', { signal }),
+  runComparison: (base: number, target: number, signal?: AbortSignal) => request<RunComparison>(`/run-comparisons?${new URLSearchParams({ base: String(base), target: String(target) })}`, { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),
   createCase: (body: Record<string, unknown>) =>
     request<{ id: number }>('/cases', {
