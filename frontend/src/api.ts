@@ -1,3 +1,4 @@
+import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
 import type {
   AppConfig,
   B2BVisibility,
@@ -64,6 +65,10 @@ export async function loadDashboard(): Promise<DashboardData> {
 }
 
 export const api = {
+  partners: (query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<PartnerSummary>>(`/partners?${query}`, { signal }),
+  partnerDetail: (code: string, signal?: AbortSignal) => request<PartnerDetail>(`/partners/${encodeURIComponent(code)}`, { signal }),
+  partnerSkus: (code: string, query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/partners/${encodeURIComponent(code)}/skus?${query}`, { signal }),
+  commercialRecommendations: (query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/commercial-recommendations?${query}`, { signal }),
   forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),

@@ -1,0 +1,11 @@
+{
+  "recent_months": 3,
+  "minimum_sell_out_months": 3,
+  "maximum_age_months": 1,
+  "reposition_coverage_days": 30,
+  "excess_coverage_days": 90,
+  "low_monthly_sell_out": 30,
+  "minimum_excess_stock": 100,
+  "divergence_ratio": 0.5,
+  "minimum_divergence_quantity": 50
+}

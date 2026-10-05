@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
+import { PartnerSkuContext } from '../components/PartnerSkuContext';
 import { Alert, Badge, DecisionBoundary, ErrorState, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
@@ -59,5 +60,6 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <div className="drawer-section"><h3>Riscos e evidências</h3>{detail.issues.map((issue) => <article className="issue-card" key={issue.code}><div><Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge><strong>{reasonNames[issue.code] ?? issue.code}</strong></div><p>{issue.description}</p><dl>{Object.entries(issue.values_used).map(([key, value]) => <div key={key}><dt>{key.split('_').join(' ')}</dt><dd>{String(value)}</dd></div>)}</dl><small>Origem: {issue.data_origin.join(' · ')}</small></article>)}</div>
       <div className="drawer-note"><strong>Limitação conhecida</strong><p>{detail.limitation}</p></div>
     </div>
+    <PartnerSkuContext sku={sku} refreshToken={refreshToken} />
   </div>;
 }

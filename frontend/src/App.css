@@ -441,3 +441,33 @@ button:disabled { cursor: wait; opacity: .65; }
 .table-shell { position: relative; }
 .tooltip.is-dismissed .tooltip-content { display: none; }
 .priority-table caption { padding: 10px 12px; text-align: left; color: var(--slate-500); font-size: 12px; border-bottom: 1px solid var(--slate-100); }
+
+/* Etapa 4: evidência comercial separada da recomendação operacional. */
+.commercial-table { min-width: 1180px; }
+.commercial-table td { vertical-align: top; }
+.commercial-table td small { white-space: normal; max-width: 230px; overflow-wrap: anywhere; }
+.commercial-action { display: block; margin-top: 8px; max-width: 200px; }
+.commercial-evidence { margin: 0 0 14px; border: 1px solid var(--slate-200); border-radius: var(--radius-sm); background: white; min-width: 0; }
+.commercial-evidence summary { cursor: pointer; padding: 15px; color: var(--slate-900); font-size: 13px; font-weight: 650; overflow-wrap: anywhere; }
+.commercial-evidence > div { padding: 0 15px 15px; font-size: 13px; line-height: 1.6; color: var(--slate-700); overflow-wrap: anywhere; }
+.commercial-evidence ul { padding-left: 20px; }
+.commercial-evidence .data-table { min-width: 650px; }
+.commercial-thresholds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.commercial-thresholds div { padding: 10px; background: var(--slate-50); }
+.commercial-thresholds dt { overflow-wrap: anywhere; }
+.commercial-thresholds dd { margin: 4px 0 0; font-weight: 700; }
+.commercial-pagination { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 18px 0; font-size: 13px; }
+.partner-sku-context { margin-top: 30px; min-width: 0; }
+.partner-sku-context > p { font-size: 13px; color: var(--slate-700); line-height: 1.6; }
+.partner-card p { font-size: 12px; color: var(--slate-700); line-height: 1.5; }
+.partner-head > div { min-width: 0; }
+.partner-head strong, .partner-head span { overflow-wrap: anywhere; }
+.filter-bar input { padding: 8px 10px; min-width: 0; max-width: 100%; }
+@media (max-width: 620px) {
+  .commercial-thresholds { grid-template-columns: 1fr; }
+  .filter-bar label { min-width: 0; }
+  .filter-bar select { min-width: 0; max-width: 100%; }
+  .partner-head { flex-wrap: wrap; }
+}
+.commercial-sku-filter { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
+@media (max-width: 620px) { .commercial-sku-filter { grid-column: 1/-1; } .commercial-sku-filter label { flex: 1; } }

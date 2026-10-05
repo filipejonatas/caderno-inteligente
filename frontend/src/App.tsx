@@ -14,6 +14,7 @@ const ForecastsPage = lazy(() => import('./pages/ForecastsPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const QualityPage = lazy(() => import('./pages/QualityPage'));
 const B2BPage = lazy(() => import('./pages/B2BPage'));
+const PartnerDetailPage = lazy(() => import('./pages/PartnerDetailPage'));
 const ScenariosPage = lazy(() => import('./pages/ScenariosPage'));
 const RunsPage = lazy(() => import('./pages/RunsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
@@ -25,7 +26,6 @@ const PAGE_FIELDS = {
   PrioritiesPage: ['priorities'],
   CasesPage: ['cases', 'priorities', 'config'],
   QualityPage: ['quality'],
-  B2BPage: ['b2b'],
   ScenariosPage: ['config'],
   RunsPage: ['runs'],
   FeedbackPage: ['feedback', 'priorities', 'config'],
@@ -43,6 +43,7 @@ function App() {
   useEffect(() => { window.scrollTo({ top: 0 }); setMenuOpen(false); }, [location.pathname]);
 
   const current = useMemo(() => {
+    if (matchPath('/parceiros/:codigo', location.pathname)) return { label: 'Detalhe do parceiro', description: 'Evidência comercial por SKU' };
     if (matchPath('/skus/:sku', location.pathname)) return { label: 'Detalhe do SKU', description: 'Evidências e recomendação' };
     const item = navigation.find((candidate) => matchPath({ path: candidate.path, end: candidate.path === '/' }, location.pathname));
     return item ?? { label: 'Página não encontrada', description: 'Navegação' };
@@ -70,7 +71,8 @@ function App() {
             <Route path="/previsoes" element={<ForecastsPage onSelect={selectSku} refreshToken={refreshToken} />} />
             <Route path="/casos" element={<PageResource key="CasesPage" fields={PAGE_FIELDS.CasesPage} refreshToken={refreshToken}>{(dashboard, reload) => <CasesPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/qualidade" element={<PageResource key="QualityPage" fields={PAGE_FIELDS.QualityPage} refreshToken={refreshToken}>{(dashboard, reload) => <QualityPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
-            <Route path="/parceiros" element={<PageResource key="B2BPage" fields={PAGE_FIELDS.B2BPage} refreshToken={refreshToken}>{(dashboard, reload) => <B2BPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
+            <Route path="/parceiros" element={<B2BPage refreshToken={refreshToken} />} />
+            <Route path="/parceiros/:codigo" element={<PartnerDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="/cenarios" element={<PageResource key="ScenariosPage" fields={PAGE_FIELDS.ScenariosPage} refreshToken={refreshToken}>{(dashboard, reload) => <ScenariosPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/execucoes" element={<PageResource key="RunsPage" fields={PAGE_FIELDS.RunsPage} refreshToken={refreshToken}>{(dashboard, reload) => <RunsPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/decisoes" element={<PageResource key="FeedbackPage" fields={PAGE_FIELDS.FeedbackPage} refreshToken={refreshToken}>{(dashboard, reload) => <FeedbackPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />

@@ -528,3 +528,9 @@ def feedback_post(item: Feedback):
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
     return {"status": "created"}
+
+
+# Additive commercial view: separate configuration; no change to pipeline/ranking.
+from backend.partners import create_partner_router  # noqa: E402
+
+app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json"))

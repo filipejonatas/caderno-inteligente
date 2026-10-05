@@ -70,3 +70,29 @@ test('alerts and tooltips expose consistent accessibility semantics', () => {
   assert.ok(tooltip.includes('aria-describedby='));
   assert.ok(tooltip.includes('role="tooltip"'));
 });
+
+const { CommercialMatrix } = await import(await compile('../src/components/CommercialMatrix.tsx', { '../components': componentsUrl, '../pages/shared': sharedUrl }));
+test('commercial view keeps null separate from observed zero and names its real key', () => {
+  const row = {
+    partner: 'Loja própria', partner_name: 'Teste comercial', sku: 'TEST / SKU', product: 'Teste', region: 'Sul', channel: 'Loja',
+    sell_in_recent: null, sell_out_recent: 0, comparable_difference: null, sell_in_months: [], sell_out_months: ['2026-08'], comparable_months: [],
+    estimated_stock: null, stock_month: null, coverage_days: null, backlog_quantity: 10, backlog_order_count: 1,
+    data_quality: 'insufficient', action_label: 'Sem recomendação por dados insuficientes', age_months: 0, missing_months: [],
+    data_nature: null, comparable_sell_in: null, comparable_sell_out: null, average_monthly_sell_out: 0, signals: [], orders: [],
+    recommendation_reason: 'Teste isolado', periods: [{ month: '2026-08', sell_in_quantity: null, sell_out_quantity: 0, estimated_stock: null, data_nature: null }],
+  };
+  const response = { items: [row], total: 1, reference_month: '2026-08', limitation: 'Estoque do parceiro não é estoque do CD.', field_nature: {}, thresholds: {} };
+  const html = render(React.createElement(MemoryRouter, null, React.createElement(CommercialMatrix, { response })));
+  assert.ok(html.includes('Recomendação comercial, não operacional'));
+  assert.ok(html.includes('Sem recomendação por dados insuficientes'));
+  assert.ok(html.includes('<td>0<small>08/2026'));
+  assert.ok(html.includes('Não observado'));
+  assert.ok(html.includes('/parceiros/Loja%20pr%C3%B3pria'));
+  assert.ok(html.includes('/skus/TEST%20%2F%20SKU'));
+});
+test('commercial matrix has an explicit empty state without synthesizing links', () => {
+  const response = { items: [], total: 0, reference_month: null, limitation: 'Teste', field_nature: {}, thresholds: {} };
+  const html = render(React.createElement(MemoryRouter, null, React.createElement(CommercialMatrix, { response })));
+  assert.ok(html.includes('Nenhum vínculo neste recorte'));
+  assert.ok(!html.includes('href="/skus/'));
+});
