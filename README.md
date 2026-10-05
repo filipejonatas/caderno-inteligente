@@ -102,6 +102,7 @@ npm run check
 - **`/cenarios` — Cenários:** simulações que não alteram o ranking oficial;
 - **`/execucoes` — Execuções:** snapshots auditáveis da fonte e do ranking;
 - **`/decisoes` — Decisões:** feedback do PCP separado da base XLSM.
+- **`/validacao` — Validação:** comparação com o processo atual, previsão contra baseline, casos congelados, comportamento seguro, falhas e ajustes, com exportação CSV e impressão.
 
 O frontend usa rotas reais no navegador, lazy loading por página e uma rota 404. O arquivo `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar diretamente uma URL interna na Vercel.
 
@@ -109,6 +110,7 @@ O frontend usa rotas reais no navegador, lazy loading por página e uma rota 404
 
 - Pesos: `config/prioritization_weights.json`;
 - Limiares: `config/rule_thresholds.json`;
+- Casos congelados e linha de base da validação: `config/validation_center.json`;
 - Origem permitida pela API: variável `CORS_ORIGINS`, separada por vírgulas;
 - Nível de log: variável `LOG_LEVEL`.
 - PostgreSQL/Supabase: variável secreta `DATABASE_URL`. Na ausência dela, o backend usa SQLite.
@@ -142,3 +144,4 @@ Mais detalhes estão em [Deploy com Vercel e Supabase](docs/deploy-vercel-supaba
 - [Decisões técnicas](docs/decisions.md)
 - [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md)
 - [Plano de melhorias](docs/plano-de-melhorias.md)
+- [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)

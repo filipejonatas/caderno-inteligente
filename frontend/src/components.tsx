@@ -14,6 +14,7 @@ type IconName =
   | 'scenarios'
   | 'runs'
   | 'feedback'
+  | 'validation'
   | 'menu'
   | 'close'
   | 'refresh'
@@ -31,6 +32,7 @@ const iconPaths: Record<IconName, ReactNode> = {
   scenarios: <><path d="M5 4v16M5 7h8a3 3 0 0 1 0 6H5M13 13l6 6"/></>,
   runs: <><path d="M12 3a9 9 0 1 1-8 5"/><path d="M3 3v6h6M12 7v5l3 2"/></>,
   feedback: <><path d="M4 4h16v13H9l-5 4V4Z"/><path d="M8 9h8M8 13h5"/></>,
+  validation: <><path d="M9 3h6v3H9z"/><path d="M7 4.5H5v16h14v-16h-2"/><path d="m8.5 13 2.5 2.5 4.5-5"/></>,
   menu: <path d="M4 7h16M4 12h16M4 17h16"/>,
   close: <path d="m6 6 12 12M18 6 6 18"/>,
   refresh: <><path d="M20 6v5h-5"/><path d="M18 16a8 8 0 1 1 1-9l1 4"/></>,
@@ -53,6 +55,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações seguras' },
   { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Snapshots auditáveis' },
   { id: 'feedback', path: '/decisoes', label: 'Decisões', description: 'Feedback do PCP' },
+  { id: 'validation', path: '/validacao', label: 'Validação', description: 'Evidência da Semana 4' },
 ];
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {

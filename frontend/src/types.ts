@@ -8,7 +8,8 @@ export type PageId =
   | 'b2b'
   | 'scenarios'
   | 'runs'
-  | 'feedback';
+  | 'feedback'
+  | 'validation';
 
 export type Severity = 'crítica' | 'alta' | 'média' | 'baixa' | string;
 export type Confidence = 'baixa' | 'média' | 'alta' | string;

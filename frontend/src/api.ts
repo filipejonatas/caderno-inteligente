@@ -1,4 +1,5 @@
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
+import type { ValidationSummary } from './types-validation';
 import type {
   AppConfig,
   B2BVisibility,
@@ -71,6 +72,7 @@ export const api = {
   commercialRecommendations: (query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/commercial-recommendations?${query}`, { signal }),
   forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
+  validationSummary: (signal?: AbortSignal) => request<ValidationSummary>('/validation/summary', { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),
   createCase: (body: Record<string, unknown>) =>
     request<{ id: number }>('/cases', {

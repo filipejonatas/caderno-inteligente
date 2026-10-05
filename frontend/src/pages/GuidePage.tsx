@@ -10,6 +10,7 @@ const pageDescriptions: Record<string, { eyebrow: string; description: string }>
   b2b: { eyebrow: 'Observe o canal', description: 'Compare a cobertura de sell-out e o nível demonstrativo dos parceiros.' },
   scenarios: { eyebrow: 'Teste hipóteses', description: 'Altere pesos em uma simulação segura, sem modificar o ranking oficial.' },
   runs: { eyebrow: 'Preserve o histórico', description: 'Registre snapshots auditáveis da fonte, configuração e ranking.' },
+  validation: { eyebrow: 'Prove a aplicabilidade', description: 'Compare com o processo atual, avalie a previsão contra a baseline e confira casos congelados e falhas.' },
   feedback: { eyebrow: 'Feche o ciclo', description: 'Registre a decisão humana e como os dados do parceiro influenciaram a análise.' },
 };
 

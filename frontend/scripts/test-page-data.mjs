@@ -64,3 +64,11 @@ test('forecasts and SKU detail remain dedicated reads with encoded SKU', async (
     assert.deepEqual(calls, ['/api/forecasts', '/api/priorities/SKU%20%2F%201']);
   });
 });
+test('validation summary is a dedicated read that does not load the dashboard', async () => {
+  const calls = [];
+  const signal = new AbortController().signal;
+  await mockedFetch(async (url, init) => { calls.push(url); assert.equal(init.signal, signal); return ok({}); }, async () => {
+    await api.validationSummary(signal);
+    assert.deepEqual(calls, ['/api/validation/summary']);
+  });
+});

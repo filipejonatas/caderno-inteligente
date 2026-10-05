@@ -1,0 +1,250 @@
+{
+  "frozen_at": "2026-10-05",
+  "frozen_source_sha256": "03fa0ed400aa3f8e14de8f8232cd12727a54c85089a36672f009cae37b78803f",
+  "policy": "Casos definidos a partir da especificação das regras e do PRD, antes de comparar os resultados. Não são usados para ajustar pesos, limiares ou modelos. Qualquer alteração nesta lista deve ser registrada no histórico de ajustes.",
+  "company_baseline": [
+    {
+      "id": "analysis_time",
+      "label": "Tempo de análise do PCP",
+      "value": 22,
+      "unit": "horas/semana",
+      "target": 8,
+      "target_unit": "horas/semana",
+      "source": "Informado pela empresa (Grupo 08 — Semana 1, Diagnóstico do problema)"
+    },
+    {
+      "id": "forecast_error",
+      "label": "Erro médio do forecast",
+      "value": 0.31,
+      "unit": "MAPE",
+      "target": null,
+      "target_unit": null,
+      "source": "Informado pela empresa (Grupo 08 — Semana 1, Diagnóstico do problema)"
+    },
+    {
+      "id": "on_time_orders",
+      "label": "Pedidos atendidos no prazo",
+      "value": 0.89,
+      "unit": "percentual",
+      "target": 0.96,
+      "target_unit": "percentual",
+      "source": "Informado pela empresa (Grupo 08 — Semana 1, Diagnóstico do problema)"
+    },
+    {
+      "id": "plan_adherence",
+      "label": "Aderência ao plano de produção",
+      "value": 0.78,
+      "unit": "percentual",
+      "target": null,
+      "target_unit": null,
+      "source": "Informado pela empresa (Grupo 08 — Semana 1, Diagnóstico do problema)"
+    }
+  ],
+  "minimum_feedback_sample": 20,
+  "cases": [
+    {
+      "id": "VC-01",
+      "title": "Ruptura com carteira e sem produção",
+      "kind": "operational",
+      "origin": "synthetic",
+      "origin_reason": "A base atual não contém SKU com ruptura, carteira positiva e nenhuma ordem de produção ao mesmo tempo.",
+      "input": {
+        "indicator": {
+          "SKU": "SINT-VC01",
+          "Produto": "Caso sintético de ruptura",
+          "family": "Sintética",
+          "lead_time_days": 20,
+          "safety_stock_days": 10,
+          "average_sales_per_day": 10,
+          "current_stock": 50,
+          "coverage_days_calculated": 5,
+          "minimum_lot": 100,
+          "backlog_order_quantity": 400,
+          "production_order_quantity": 0,
+          "first_promised_date": "2026-09-15",
+          "first_production_completion": null,
+          "capacity_occupation_average": 0.7,
+          "capacity_available_average": 100,
+          "has_sell_out": true,
+          "sell_out_partner_count": 1,
+          "sell_out_visibility": "parcial"
+        },
+        "forecast": {"status": "ok", "forecast_next_month": 300, "forecast_confidence": "média"}
+      },
+      "expected": {
+        "signals": {"includes": ["RUP_LEAD_TIME", "RUP_SAFETY_STOCK", "ORDER_WITHOUT_PRODUCTION"]},
+        "action": "produzir",
+        "suggested_quantity": {"positive": true},
+        "requires_human_review": true
+      },
+      "limitation": "Entrada sintética: comprova o comportamento das regras, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-02",
+      "title": "Produção posterior à data prometida",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0005",
+      "expected": {
+        "signals": {"includes": ["PRODUCTION_AFTER_PROMISE"]},
+        "ranked": true,
+        "requires_human_review": true
+      },
+      "limitation": "Compara a primeira promessa com a primeira conclusão do SKU; a base não vincula pedido a OP."
+    },
+    {
+      "id": "VC-03",
+      "title": "Excesso de estoque",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0044",
+      "expected": {
+        "signals": {"includes": ["EXCESS_COVERAGE"], "excludes": ["RUP_LEAD_TIME", "RUP_SAFETY_STOCK"]},
+        "action": "monitorar_excesso",
+        "suggested_quantity": {"equals": 0},
+        "requires_human_review": true
+      },
+      "limitation": "O limite de 90 dias é configurável e demonstrativo; não foi aprovado pela empresa."
+    },
+    {
+      "id": "VC-04",
+      "title": "Prioridade alta sem necessidade de produção adicional",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0041",
+      "expected": {
+        "priority": {"max": 5},
+        "action": "sem_acao_necessaria",
+        "suggested_quantity": {"equals": 0},
+        "requires_human_review": true
+      },
+      "limitation": "Prioridade alta indica o que investigar primeiro; não significa que falta produção."
+    },
+    {
+      "id": "VC-05",
+      "title": "Forecast com dados insuficientes",
+      "kind": "operational",
+      "origin": "synthetic",
+      "origin_reason": "Todos os SKUs da base possuem histórico suficiente para a previsão.",
+      "input": {
+        "indicator": {
+          "SKU": "SINT-VC05",
+          "Produto": "Caso sintético de histórico curto",
+          "family": "Sintética",
+          "lead_time_days": 15,
+          "safety_stock_days": 10,
+          "average_sales_per_day": 5,
+          "current_stock": 200,
+          "coverage_days_calculated": 40,
+          "minimum_lot": 100,
+          "backlog_order_quantity": 0,
+          "production_order_quantity": 0,
+          "first_promised_date": null,
+          "first_production_completion": null,
+          "capacity_occupation_average": 0.5,
+          "capacity_available_average": 300,
+          "has_sell_out": true,
+          "sell_out_partner_count": 1,
+          "sell_out_visibility": "parcial"
+        },
+        "sales": [
+          {"Mês": "2026-05-01", "Quantidade faturada": 120},
+          {"Mês": "2026-06-01", "Quantidade faturada": 140},
+          {"Mês": "2026-07-01", "Quantidade faturada": 130},
+          {"Mês": "2026-08-01", "Quantidade faturada": 150}
+        ]
+      },
+      "expected": {
+        "forecast_status": "insufficient_data",
+        "action": "investigar_dados",
+        "suggested_quantity": {"is_null": true},
+        "requires_human_review": true
+      },
+      "limitation": "Entrada sintética: o mínimo de 6 meses é regra do protótipo, não exigência estatística universal."
+    },
+    {
+      "id": "VC-06",
+      "title": "Parceiro com oportunidade de reposição sustentada",
+      "kind": "commercial",
+      "origin": "base",
+      "partner": "KA-01",
+      "sku": "CI-0011",
+      "expected": {
+        "action": "avaliar_reposicao",
+        "signals": {"includes": ["REPOSITION_OPPORTUNITY"]},
+        "data_quality": "sufficient",
+        "missing_months": {"empty": true},
+        "requires_human_review": true
+      },
+      "limitation": "Estoque do parceiro é estimado na fonte; a sugestão não contém quantidade autorizada."
+    },
+    {
+      "id": "VC-07",
+      "title": "Parceiro com dado ausente ou desatualizado",
+      "kind": "commercial",
+      "origin": "base",
+      "partner": "E-commerce",
+      "sku": "CI-0009",
+      "expected": {
+        "action": "dados_insuficientes",
+        "signals": {"includes": ["INSUFFICIENT_PARTNER_DATA"]},
+        "estimated_stock": {"is_null": true},
+        "coverage_days": {"is_null": true},
+        "requires_human_review": true
+      },
+      "limitation": "Ausência de sell-out não é venda zero; o sistema deve recusar a recomendação, não estimá-la."
+    },
+    {
+      "id": "VC-08",
+      "title": "Pressão de capacidade que exige revisão humana",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0014",
+      "expected": {
+        "signals": {"includes": ["CAPACITY_CONFLICT"]},
+        "action": "produzir_validar_capacidade",
+        "capacity_status": "requires_review",
+        "confidence": {"not": "alta"},
+        "requires_human_review": true
+      },
+      "limitation": "Capacidade é agregada por família; não comprova viabilidade por SKU e semana."
+    }
+  ],
+  "adjustments": [
+    {
+      "date": "2026-09-30",
+      "change": "O feedback passou a registrar separadamente a ação humana e o efeito do dado do parceiro.",
+      "reason": "Sem essa separação não era possível medir se o dado do parceiro influenciou a decisão.",
+      "evidence": "docs/decisions.md — Impacto do dado do parceiro",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-01",
+      "change": "A métrica de ruptura passou a contar SKUs únicos (rupture_sku_count) em vez de somar ocorrências de duas regras.",
+      "reason": "A soma apresentava o mesmo SKU duas vezes como se fossem SKUs distintos.",
+      "evidence": "docs/plano-hackathon-para-ia.md — Entrega 1",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-04",
+      "change": "Histórico insuficiente deixou de poder gerar previsão zero; o SKU passa a exigir investigação de dados.",
+      "reason": "Uma previsão zero seria confundida com ausência de demanda.",
+      "evidence": "docs/decisions.md — Previsão de demanda e recomendação operacional",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-05",
+      "change": "O intervalo entre primeira promessa e primeira conclusão passou a ser rotulado como intervalo de risco, sem mudar o cálculo.",
+      "reason": "A base não vincula pedido a OP, logo não comprova atraso efetivo.",
+      "evidence": "docs/etapa-3-jornada-visual.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-05",
+      "change": "A cobertura comercial passou a ser medida pelos registros de sell-out, não pela declaração cadastral de cobertura completa.",
+      "reason": "Canais declarados como completos apareciam sem sell-out observado.",
+      "evidence": "docs/etapa-4-parceiros-comercial.md",
+      "changed_weights_or_models": false
+    }
+  ]
+}

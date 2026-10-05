@@ -90,3 +90,13 @@
 - As páginas são separadas em módulos e carregadas sob demanda; o carregamento específico por rota das demais áreas fica para a Etapa 2.
 - O frontend usa rewrite de SPA na Vercel para que deep links sejam atualizáveis e compartilháveis.
 - Detalhe de parceiro e Validação continuam reservados às etapas que possuem dados e critérios próprios; nenhuma granularidade é criada apenas para preencher uma rota.
+
+## 2026-10-05 — Central de validação da Semana 4
+
+- A validação é uma rota aditiva e somente leitura; não altera pesos, limiares, modelos, ranking, regras ou a planilha.
+- Linha de base da empresa (22 h/semana, MAPE 31%, 89% no prazo com meta de 96%, 78% de aderência) e meta de 8 h/semana aparecem separadas do que o protótipo recalcula.
+- Pedidos no prazo e aderência ao plano ficam como não recalculáveis: a base não traz entregas nem produção realizada. O forecast comercial da base cobre somente meses futuros, por isso o MAPE informado também não é recalculado; o WAPE do protótipo é exibido como métrica diferente, não comparável diretamente.
+- A baseline explícita da previsão é o último mês observado repetido no holdout. Ela não participa da seleção do modelo; empate conta como não superou.
+- Os oito casos representativos são congelados em `config/validation_center.json` com o hash da planilha. Seis usam SKUs ou pares reais; dois são sintéticos porque a base não contém exemplo, e isso é exibido como lacuna.
+- O tempo de análise registrado não é comparado com a linha de base antes de 20 registros com minutos.
+- Exportação em CSV e impressão são feitas no navegador, sem dependência nova.

@@ -534,3 +534,22 @@ def feedback_post(item: Feedback):
 from backend.partners import create_partner_router  # noqa: E402
 
 app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json"))
+
+# Additive Week 4 validation view: read-only, reuses the cached pipeline and existing recommendations.
+from backend.validation import create_validation_router  # noqa: E402
+
+
+def _all_operational_recommendations():
+    return [item["operational_recommendation"] for item in forecast_summaries()]
+
+
+app.include_router(create_validation_router(
+    pipeline=pipeline,
+    persistence=_persistence,
+    recommendations=_all_operational_recommendations,
+    sku_detail=detail,
+    source=SOURCE,
+    config_file=ROOT / "config/validation_center.json",
+    thresholds_file=THRESHOLDS_FILE,
+    commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
+))

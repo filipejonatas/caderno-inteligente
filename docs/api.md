@@ -77,3 +77,18 @@ Valores ausentes são nulos; números observados iguais a zero continuam zero. C
 Parceiro inexistente retorna 404. Filtro enumerado inválido, paginação inválida ou dados/configuração comercial inválidos retornam 422. Atribuição de decisões por parceiro é explicitamente indisponível: `decisions.attribution_available=false`, `decisions.items=null`, com justificativa.
 
 Método e regras: `docs/commercial-rules.md`.
+
+## Etapa 5 — `GET /api/validation/summary`
+
+Leitura aditiva e somente leitura para a Central de validação (`/validacao`). Reutiliza o pipeline cacheado, a previsão e a recomendação existentes; não altera pesos, limiares, modelos, ranking nem arquivos. Configuração: `config/validation_center.json`.
+
+Campos principais:
+
+- `process_comparison`: uma linha por indicador da empresa, com `informed` (natureza `informado`), `recalculated` (natureza `recalculado`, com `comparable` e `reason`) e `target` (natureza `meta` ou `null`). Valores não recalculáveis são `null`, nunca zero.
+- `analysis_time`: decisões registradas, registros com minutos, soma, média e mediana; `comparison_allowed=false` enquanto a amostra for menor que `minimum_sample`.
+- `forecast_evaluation`: holdout de 3 meses por SKU para cada candidato, para o modelo selecionado e para a baseline `naive_last` (último mês observado). Inclui SKUs elegíveis e insuficientes, WAPE mediano e ponderado, vitórias por modelo, SKUs que não superaram a baseline (empate conta como não superou) e lista por SKU.
+- `frozen_cases`: os oito casos congelados com entrada, esperado, obtido, verificações, resultado (`passou`, `falhou`, `nao_encontrado`), limitação e ajuste. `source_matches_frozen=false` indica que a planilha mudou desde o congelamento.
+- `safe_behavior`: verificações executadas a cada consulta (`aprovado`/`reprovado`) e as cobertas por teste automatizado (`coberto_por_teste`).
+- `known_failures`, `known_limitations`, `adjustments` e `requires_human_review=true`.
+
+Falha da persistência não derruba a rota: o tempo de análise volta vazio, com nota explicativa, e a falha é listada em `known_failures`. Configuração de validação inválida retorna 422.
