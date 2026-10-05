@@ -151,6 +151,8 @@ Não é necessário fragmentar cada pequeno componente. A separação deve acomp
 **Prioridade:** bloqueante  
 **Timebox para IA:** 45 a 90 minutos
 
+**Status em 05/10/2026:** concluída com `.venv` em Python 3.12.14, dependências consistentes, 61 testes Python aprovados e `npm run check` aprovado. O comando consolidado é `./scripts/validate.ps1`.
+
 #### Implementação
 
 - Remover e recriar a `.venv` com uma versão suportada do Python, preferencialmente 3.12 ou 3.13.

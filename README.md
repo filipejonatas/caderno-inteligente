@@ -30,6 +30,8 @@ SQLite local ou PostgreSQL/Supabase em produção
 
 No PowerShell, a partir da raiz do projeto:
 
+Use Python 3.12 ou 3.13. O projeto não oferece suporte a Python 3.14.
+
 ```powershell
 py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
@@ -63,6 +65,16 @@ npm run dev
 Acesse `http://127.0.0.1:5173`.
 
 ## Validar
+
+Para executar todas as verificações com um único comando, a partir da raiz:
+
+```powershell
+.\scripts\validate.ps1
+```
+
+O script valida as dependências instaladas, executa toda a suíte Python e roda o typecheck e o build do frontend.
+
+Comandos individuais:
 
 Testes Python:
 
