@@ -30,15 +30,17 @@ def _sha256(path: Path) -> str:
 
 
 def create_validation_router(*, pipeline: Callable, persistence: Callable, recommendations: Callable, sku_detail: Callable,
-                             source: Path, config_file: Path, thresholds_file: Path, commercial_thresholds_file: Path) -> APIRouter:
+                             source: Path, config_file: Path, thresholds_file: Path, commercial_thresholds_file: Path,
+                             describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
+    describe = describe_error or (lambda message, error: f"{message}: {error}")
 
     @router.get("/validation/summary")
     def validation_summary():
         try:
             config = load_validation_config(config_file)
         except (OSError, ValueError) as error:
-            raise HTTPException(422, f"Configuração de validação inválida: {error}") from error
+            raise HTTPException(422, describe("Configuração de validação inválida", error)) from error
         dataset, _, indicators, issues, ranking, forecasts = pipeline()
         partner_items = build_partner_insights(dataset, load_commercial_thresholds(commercial_thresholds_file))["items"]
         source_sha256 = _sha256(source)

@@ -120,6 +120,14 @@ export function Tooltip({ label, children }: { label: string; children: ReactNod
   return <span className={`tooltip ${open ? 'is-open' : ''} ${dismissed ? 'is-dismissed' : ''}`} onMouseEnter={() => setDismissed(false)}><button type="button" className="tooltip-trigger" aria-label={label} aria-describedby={id} aria-expanded={open} onFocus={() => setDismissed(false)} onClick={() => { setDismissed(false); setOpen(value => !value); }} onBlur={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); setDismissed(true); } }}>?</button><span id={id} role="tooltip" className="tooltip-content">{children}</span></span>;
 }
 
+export function SystemBanner({ info }: { info: { demo_mode: boolean; write_enabled: boolean; notice: string | null } | null }) {
+  if (!info || (!info.demo_mode && info.write_enabled)) return null;
+  return <div className="system-banner" role="note" aria-label="Modo da publicação">
+    {info.demo_mode && <span><strong>Demonstração.</strong> {info.notice}</span>}
+    {!info.write_enabled && <span><strong>Somente leitura.</strong> Registro de decisões, casos e execuções está desabilitado nesta publicação.</span>}
+  </div>;
+}
+
 export function DecisionBoundary() {
   return <Alert title="Prioridade de análise não é ordem de produção">O score indica o que investigar primeiro. A recomendação considera demanda, estoque e produção aberta. Um SKU pode ter prioridade alta e estar sem ação necessária de produção. Isso não elimina seus riscos nem dispensa revisão humana.</Alert>;
 }

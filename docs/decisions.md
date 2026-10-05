@@ -117,3 +117,14 @@
 - A acessibilidade é verificada com axe-core em todas as rotas, em viewport móvel e desktop, exigindo zero violações de qualquer gravidade. Como o jsdom não calcula cores nem layout, o contraste é testado a partir dos tokens do CSS e foi conferido com axe no Chromium real.
 - `--slate-500` mudou de `#718096` (4,0:1 sobre branco) para `#5b6b7f` (≥ 5:1), cumprindo WCAG AA para texto pequeno. Nenhuma outra cor foi alterada.
 - Cada rota fica dentro de um error boundary: resposta malformada ou chunk indisponível após um deploy não apagam a aplicação inteira.
+
+## 2026-10-05 — Segurança e modo de demonstração
+
+- A configuração é feita só por variáveis de ambiente (`APP_ENV`, `DEMO_MODE`, `WRITE_ENABLED`, `CORS_ORIGINS`). Os padrões preservam o comportamento local atual; valor desconhecido de `APP_ENV` é tratado como produção (falha fechada).
+- A escrita é bloqueada no servidor (403). A interface apenas reflete o estado. Simulações continuam liberadas porque não persistem nada.
+- A limpeza de dados de demonstração não é exposta por API. Ela é um procedimento operacional (script com simulação por padrão, confirmação explícita e backup JSON, ou SQL no Supabase).
+- Decisões e casos passam a exigir SKU existente na base, para não aceitar registros que não correspondem a nenhum item analisado.
+- Logs passam por um filtro que remove `DATABASE_URL`, connection strings e senhas, inclusive em tracebacks.
+- O frontend publica CSP sem `unsafe-inline` (estilos dinâmicos do React usam CSSOM) e `connect-src 'self' https:`, porque o domínio da API varia por publicação.
+- O Vite foi atualizado de 6.0.11 para 6.4.3 (mesma série), corrigindo o aviso *high* do servidor de desenvolvimento. O react-router permanece em 6.30.6, a última da série 6. O retorno do detalhe do SKU passou a aceitar só caminhos internos (`isInternalPath`).
+- Autenticação (Supabase Auth e perfis) continua fora desta etapa, como previsto no plano.

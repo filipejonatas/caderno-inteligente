@@ -113,3 +113,30 @@ Compara dois snapshots gravados, sem recalcular nada. A rota é separada de `/ap
 - `comparable`, `notes`, `limitations`.
 
 Seção sem dados compatíveis retorna `{"available": false, "reason": "..."}`. Isso ocorre com snapshot anterior à Etapa 6, versão de snapshot diferente, ranking sem os campos necessários ou análise comercial indisponível no registro. Base igual ao alvo ou id menor que 1 retorna 422; execução inexistente retorna 404.
+
+## Etapa 8 — Segurança e modo de demonstração
+
+### `GET /api/system` (novo, aditivo)
+
+Retorna `environment`, `demo_mode`, `write_enabled`, `text_limits` (`note`, `user_name`, `owner`, `case_action`, `analysis_minutes`) e `notice`. Não consulta o banco e não expõe segredos nem dados de conexão.
+
+### Escrita desabilitável
+
+Com `WRITE_ENABLED=false`, `POST /api/feedback`, `POST /api/cases`, `PUT /api/cases/{id}` e `POST /api/runs` retornam **403** com `detail` explicativo. Leituras e `POST /api/scenarios` (simulação sem persistência) continuam disponíveis.
+
+### Validação de entrada
+
+- Decisões e casos recusam campos desconhecidos (422) e exigem SKU existente na base atual (422).
+- Limites: `sku` 32, `note` 2000, `user_name` 80, `owner` 80, `action` do caso 200, `analysis_minutes` entre 0 e 1440. `due_date` vazio ou `AAAA-MM-DD` válido. `run_id` ≥ 1.
+- Texto com caracteres de controle é recusado; quebras de linha e tabulação são permitidas. Espaços nas pontas são removidos.
+- `PUT /api/cases/{id}` de caso inexistente retorna 404, sem gravar histórico órfão.
+- `POST /api/scenarios` aceita somente regras e limiares conhecidos. Pesos ficam entre 0 e 100, `excess_coverage_days` entre 1 e 3650 e `capacity_occupation_threshold` entre 0 e 2.
+- `GET /api/priorities`: `search`, `family` e `confidence` com até 100 caracteres.
+- Corpo de `POST` e `PUT` acima de 16 KB retorna 413.
+
+### Erros, cabeçalhos e CORS
+
+- Toda resposta traz `X-Request-ID`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy: no-referrer`.
+- Erro não tratado retorna 500 com `detail` contendo o código de referência. Em `APP_ENV=production` a mensagem é genérica; em desenvolvimento inclui o tipo e a mensagem, já sem connection strings.
+- Em produção, erros 422 de validação retornam somente `type`, `loc` e `msg`, sem ecoar o valor enviado.
+- CORS aceita apenas as origens válidas de `CORS_ORIGINS`, os métodos GET, POST, PUT e OPTIONS e o cabeçalho `Content-Type`, sem credenciais.

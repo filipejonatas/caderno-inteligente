@@ -8,9 +8,11 @@ from pathlib import Path
 from threading import Lock
 from time import perf_counter
 
-from fastapi import FastAPI, HTTPException
+from datetime import date
+
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -40,6 +42,27 @@ THRESHOLDS_FILE = ROOT / "config/rule_thresholds.json"
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("caderno_inteligente.api")
 
+from backend.security import (  # noqa: E402
+    MAX_ANALYSIS_MINUTES,
+    TEXT_LIMITS,
+    install_error_handling,
+    install_log_redaction,
+    load_settings,
+    public_message,
+    write_guard,
+)
+
+install_log_redaction()
+SETTINGS = load_settings()
+
+
+def settings():
+    """Read at call time so tests and future reloads can replace SETTINGS."""
+    return SETTINGS
+
+
+require_write_access = Depends(write_guard(settings))
+
 
 def _persistence():
     """Select PostgreSQL in production and retain SQLite for local development."""
@@ -51,11 +74,6 @@ def _persistence():
     )
 
 
-def _allowed_origins() -> list[str]:
-    value = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
-    return [origin.strip() for origin in value.split(",") if origin.strip()]
-
-
 app = FastAPI(
     title="Caderno Inteligente API",
     description="API local e auditável para apoio à decisão do PCP.",
@@ -63,9 +81,17 @@ app = FastAPI(
 )
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allowed_origins(),
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=list(SETTINGS.cors_origins),
+    allow_methods=["GET", "POST", "PUT", "OPTIONS"],
+    allow_headers=["Content-Type"],
+    expose_headers=["X-Request-ID"],
+    allow_credentials=False,
+)
+install_error_handling(app, settings)
+logger.info(
+    "api_settings environment=%s demo_mode=%s write_enabled=%s cors_origins=%s persistence=%s",
+    SETTINGS.environment, SETTINGS.demo_mode, SETTINGS.write_enabled, len(SETTINGS.cors_origins),
+    "postgres" if os.getenv("DATABASE_URL") else "sqlite",
 )
 
 
@@ -180,6 +206,28 @@ def health():
     }
 
 
+@app.get("/api/system")
+def system():
+    """Additive, lightweight runtime information for the interface; never exposes secrets or connection details."""
+    current = settings()
+    return {
+        "environment": current.environment,
+        "demo_mode": current.demo_mode,
+        "write_enabled": current.write_enabled,
+        "text_limits": {
+            "note": TEXT_LIMITS["note"],
+            "user_name": TEXT_LIMITS["user_name"],
+            "owner": TEXT_LIMITS["owner"],
+            "case_action": TEXT_LIMITS["case_action"],
+            "analysis_minutes": MAX_ANALYSIS_MINUTES,
+        },
+        "notice": (
+            "Publicação de demonstração: os dados são fictícios e os registros podem ser apagados sem aviso."
+            if current.demo_mode else None
+        ),
+    }
+
+
 @app.get("/api/overview")
 def overview():
     _, indicators, issues, ranking = data()
@@ -203,7 +251,11 @@ def overview():
 
 
 @app.get("/api/priorities")
-def priorities(family: str | None = None, confidence: str | None = None, search: str | None = None):
+def priorities(
+    family: str | None = Query(None, max_length=TEXT_LIMITS["search"]),
+    confidence: str | None = Query(None, max_length=TEXT_LIMITS["search"]),
+    search: str | None = Query(None, max_length=TEXT_LIMITS["search"]),
+):
     *_, ranking = data()
     result = ranking
     if family:
@@ -306,9 +358,38 @@ def detail(sku: str):
     }
 
 
+SCENARIO_THRESHOLD_BOUNDS = {"excess_coverage_days": (1, 3650), "capacity_occupation_threshold": (0, 2)}
+
+
 class Scenario(BaseModel):
     weights: dict[str, int] | None = None
     thresholds: dict[str, float] | None = None
+
+    @field_validator("weights")
+    @classmethod
+    def _known_weights(cls, value):
+        if value is None:
+            return value
+        unknown = sorted(set(value) - set(load_weights(WEIGHTS_FILE)))
+        if unknown:
+            raise ValueError(f"Regras desconhecidas: {', '.join(unknown)}")
+        if any(weight < 0 or weight > 100 for weight in value.values()):
+            raise ValueError("Pesos devem estar entre 0 e 100")
+        return value
+
+    @field_validator("thresholds")
+    @classmethod
+    def _known_thresholds(cls, value):
+        if value is None:
+            return value
+        unknown = sorted(set(value) - set(SCENARIO_THRESHOLD_BOUNDS))
+        if unknown:
+            raise ValueError(f"Limiares desconhecidos: {', '.join(unknown)}")
+        for key, number in value.items():
+            low, high = SCENARIO_THRESHOLD_BOUNDS[key]
+            if not low <= number <= high:
+                raise ValueError(f"{key} deve estar entre {low} e {high}")
+        return value
 
 
 @app.post("/api/scenarios")
@@ -417,7 +498,7 @@ def quality():
     return data()[0]
 
 
-@app.post("/api/runs")
+@app.post("/api/runs", dependencies=[require_write_access])
 def create_snapshot():
     quality_report, _, _, ranking = data()
     run_id = _persistence().create_run(
@@ -426,14 +507,49 @@ def create_snapshot():
     return {"id": run_id}
 
 
-class Case(BaseModel):
-    sku: str
-    run_id: int | None = None
-    status: str = "novo"
-    owner: str = ""
-    due_date: str = ""
-    action: str = ""
-    note: str = ""
+def _clean_text(value: str) -> str:
+    """Trim and reject control characters (line breaks and tabs are allowed in free text)."""
+    value = value.strip()
+    if any((ord(char) < 32 and char not in "\n\t\r") or ord(char) == 127 for char in value):
+        raise ValueError("Texto contém caracteres de controle não permitidos")
+    return value
+
+
+def _require_known_sku(sku: str) -> None:
+    if sku not in set(data()[1]["SKU"]):
+        raise HTTPException(422, "SKU não encontrado na base de dados atual.")
+
+
+class StrictModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class Case(StrictModel):
+    sku: str = Field(min_length=1, max_length=TEXT_LIMITS["sku"])
+    run_id: int | None = Field(default=None, ge=1)
+    status: str = Field(default="novo", max_length=40)
+    owner: str = Field(default="", max_length=TEXT_LIMITS["owner"])
+    due_date: str = Field(default="", max_length=10)
+    action: str = Field(default="", max_length=TEXT_LIMITS["case_action"])
+    note: str = Field(default="", max_length=TEXT_LIMITS["note"])
+
+    @field_validator("sku", "owner", "action", "note")
+    @classmethod
+    def _clean(cls, value: str) -> str:
+        return _clean_text(value)
+
+    @field_validator("due_date")
+    @classmethod
+    def _iso_date(cls, value: str) -> str:
+        value = value.strip()
+        if value:
+            try:
+                date.fromisoformat(value)
+            except ValueError as error:
+                raise ValueError("Prazo deve estar no formato AAAA-MM-DD") from error
+            if len(value) != 10:
+                raise ValueError("Prazo deve estar no formato AAAA-MM-DD")
+        return value
 
 
 @app.get("/api/cases")
@@ -441,18 +557,21 @@ def cases():
     return _persistence().list_cases()
 
 
-@app.post("/api/cases")
+@app.post("/api/cases", dependencies=[require_write_access])
 def case_create(item: Case):
+    _require_known_sku(item.sku)
     try:
         return {"id": _persistence().create_case(**item.model_dump())}
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
 
 
-@app.put("/api/cases/{case_id}")
+@app.put("/api/cases/{case_id}", dependencies=[require_write_access])
 def case_update(case_id: int, item: Case):
+    persistence = _persistence()
+    if not any(case["id"] == case_id for case in persistence.list_cases()):
+        raise HTTPException(404, "Caso não encontrado")
     try:
-        persistence = _persistence()
         persistence.update_case(case_id, **item.model_dump(exclude={"sku", "run_id"}))
         return {"status": "updated", "history": persistence.case_history(case_id)}
     except ValueError as error:
@@ -488,13 +607,18 @@ def config():
     }
 
 
-class Feedback(BaseModel):
-    sku: str
-    action: str
-    note: str = ""
-    user_name: str = ""
-    partner_data_effect: str = "nao_utilizado"
-    analysis_minutes: int | None = Field(default=None, ge=0)
+class Feedback(StrictModel):
+    sku: str = Field(min_length=1, max_length=TEXT_LIMITS["sku"])
+    action: str = Field(max_length=40)
+    note: str = Field(default="", max_length=TEXT_LIMITS["note"])
+    user_name: str = Field(default="", max_length=TEXT_LIMITS["user_name"])
+    partner_data_effect: str = Field(default="nao_utilizado", max_length=40)
+    analysis_minutes: int | None = Field(default=None, ge=0, le=MAX_ANALYSIS_MINUTES)
+
+    @field_validator("sku", "note", "user_name")
+    @classmethod
+    def _clean(cls, value: str) -> str:
+        return _clean_text(value)
 
 
 @app.get("/api/feedback")
@@ -514,8 +638,9 @@ def feedback():
     ]
 
 
-@app.post("/api/feedback")
+@app.post("/api/feedback", dependencies=[require_write_access])
 def feedback_post(item: Feedback):
+    _require_known_sku(item.sku)
     try:
         _persistence().save_feedback(
             item.sku,
@@ -533,7 +658,11 @@ def feedback_post(item: Feedback):
 # Additive commercial view: separate configuration; no change to pipeline/ranking.
 from backend.partners import create_partner_router  # noqa: E402
 
-app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json"))
+def _describe_error(message: str, error: Exception) -> str:
+    return public_message(settings(), message, error)
+
+
+app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json", _describe_error))
 
 # Additive Week 4 validation view: read-only, reuses the cached pipeline and existing recommendations.
 from backend.validation import create_validation_router  # noqa: E402
@@ -552,6 +681,7 @@ app.include_router(create_validation_router(
     config_file=ROOT / "config/validation_center.json",
     thresholds_file=THRESHOLDS_FILE,
     commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
+    describe_error=_describe_error,
 ))
 
 # Additive run comparison: snapshots preserve forecast, recommendation and partner coverage as computed.

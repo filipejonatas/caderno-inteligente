@@ -29,12 +29,13 @@ const ROUTES: Array<[string, RegExp]> = [
   ['quality', /^\/api\/data-quality$/],
   ['b2b', /^\/api\/b2b2c\/visibility$/],
   ['scenario', /^\/api\/scenarios$/],
+  ['system', /^\/api\/system$/],
 ];
 
 const DEFAULTS: Record<string, Value> = {
   validation: fx.validationSummary, runComparison: fx.runComparison, partnerSkus: fx.partnerRows, partnerDetail: fx.partnerDetail,
   partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts,
-  runs: fx.runs, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
+  runs: fx.runs, system: fx.system, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
   skuDetail: (url: URL) => decodeURIComponent(url.pathname.split('/').pop() ?? '') === fx.SKU_SHORT ? fx.skuDetailShort : fx.skuDetailOk,
   'POST runs': { id: 3 }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
   'POST scenario': { is_simulation: true, warning: 'Cenário hipotético.', weights: fx.config.weights, thresholds: fx.config.thresholds, ranking: fx.priorities },

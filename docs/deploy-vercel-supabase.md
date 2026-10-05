@@ -31,7 +31,15 @@ Configure somente no projeto backend:
 DATABASE_URL=<connection string do Transaction Pooler>
 CORS_ORIGINS=https://DOMINIO-DO-FRONTEND.vercel.app
 LOG_LEVEL=INFO
+APP_ENV=production
+DEMO_MODE=true
+WRITE_ENABLED=true
 ```
+
+- `APP_ENV=production` oculta detalhes internos nas respostas de erro; a causa fica no log da Vercel, já sem `DATABASE_URL`.
+- `DEMO_MODE=true` exibe o aviso de publicação de demonstração.
+- Para uma publicação aberta sem registro de dados, use `WRITE_ENABLED=false`: decisões, casos e execuções retornam 403 e a interface desabilita os formulários.
+- Para limpar dados de demonstração, execute `supabase/maintenance/reset_demo_data.sql` no SQL Editor ou `python scripts/reset_demo_data.py --postgres --confirm` com `DATABASE_URL` no ambiente do terminal (gera backup JSON antes).
 
 Depois do deploy, valide:
 

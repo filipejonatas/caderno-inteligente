@@ -3,6 +3,7 @@ import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, For
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
+import type { SystemInfo } from '../hooks/useSystemInfo';
 
 export const SKU_OK = 'TEST-001';
 export const SKU_SHORT = 'TEST / 002'; // Needs URL encoding and has insufficient history.
@@ -161,4 +162,9 @@ export const runComparison: RunComparison = {
   forecasts: { available: false, reason: 'Execução #1 foi registrada antes da comparação ampliada.' },
   b2b_coverage: { available: false, reason: 'Execução #1 foi registrada antes da comparação ampliada.' },
   notes: [], limitations: ['Limitação.'],
+};
+
+export const system: SystemInfo = {
+  environment: 'development', demo_mode: false, write_enabled: true, notice: null,
+  text_limits: { note: 2000, user_name: 80, owner: 80, case_action: 200, analysis_minutes: 1440 },
 };

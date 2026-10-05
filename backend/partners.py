@@ -7,14 +7,15 @@ from fastapi import APIRouter, HTTPException, Query
 from caderno_inteligente.partner_insights import ACTION_LABELS, build_partner_insights, load_commercial_thresholds
 
 
-def create_partner_router(dataset_loader: Callable, thresholds_file: Path) -> APIRouter:
+def create_partner_router(dataset_loader: Callable, thresholds_file: Path, describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
+    describe = describe_error or (lambda message, error: f"{message}: {error}")
 
     def insights():
         try:
             return build_partner_insights(dataset_loader(), load_commercial_thresholds(thresholds_file))
         except (ValueError, KeyError) as error:
-            raise HTTPException(422, f"Análise comercial bloqueada por dados/configuração inválidos: {error}") from error
+            raise HTTPException(422, describe("Análise comercial bloqueada por dados/configuração inválidos", error)) from error
 
     def select(result, partner=None, sku=None, region=None, channel=None, action=None, data_quality=None):
         if action is not None and action not in ACTION_LABELS:

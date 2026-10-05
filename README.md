@@ -113,7 +113,11 @@ O frontend usa rotas reais no navegador, lazy loading por página e uma rota 404
 - Pesos: `config/prioritization_weights.json`;
 - Limiares: `config/rule_thresholds.json`;
 - Casos congelados e linha de base da validação: `config/validation_center.json`;
-- Origem permitida pela API: variável `CORS_ORIGINS`, separada por vírgulas;
+- Origem permitida pela API: variável `CORS_ORIGINS`, separada por vírgulas (origens exatas, sem caminho e sem curinga; em produção, sem valor, nenhuma origem externa é aceita);
+- Ambiente: `APP_ENV=development|production`. Em `production`, erros retornam mensagem genérica com código de referência;
+- Modo demonstração: `DEMO_MODE=true` exibe aviso de dados fictícios que podem ser apagados;
+- Escrita: `WRITE_ENABLED=false` bloqueia decisões, casos e execuções (HTTP 403), mantendo consultas e simulações;
+- Limpeza de dados de demonstração: `python scripts/reset_demo_data.py` (simulação; `--confirm` faz backup e limpa; `--postgres` usa `DATABASE_URL`);
 - Nível de log: variável `LOG_LEVEL`.
 - PostgreSQL/Supabase: variável secreta `DATABASE_URL`. Na ausência dela, o backend usa SQLite.
 - URL pública da API no frontend: `VITE_API_URL`. Na ausência dela, o frontend usa `/api`.
@@ -149,3 +153,4 @@ Mais detalhes estão em [Deploy com Vercel e Supabase](docs/deploy-vercel-supaba
 - [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)
 - [Etapa 6 — Comparação entre execuções](docs/etapa-6-comparacao-execucoes.md)
 - [Etapa 7 — Testes do frontend, acessibilidade e robustez](docs/etapa-7-testes-acessibilidade.md)
+- [Etapa 8 — Segurança e modo de demonstração](docs/etapa-8-seguranca-modo-demo.md)

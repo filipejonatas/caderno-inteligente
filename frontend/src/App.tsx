@@ -2,9 +2,12 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
-import { LoadingState, Sidebar, Topbar, navigation } from './components';
+import { LoadingState, Sidebar, SystemBanner, Topbar, navigation } from './components';
 import type { SelectedSku } from './types';
 import { PageLoadContext } from './hooks/usePageLoadStatus';
+import { SystemInfoContext } from './hooks/useSystemInfo';
+import type { SystemInfo } from './hooks/useSystemInfo';
+import { api } from './api';
 import type { PageLoadStatus } from './hooks/usePageLoadStatus';
 import './App.css';
 
@@ -42,6 +45,7 @@ function App() {
   const reportLoad = useCallback((status: PageLoadStatus) => setLoadStatus({ ...status, path: location.pathname }), [location.pathname]);
   const refresh = () => setRefreshToken(token => token + 1);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
+  const [systemInfo, setSystemInfo] = useState<SystemInfo | null>(null);
 
   const firstRender = useRef(true);
   useEffect(() => {
@@ -69,12 +73,21 @@ function App() {
   const staticPage = isGuide || current.label === 'Página não encontrada';
   const status = loadStatus.path === location.pathname ? loadStatus : { loading: true, error: '', loadedAt: null };
 
-  return <PageLoadContext.Provider value={reportLoad}><div className="app-shell">
+  // Runtime mode (demo / read-only) is read once API-backed pages are used; static pages stay offline-capable.
+  useEffect(() => {
+    if (staticPage || systemInfo) return;
+    const controller = new AbortController();
+    api.system(controller.signal).then(setSystemInfo).catch(() => { /* unknown mode: the server still enforces it */ });
+    return () => controller.abort();
+  }, [staticPage, systemInfo, refreshToken]);
+
+  return <SystemInfoContext.Provider value={systemInfo}><PageLoadContext.Provider value={reportLoad}><div className="app-shell">
     <a className="skip-link" href="#conteudo" onClick={(event) => { event.preventDefault(); document.getElementById('page-title')?.focus(); }}>Pular para o conteúdo</a>
     <Sidebar open={menuOpen} onClose={closeMenu} />
     <main className="main-content" id="conteudo">
       <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
       <div className="page-content">
+        {!staticPage && <SystemBanner info={systemInfo} />}
         <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
             <Route path="/guia" element={<GuidePage />} />
@@ -95,7 +108,7 @@ function App() {
         </Suspense></RouteErrorBoundary>
       </div>
     </main>
-  </div></PageLoadContext.Provider>;
+  </div></PageLoadContext.Provider></SystemInfoContext.Provider>;
 }
 
 export default App;

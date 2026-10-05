@@ -7,6 +7,11 @@ import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { displayNumber, displayPercent, formatDate, missingDataNames, positiveDelayDays, reasonNames } from './shared';
 
+/** Only same-app paths: blocks '//host', backslash tricks and schemes (open-redirect hardening). */
+export function isInternalPath(value: string) {
+  return value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') && !/[\u0000-\u001f]/.test(value);
+}
+
 export default function SkuDetailPage({ refreshToken }: { refreshToken: number }) {
   const { sku = '' } = useParams();
   const location = useLocation();
@@ -14,7 +19,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   const loader = useCallback((signal: AbortSignal) => api.skuDetail(sku, signal), [sku]);
   const { data: detail, error, loading, loadedAt, refresh: load } = useApiResource(loader, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
-  const backTarget = typeof location.state === 'object' && location.state && 'from' in location.state && typeof location.state.from === 'string' && location.state.from.startsWith('/') ? location.state.from : '/prioridades';
+  const backTarget = typeof location.state === 'object' && location.state && 'from' in location.state && typeof location.state.from === 'string' && isInternalPath(location.state.from) ? location.state.from : '/prioridades';
 
   if (error && !detail) return <div className="sku-detail-page"><PageIntro eyebrow="Detalhe compartilhável" title={sku || 'SKU não informado'} description="Não foi possível carregar as evidências deste item." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><ErrorState message={error} onRetry={() => void load()} /></div>;
   if (!detail) return <div className="sku-detail-page"><PageIntro eyebrow="Carregando análise" title={sku || 'Detalhe do SKU'} description="Buscando indicadores, previsão, recomendação e evidências." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><div className="drawer-loading"><span /><span /><span /></div></div>;

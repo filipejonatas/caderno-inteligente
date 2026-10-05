@@ -4,6 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { Alert, Badge, EmptyState, PageIntro, SectionCard } from '../components';
 import { RunComparisonView } from '../components/RunComparisonView';
+import { useSystemInfo } from '../hooks/useSystemInfo';
 import type { PageProps } from './shared';
 import { formatDateTime } from './shared';
 
@@ -13,6 +14,7 @@ export default function RunsPage({ data, onRefresh }: PageProps<'runs'>) {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [params, setParams] = useSearchParams();
+  const writeDisabled = useSystemInfo()?.write_enabled === false;
   const ids = new Set(data.runs.map((run) => run.id));
   const base = parseId(params.get('base'));
   const target = parseId(params.get('alvo'));
@@ -26,7 +28,7 @@ export default function RunsPage({ data, onRefresh }: PageProps<'runs'>) {
   function compare(event: FormEvent) { event.preventDefault(); setParams({ base: draftBase, alvo: draftTarget }); }
 
   return <>
-    <PageIntro eyebrow="Auditoria" title="Execuções registradas" description="Snapshots preservam fonte, configuração, ranking, previsão, recomendação e cobertura B2B2C para comparação posterior." action={<button className="primary-button" onClick={snapshot} disabled={saving}>{saving ? 'Registrando…' : 'Registrar execução atual'}</button>} />
+    <PageIntro eyebrow="Auditoria" title="Execuções registradas" description="Snapshots preservam fonte, configuração, ranking, previsão, recomendação e cobertura B2B2C para comparação posterior." action={<button className="primary-button" onClick={snapshot} disabled={saving || writeDisabled} title={writeDisabled ? 'Registro desabilitado nesta publicação (somente leitura)' : undefined}>{saving ? 'Registrando…' : 'Registrar execução atual'}</button>} />
     {message && <div className="toast-inline">{message}</div>}
     <SectionCard title="Comparar execuções" subtitle="Escolha a execução base e a execução alvo. O link resultante pode ser compartilhado.">
       {data.runs.length < 2 ? <EmptyState title="São necessárias duas execuções" description="Registre pelo menos duas execuções para comparar mudanças no ranking." /> :

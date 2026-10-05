@@ -6,7 +6,7 @@ import { endpoints, keyPaths } from './contract';
 const FIXTURES: Record<string, unknown> = {
   overview: fx.overview, priorities: fx.priorities, quality: fx.quality, config: fx.config, runs: fx.runs, b2b: fx.b2b,
   forecasts: fx.forecasts, skuDetail: fx.skuDetailOk, partners: fx.partnersPage, partnerDetail: fx.partnerDetail,
-  partnerSkus: fx.partnerRows, commercial: fx.partnerRows, validation: fx.validationSummary, runComparison: fx.runComparison,
+  partnerSkus: fx.partnerRows, commercial: fx.partnerRows, validation: fx.validationSummary, runComparison: fx.runComparison, system: fx.system,
 };
 
 describe('contratos críticos do frontend', () => {

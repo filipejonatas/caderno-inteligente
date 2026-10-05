@@ -594,3 +594,8 @@ button:disabled { cursor: wait; opacity: .65; }
 .forecast-page-filters input:focus-visible, .forecast-page-filters select:focus-visible { outline: 2px solid var(--blue-700); outline-offset: 1px; }
 .error-boundary { max-width: 640px; }
 @media (prefers-reduced-motion: reduce) { .skip-link { transition: none; } }
+
+/* Etapa 8 — modo da publicação */
+.system-banner { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: -12px 0 20px; padding: 10px 14px; border: 1px solid #f0d49b; border-radius: 9px; background: var(--amber-100); color: var(--amber-700); font-size: 12.5px; }
+.system-banner strong { color: var(--amber-700); }
+.write-disabled-note { margin: 0; color: var(--amber-700); font-size: 12px; }

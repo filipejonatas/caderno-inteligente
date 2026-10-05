@@ -1,6 +1,7 @@
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
 import type { RunComparison } from './types-runs';
 import type { ValidationSummary } from './types-validation';
+import type { SystemInfo } from './hooks/useSystemInfo';
 import type {
   AppConfig,
   B2BVisibility,
@@ -25,6 +26,15 @@ export class ApiError extends Error {
   }
 }
 
+const FIELD_NAMES: Record<string, string> = { note: 'observação', user_name: 'usuário', owner: 'responsável', due_date: 'prazo', analysis_minutes: 'tempo de análise', sku: 'SKU', action: 'ação' };
+
+function validationMessage(item: { msg?: string; loc?: unknown[] }) {
+  const field = item.loc?.[item.loc.length - 1];
+  const name = typeof field === 'string' ? FIELD_NAMES[field] ?? field : null;
+  const message = (item.msg ?? 'valor inválido').replace(/^Value error, /, '');
+  return name ? `${name} — ${message}` : message;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -37,8 +47,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let detail = `A solicitação falhou (${response.status}).`;
     try {
-      const body = (await response.json()) as { detail?: string };
-      if (body.detail) detail = body.detail;
+      const body = (await response.json()) as { detail?: string | Array<{ msg?: string; loc?: unknown[] }> };
+      if (typeof body.detail === 'string') detail = body.detail;
+      else if (Array.isArray(body.detail) && body.detail.length) detail = `Dados inválidos: ${body.detail.map(validationMessage).join('; ')}`;
     } catch {
       // The status code remains useful when the response has no JSON body.
     }
@@ -73,6 +84,7 @@ export const api = {
   commercialRecommendations: (query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/commercial-recommendations?${query}`, { signal }),
   forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
+  system: (signal?: AbortSignal) => request<SystemInfo>('/system', { signal }),
   validationSummary: (signal?: AbortSignal) => request<ValidationSummary>('/validation/summary', { signal }),
   runComparison: (base: number, target: number, signal?: AbortSignal) => request<RunComparison>(`/run-comparisons?${new URLSearchParams({ base: String(base), target: String(target) })}`, { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),

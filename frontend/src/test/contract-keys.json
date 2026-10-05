@@ -591,6 +591,21 @@
         "target.prioritized_skus",
         "target.source_hash"
       ]
+    },
+    "system": {
+      "path": "/api/system",
+      "keys": [
+        "demo_mode",
+        "environment",
+        "notice",
+        "text_limits",
+        "text_limits.analysis_minutes",
+        "text_limits.case_action",
+        "text_limits.note",
+        "text_limits.owner",
+        "text_limits.user_name",
+        "write_enabled"
+      ]
     }
   }
 }

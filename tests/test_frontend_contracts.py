@@ -77,7 +77,7 @@ def responses(tmp_path_factory):
         "runs": "/api/runs", "b2b": "/api/b2b2c/visibility", "forecasts": "/api/forecasts", "skuDetail": f"/api/priorities/{SKU}",
         "partners": "/api/partners", "partnerDetail": f"/api/partners/{PARTNER}", "partnerSkus": f"/api/partners/{PARTNER}/skus?limit=50",
         "commercial": "/api/commercial-recommendations?limit=50", "validation": "/api/validation/summary",
-        "runComparison": f"/api/run-comparisons?base={legacy}&target={current}",
+        "runComparison": f"/api/run-comparisons?base={legacy}&target={current}", "system": "/api/system",
     }
     result = {}
     for name, path in paths.items():

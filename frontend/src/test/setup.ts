@@ -1,6 +1,9 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach, vi } from 'vitest';
+
+// Lazy route chunks load slower when every test file runs in parallel; the 1s default caused flaky waits.
+configure({ asyncUtilTimeout: 5000 });
 
 /** Tests switch the emulated viewport with setViewport('mobile' | 'desktop'). */
 let mobile = false;

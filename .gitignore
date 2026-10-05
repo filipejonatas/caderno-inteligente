@@ -12,6 +12,7 @@ frontend/dist/
 # Runtime local e artefatos gerados
 runtime/*.db
 runtime/reports/*.json
+runtime/backups/
 
 # Ferramentas e sistema
 .env
