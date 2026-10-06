@@ -11,8 +11,9 @@ const OPTIONS: axe.RunOptions = { rules: { 'color-contrast': { enabled: false } 
 const PAGES: Array<[string, string]> = [
   ['/', 'O que olhar primeiro'],
   ['/guia', 'Entenda o Caderno Inteligente em poucos minutos'],
-  ['/prioridades', 'Em que ordem analisar os SKUs'],
-  ['/previsoes', 'Preciso produzir? Quanto?'],
+  ['/fila', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/prioridades', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/previsoes', 'Qual SKU analisar, o que fazer e quanto'],
   [`/skus/${encodeURIComponent(SKU_SHORT)}`, SKU_SHORT],
   ['/casos', 'Casos em acompanhamento'],
   ['/qualidade', 'Posso confiar na planilha?'],

@@ -21,13 +21,13 @@ export default function OverviewPage({ data, onSelect }: PageProps<'overview' | 
       <div className="focus-actions">
         <button className="primary-button" onClick={() => onSelect(first)}>Abrir evidências de {first.sku}<Icon name="arrow" /></button>
       </div>
-    </article> : <><EmptyState title="Nenhum SKU na fila de atenção" description="Não foram retornadas prioridades. Isso não substitui a avaliação da qualidade dos dados." /><Link className="secondary-button" to="/previsoes">Ver previsão e ação</Link></>}
+    </article> : <><EmptyState title="Nenhum SKU na fila de atenção" description="Não foram retornadas prioridades. Isso não substitui a avaliação da qualidade dos dados." /><Link className="secondary-button" to="/fila">Ver a fila operacional</Link></>}
     <div className="metrics-grid">
       <MetricCard label="SKUs com risco de ruptura" value={data.overview.rupture_sku_count} detail={`${data.overview.below_lead_time_count} abaixo do prazo de produção, ${data.overview.below_safety_stock_count} abaixo da segurança`} tone="red" icon="quality" />
       <MetricCard label="Pedidos sem ordem de produção" value={data.overview.order_without_production} detail="pedidos em carteira sem OP" tone="amber" icon="cases" />
       <MetricCard label="Com confiança baixa" value={data.overview.low_confidence} detail={`de ${data.overview.prioritized} SKUs na fila`} tone="slate" icon="b2b" />
     </div>
     <UpcomingEvents />
-    <SectionCard title={`Fila de atenção (${data.overview.prioritized} de ${data.overview.total_skus})`} action={<Link className="secondary-button" to="/prioridades">Ver a fila completa</Link>}><PriorityTable rows={data.priorities.slice(0, 5)} onSelect={onSelect} weights={weights} /></SectionCard>
+    <SectionCard title={`Fila de atenção (${data.overview.prioritized} de ${data.overview.total_skus})`} action={<Link className="secondary-button" to="/fila?todos=1">Ver a fila completa</Link>}><PriorityTable rows={data.priorities.slice(0, 5)} onSelect={onSelect} weights={weights} /></SectionCard>
   </div>;
 }

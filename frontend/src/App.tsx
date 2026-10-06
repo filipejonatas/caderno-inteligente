@@ -1,5 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { matchPath, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { LoadingState, RuleLine, Sidebar, SubNav, SystemBanner, Topbar, navigation, showsRule } from './components';
@@ -14,8 +14,7 @@ import './usability.css';
 
 const GuidePage = lazy(() => import('./pages/GuidePage'));
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
-const PrioritiesPage = lazy(() => import('./pages/PrioritiesPage'));
-const ForecastsPage = lazy(() => import('./pages/ForecastsPage'));
+const OperationalQueuePage = lazy(() => import('./pages/OperationalQueuePage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const QualityPage = lazy(() => import('./pages/QualityPage'));
 const B2BPage = lazy(() => import('./pages/B2BPage'));
@@ -31,7 +30,6 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PAGE_FIELDS = {
   OverviewPage: ['overview', 'priorities', 'config'],
-  PrioritiesPage: ['priorities', 'config'],
   CasesPage: ['cases', 'priorities', 'config'],
   QualityPage: ['quality'],
   ScenariosPage: ['config'],
@@ -98,8 +96,10 @@ function App() {
           <Routes>
             <Route path="/guia" element={<GuidePage />} />
             <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
-            <Route path="/prioridades" element={<PageResource key="PrioritiesPage" fields={PAGE_FIELDS.PrioritiesPage} refreshToken={refreshToken}>{(dashboard, reload) => <PrioritiesPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
-            <Route path="/previsoes" element={<ForecastsPage onSelect={selectSku} refreshToken={refreshToken} />} />
+            <Route path="/fila" element={<OperationalQueuePage onSelect={selectSku} refreshToken={refreshToken} />} />
+            {/* Rotas antigas: mesmos parâmetros (busca, familia, acao, rotulo, confianca, ordem, todos), nova página. */}
+            <Route path="/prioridades" element={<Navigate to={{ pathname: '/fila', search: location.search }} replace />} />
+            <Route path="/previsoes" element={<Navigate to={{ pathname: '/fila', search: location.search }} replace />} />
             <Route path="/casos" element={<PageResource key="CasesPage" fields={PAGE_FIELDS.CasesPage} refreshToken={refreshToken}>{(dashboard, reload) => <CasesPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/qualidade" element={<PageResource key="QualityPage" fields={PAGE_FIELDS.QualityPage} refreshToken={refreshToken}>{(dashboard, reload) => <QualityPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/parceiros" element={<B2BPage refreshToken={refreshToken} />} />

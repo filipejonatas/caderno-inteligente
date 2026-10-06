@@ -70,7 +70,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   const loader = useCallback((signal: AbortSignal) => api.skuDetail(sku, signal), [sku]);
   const { data: detail, error, loading, loadedAt, refresh: load } = useApiResource(loader, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
-  const backTarget = typeof location.state === 'object' && location.state && 'from' in location.state && typeof location.state.from === 'string' && isInternalPath(location.state.from) ? location.state.from : '/prioridades';
+  const backTarget = typeof location.state === 'object' && location.state && 'from' in location.state && typeof location.state.from === 'string' && isInternalPath(location.state.from) ? location.state.from : '/fila';
 
   if (error && !detail) return <div className="sku-detail-page"><PageIntro title={sku || 'SKU não informado'} description="Não foi possível carregar as evidências deste item." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><ErrorState message={error} onRetry={() => void load()} /></div>;
   if (!detail) return <div className="sku-detail-page"><PageIntro title={sku || 'Detalhe do SKU'} description="Buscando indicadores, previsão, recomendação e evidências." action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} /><div className="drawer-loading"><span /><span /><span /></div></div>;

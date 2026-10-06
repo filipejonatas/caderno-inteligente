@@ -5,7 +5,7 @@ import { mockApi, renderApp } from './utils';
 
 // Teste de volume: mede palavras, números, blocos, colunas e avisos de cada tela (tudo expandido) e falha acima do orçamento.
 // Texto só para leitor de tela (.sr-only) e o conteúdo dos "?" não contam.
-const WRAPPERS = /(decision-journey|sku-detail-page|forecast-page|validation-page|guide-page|feedback-layout|scenario-layout)/;
+const WRAPPERS = /(decision-journey|sku-detail-page|operational-queue|validation-page|guide-page|feedback-layout|scenario-layout)/;
 const SKIP = /(rule-line|subnav|page-intro|system-banner)/;
 
 const words = (text: string) => text.split(/\s+/).filter(Boolean).length;

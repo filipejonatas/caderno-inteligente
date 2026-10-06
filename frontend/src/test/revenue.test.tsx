@@ -24,7 +24,7 @@ describe('formatos de faturamento', () => {
 describe('Previsão: faturamento estimado', () => {
   it('mostra o total como estimativa, com selo, erro do teste e gráfico acessível', async () => {
     mockApi();
-    renderApp('/previsoes');
+    renderApp('/fila');
     const card = (await screen.findByRole('heading', { level: 3, name: 'Faturamento estimado' })).closest('section') as HTMLElement;
     expect(within(card).getByText('Unidades previstas × preço vigente, próximos três meses.')).toBeInTheDocument();
     expect(within(card).getByText('Estimativa', { selector: '.badge' })).toBeInTheDocument();
@@ -46,7 +46,7 @@ describe('Previsão: faturamento estimado', () => {
 
   it('família sem estimativa mostra "Não disponível", nunca R$ 0, e lista o SKU fora', async () => {
     mockApi();
-    renderApp('/previsoes');
+    renderApp('/fila');
     const table = await screen.findByRole('region', { name: 'Faturamento estimado por família' });
     const rowB = within(table).getByText('Família B').closest('tr') as HTMLElement;
     expect(within(rowB).getAllByText('Não disponível').length).toBeGreaterThan(0);
@@ -57,8 +57,8 @@ describe('Previsão: faturamento estimado', () => {
 
   it('falha da estimativa não bloqueia a tela operacional e oferece nova tentativa', async () => {
     mockApi({ revenueForecast: fail(500, 'Erro interno.') });
-    renderApp('/previsoes?todos=1');
-    expect(await screen.findByRole('heading', { level: 2, name: 'Preciso produzir? Quanto?' })).toBeInTheDocument();
+    renderApp('/fila?todos=1');
+    expect(await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' })).toBeInTheDocument();
     expect(await screen.findByText('Faturamento estimado indisponível')).toBeInTheDocument();
     expect(screen.getByText(/A previsão em unidades e as ações seguem válidas/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument();
@@ -66,13 +66,15 @@ describe('Previsão: faturamento estimado', () => {
     expect(screen.getAllByText('Não disponível').length).toBeGreaterThan(0);
   });
 
-  it('não altera as colunas e a ação operacional existentes', async () => {
+  it('a fila tem cinco colunas de decisão e o faturamento vem depois dela', async () => {
     mockApi();
-    renderApp('/previsoes?todos=1');
-    const table = await screen.findByRole('region', { name: /Previsões; role horizontalmente/ });
-    for (const header of ['SKU / Produto', 'Ação operacional sugerida', 'Quantidade sugerida (un.)', 'Próximo mês (un.)']) {
+    renderApp('/fila?todos=1');
+    const table = await screen.findByRole('region', { name: /Fila operacional; role horizontalmente/ });
+    for (const header of ['Posição e SKU', 'Ação sugerida', 'Quantidade sugerida (un.)', 'Motivo principal', 'Exceções']) {
       expect(within(table).getByRole('columnheader', { name: header })).toBeInTheDocument();
     }
+    const revenueCard = screen.getByRole('heading', { level: 3, name: 'Faturamento estimado' });
+    expect(table.compareDocumentPosition(revenueCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });
 

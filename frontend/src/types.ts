@@ -5,8 +5,7 @@ import type { RevenueItem } from './types-revenue';
 export type PageId =
   | 'guide'
   | 'overview'
-  | 'priorities'
-  | 'forecasts'
+  | 'queue'
   | 'cases'
   | 'quality'
   | 'b2b'

@@ -41,14 +41,14 @@ test('overview renders the three blocks, preserves returned priority and links s
   for (const title of ['O que olhar primeiro', 'Fila de atenção (1 de 1)']) assert.ok(html.includes(title));
   assert.ok(html.includes('posição 7'));
   assert.ok(!html.includes('href="/previsoes?busca='), 'o cartão tem uma única ação: abrir as evidências do SKU');
-  assert.ok(html.includes('href="/prioridades"'));
+  assert.ok(html.includes('href="/fila?todos=1"'));
   assert.ok(!html.includes('Detalhes: qualidade da evidência'), 'a seção de detalhes foi removida da tela de decisão');
 });
 test('empty overview does not invent a priority or action quantity', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: { ...fixture, priorities: [] }, onSelect() {} })));
   assert.ok(html.includes('Nenhum SKU na fila de atenção'));
   assert.ok(!html.includes('Abrir evidências de TEST'));
-  assert.ok(html.includes('href="/previsoes"'));
+  assert.ok(html.includes('href="/fila"'));
 });
 test('the single rule line says once that suggestions need human review and are not production orders', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(RuleLine)));

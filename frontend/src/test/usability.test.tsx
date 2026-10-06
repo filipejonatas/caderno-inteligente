@@ -50,8 +50,8 @@ describe('navegação agrupada', () => {
 
   it('diz a regra uma vez, só onde há sugestão, e não a repete nas demais telas', async () => {
     mockApi();
-    const { unmount } = renderApp('/previsoes');
-    await screen.findByRole('heading', { level: 2, name: 'Preciso produzir? Quanto?' });
+    const { unmount } = renderApp('/fila');
+    await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' });
     expect(screen.getAllByText(/não é ordem de produção/)).toHaveLength(1);
     unmount();
     renderApp('/casos');
@@ -60,15 +60,15 @@ describe('navegação agrupada', () => {
   });
 });
 
-describe('fila de atenção enxuta', () => {
+describe('fila operacional enxuta', () => {
   it('mostra uma linha curta por SKU (sem detalhe repetido) e abre o SKU com um clique', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/prioridades');
+    renderApp('/fila');
     await screen.findByText(SKU_OK);
     expect(screen.queryByText('Ver sinais, data e lacuna')).not.toBeInTheDocument();
-    expect(screen.getAllByRole('columnheader').filter((header) => !header.querySelector('.sr-only'))).toHaveLength(5);
-    await user.click(screen.getByRole('button', { name: `Abrir evidências de ${SKU_OK}` }));
+    expect(within(screen.getByRole('region', { name: /Fila operacional/ })).getAllByRole('columnheader').filter((header) => !header.querySelector('.sr-only'))).toHaveLength(5);
+    await user.click(screen.getByRole('button', { name: `Ver detalhes de ${SKU_OK}` }));
     expect(currentLocation()).toBe(`/skus/${SKU_OK}`);
   });
 });

@@ -48,11 +48,11 @@ describe('Início: eventos que pedem decisão', () => {
   });
 });
 
-describe('Previsão: selo de evento por SKU', () => {
+describe('Fila operacional: selo de evento por SKU', () => {
   it('mostra o evento mais urgente e quantos outros existem, sem tirar a ação operacional', async () => {
     mockApi();
-    renderApp('/previsoes?todos=1');
-    const table = await screen.findByRole('region', { name: /Previsões; role horizontalmente/ });
+    renderApp('/fila?todos=1');
+    const table = await screen.findByRole('region', { name: /Fila operacional; role horizontalmente/ });
     const row = within(table).getByText(SKU_OK).closest('tr') as HTMLElement;
     expect(within(row).getByText('Evento: Lançamento Coleção Teste +2')).toBeInTheDocument();
     expect(within(row).getByText('Produzir')).toBeInTheDocument();
@@ -60,10 +60,10 @@ describe('Previsão: selo de evento por SKU', () => {
     expect(within(shortRow).queryByText(/Evento:/)).not.toBeInTheDocument();
   });
 
-  it('falha do calendário não bloqueia a lista de previsões', async () => {
+  it('falha do calendário não bloqueia a fila operacional', async () => {
     mockApi({ events: fail(500, 'Erro interno.') });
-    renderApp('/previsoes?todos=1');
-    const table = await screen.findByRole('region', { name: /Previsões; role horizontalmente/ });
+    renderApp('/fila?todos=1');
+    const table = await screen.findByRole('region', { name: /Fila operacional; role horizontalmente/ });
     expect(within(table).getByText(SKU_OK)).toBeInTheDocument();
     expect(within(table).queryByText(/Evento:/)).not.toBeInTheDocument();
   });

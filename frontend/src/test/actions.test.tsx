@@ -29,11 +29,11 @@ describe('selo do rótulo de ação', () => {
   });
 });
 
-describe('Previsão: rótulo por SKU', () => {
+describe('Fila operacional: rótulo por SKU', () => {
   it('destaca só "Priorizar produção" na lista e mantém a ação operacional', async () => {
     mockApi();
-    renderApp('/previsoes?todos=1');
-    const table = await screen.findByRole('region', { name: /Previsões; role horizontalmente/ });
+    renderApp('/fila?todos=1');
+    const table = await screen.findByRole('region', { name: /Fila operacional; role horizontalmente/ });
     const row = within(table).getByText(SKU_OK).closest('tr') as HTMLElement;
     expect(within(row).getByText('Priorizar produção', { selector: '.badge' })).toBeInTheDocument();
     expect(within(row).getByText('Produzir')).toBeInTheDocument();
@@ -45,22 +45,22 @@ describe('Previsão: rótulo por SKU', () => {
   it('o filtro por rótulo lê e grava a URL e filtra a lista', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/previsoes?rotulo=investigar');
+    renderApp('/fila?rotulo=investigar');
     const select = await screen.findByLabelText('Rótulo');
     expect(select).toHaveValue('investigar');
-    const table = screen.getByRole('region', { name: /Previsões; role horizontalmente/ });
+    const table = screen.getByRole('region', { name: /Fila operacional; role horizontalmente/ });
     expect(within(table).getByText(SKU_SHORT)).toBeInTheDocument();
     expect(within(table).queryByText(SKU_OK)).not.toBeInTheDocument();
     await user.selectOptions(select, 'priorizar_producao');
-    await waitFor(() => expect(within(screen.getByRole('region', { name: /Previsões; role horizontalmente/ })).getByText(SKU_OK)).toBeInTheDocument());
-    expect(within(screen.getByRole('region', { name: /Previsões; role horizontalmente/ })).queryByText(SKU_SHORT)).not.toBeInTheDocument();
+    await waitFor(() => expect(within(screen.getByRole('region', { name: /Fila operacional; role horizontalmente/ })).getByText(SKU_OK)).toBeInTheDocument());
+    expect(within(screen.getByRole('region', { name: /Fila operacional; role horizontalmente/ })).queryByText(SKU_SHORT)).not.toBeInTheDocument();
   });
 
   it('resposta antiga sem rótulo não mostra o filtro nem quebra a lista', async () => {
     const { forecasts } = await import('./fixtures');
     mockApi({ forecasts: forecasts.map(({ challenge_action: _removed, ...item }) => item) });
-    renderApp('/previsoes?todos=1');
-    const table = await screen.findByRole('region', { name: /Previsões; role horizontalmente/ });
+    renderApp('/fila?todos=1');
+    const table = await screen.findByRole('region', { name: /Fila operacional; role horizontalmente/ });
     expect(within(table).getByText(SKU_OK)).toBeInTheDocument();
     expect(screen.queryByLabelText('Rótulo')).not.toBeInTheDocument();
   });

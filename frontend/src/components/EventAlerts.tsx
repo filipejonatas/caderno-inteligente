@@ -36,7 +36,7 @@ export function UpcomingEvents() {
   if (!data) return error ? <p className="fact-line">Calendário de eventos indisponível no momento.</p> : null;
   const upcoming = data.events.filter((event) => !event.past && event.skus_alerted > 0).slice(0, 3);
   if (!upcoming.length) return null;
-  return <SectionCard title="Eventos que pedem decisão" action={<Link className="secondary-button" to="/previsoes">Ver previsão e ação</Link>}>
+  return <SectionCard title="Eventos que pedem decisão" action={<Link className="secondary-button" to="/fila">Ver a fila operacional</Link>}>
     <div className="table-shell" tabIndex={0} role="region" aria-label="Eventos do calendário que pedem decisão"><table className="data-table responsive-table"><caption className="sr-only">Eventos do calendário com SKUs que exigem decisão; a data de decisão é o início do evento menos o prazo de produção</caption><thead><tr><th>Evento</th><th>Período</th><th>Decidir até</th><th>SKUs afetados</th></tr></thead><tbody>{upcoming.map((event) => <tr key={event.id}>
       <td data-label="Evento"><strong>{event.name}</strong>{event.impact && <small>Impacto {event.impact.toLocaleLowerCase('pt-BR')}</small>}</td>
       <td data-label="Período">{period(event.start, event.end)}</td>

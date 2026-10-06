@@ -8,12 +8,12 @@ describe('navegação por teclado', () => {
   it('o primeiro Tab alcança o link "Pular para o conteúdo", que leva ao título', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/prioridades');
-    await screen.findByRole('heading', { level: 2, name: 'Em que ordem analisar os SKUs' });
+    renderApp('/fila');
+    await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' });
     await user.tab();
     expect(screen.getByRole('link', { name: 'Pular para o conteúdo' })).toHaveFocus();
     await user.keyboard('{Enter}');
-    expect(screen.getByRole('heading', { level: 1, name: 'Fila de atenção' })).toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1, name: 'Fila operacional' })).toHaveFocus();
   });
 
   it('no desktop o menu é alcançável e ativado por teclado', async () => {
@@ -61,12 +61,11 @@ describe('navegação por teclado', () => {
     expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('linhas da tabela de prioridades abrem o detalhe com Enter', async () => {
+  it('o botão do SKU na fila abre o detalhe com Enter', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/prioridades');
-    const row = (await screen.findByText('TEST-003')).closest('tr')!;
-    row.focus();
+    renderApp('/fila');
+    (await screen.findByRole('button', { name: 'Ver detalhes de TEST-003' })).focus();
     await user.keyboard('{Enter}');
     expect(await screen.findByRole('heading', { level: 2, name: 'TEST-003' })).toBeInTheDocument();
   });

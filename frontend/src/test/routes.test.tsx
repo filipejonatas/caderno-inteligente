@@ -8,8 +8,9 @@ import { currentLocation, mockApi, renderApp } from './utils';
 const ROUTES: Array<[string, string, string]> = [
   ['/', 'Início', 'O que olhar primeiro'],
   ['/guia', 'Guia de uso', 'Entenda o Caderno Inteligente em poucos minutos'],
-  ['/prioridades', 'Fila de atenção', 'Em que ordem analisar os SKUs'],
-  ['/previsoes', 'Previsão e ação', 'Preciso produzir? Quanto?'],
+  ['/fila', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/prioridades', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/previsoes', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/casos', 'Casos', 'Casos em acompanhamento'],
   ['/qualidade', 'Dados da planilha', 'Posso confiar na planilha?'],
   ['/parceiros', 'Parceiros', 'Onde há oportunidade de reposição'],
@@ -62,11 +63,11 @@ describe('deep links', () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/prioridades?familia=Fam%C3%ADlia+A');
-    await user.click(await screen.findByRole('button', { name: `Abrir evidências de ${SKU_OK}` }));
+    await user.click(await screen.findByRole('button', { name: `Ver detalhes de ${SKU_OK}` }));
     expect(await screen.findByRole('heading', { level: 2, name: SKU_OK })).toBeInTheDocument();
     expect(currentLocation()).toBe(`/skus/${SKU_OK}`);
     await user.click(screen.getByRole('button', { name: 'Voltar' }));
-    await waitFor(() => expect(currentLocation()).toBe('/prioridades?familia=Fam%C3%ADlia+A'));
+    await waitFor(() => expect(currentLocation()).toBe('/fila?familia=Fam%C3%ADlia+A'));
   });
 });
 

@@ -1,17 +1,17 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PARTNER, SKU_OK, SKU_SHORT, partnerRows, priorities } from './fixtures';
+import { PARTNER, SKU_OK, SKU_SHORT, forecasts, partnerRows, priorities } from './fixtures';
 import { currentLocation, fail, mockApi, pending, renderApp } from './utils';
 
-const rows = () => screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[1].querySelector('strong')?.textContent);
+const rows = () => within(screen.getByRole('region', { name: /Fila operacional/ })).getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[0].querySelector('strong')?.textContent);
 
 describe('filtros sincronizados com a URL', () => {
-  it('prioridades: lê a URL inicial e grava busca, confiança e limpeza', async () => {
+  it('fila: lê a URL inicial e grava busca, confiança e limpeza', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/prioridades?familia=Fam%C3%ADlia+A');
-    await screen.findByRole('heading', { level: 2, name: 'Em que ordem analisar os SKUs' });
+    renderApp('/fila?familia=Fam%C3%ADlia+A&todos=1');
+    await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' });
     expect(screen.getByLabelText('Família')).toHaveValue('Família A');
     expect(rows()).toEqual(['TEST-001', 'TEST-003']);
 
@@ -20,33 +20,33 @@ describe('filtros sincronizados com a URL', () => {
     expect(new URLSearchParams(currentLocation().split('?')[1]).get('busca')).toBe('agenda');
 
     await user.click(screen.getByRole('button', { name: 'Limpar filtros' }));
-    expect(currentLocation()).toBe('/prioridades');
-    await user.selectOptions(screen.getByLabelText('Confiança'), 'baixa');
-    expect(currentLocation()).toBe('/prioridades?confianca=baixa');
+    expect(currentLocation()).toBe('/fila');
+    await user.selectOptions(screen.getByLabelText('Confiança nos dados'), 'baixa');
+    expect(currentLocation()).toBe('/fila?confianca=baixa');
     expect(rows()).toEqual([SKU_SHORT]);
   });
 
-  it('previsões: filtro de ação vindo da URL e checkbox de atenção', async () => {
+  it('fila: filtro de ação vindo da URL', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/previsoes?acao=investigar_dados');
-    expect(await screen.findByText('de 2 SKUs')).toBeInTheDocument();
+    renderApp('/fila?acao=investigar_dados');
+    expect(await screen.findByText('de 3 SKUs')).toBeInTheDocument();
     expect(screen.getByLabelText('Ação')).toHaveValue('investigar_dados');
-    const table = screen.getByRole('region', { name: /Previsões/ });
+    const table = screen.getByRole('region', { name: /Fila operacional/ });
     expect(within(table).getByText(SKU_SHORT)).toBeInTheDocument();
     expect(within(table).queryByText(SKU_OK)).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Limpar filtros' }));
-    expect(currentLocation()).toBe('/previsoes');
+    expect(currentLocation()).toBe('/fila');
   });
 
-  it('previsões: por padrão mostra só o que pede atenção e o botão mostra todos', async () => {
+  it('fila: por padrão mostra só o que pede atenção e o botão mostra todos', async () => {
     const user = userEvent.setup();
     mockApi();
-    renderApp('/previsoes');
-    // As duas linhas do fixture pedem atenção; a contagem "N de M" fica sempre visível.
-    expect(await screen.findByRole('heading', { name: 'SKUs que pedem atenção (2 de 2)' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Ver os 2 SKUs' }));
-    expect(currentLocation()).toBe('/previsoes?todos=1');
+    renderApp('/fila');
+    // As três linhas do fixture pedem atenção (uma só tem prioridade, sem previsão); a contagem "N de M" fica sempre visível.
+    expect(await screen.findByRole('heading', { name: 'SKUs que pedem atenção (3 de 3)' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver os 3 SKUs' }));
+    expect(currentLocation()).toBe('/fila?todos=1');
     expect(screen.getByRole('button', { name: 'Só os que pedem atenção' })).toBeInTheDocument();
   });
 
@@ -68,7 +68,7 @@ describe('filtros sincronizados com a URL', () => {
 describe('estados de carregamento, erro, vazio e sucesso', () => {
   it('carregando: mostra estado acessível e status no topo', async () => {
     mockApi({ priorities: () => pending() });
-    renderApp('/prioridades');
+    renderApp('/fila');
     expect(screen.getByRole('status', { name: 'Carregando dados' })).toBeInTheDocument();
     expect(screen.getByText('Carregando dados…')).toBeInTheDocument();
   });
@@ -76,8 +76,8 @@ describe('estados de carregamento, erro, vazio e sucesso', () => {
   it('erro: mostra a mensagem da API e recupera com "Tentar novamente"', async () => {
     const user = userEvent.setup();
     let attempts = 0;
-    mockApi({ priorities: () => (++attempts === 1 ? fail(503, 'Serviço de prioridades indisponível') : priorities) });
-    renderApp('/prioridades');
+    mockApi({ priorities: () => (++attempts === 1 ? fail(503, 'Serviço de prioridades indisponível') : priorities), forecasts: () => (attempts <= 1 ? fail(503, 'Serviço de prioridades indisponível') : forecasts) });
+    renderApp('/fila');
     expect(await screen.findByRole('heading', { name: 'Não foi possível carregar o painel' })).toBeInTheDocument();
     expect(screen.getByText('Serviço de prioridades indisponível')).toBeInTheDocument();
     expect(screen.getByText('Falha na consulta')).toBeInTheDocument();
@@ -94,9 +94,9 @@ describe('estados de carregamento, erro, vazio e sucesso', () => {
   });
 
   it('vazio: prioridades e execuções explicam a ausência sem inventar dados', async () => {
-    mockApi({ priorities: [] });
-    renderApp('/prioridades');
-    expect(await screen.findByText('Nenhuma prioridade encontrada')).toBeInTheDocument();
+    mockApi({ priorities: [], forecasts: [] });
+    renderApp('/fila');
+    expect(await screen.findByText('Nenhum SKU encontrado')).toBeInTheDocument();
   });
 
   it('vazio: comparação exige duas execuções', async () => {
@@ -108,7 +108,7 @@ describe('estados de carregamento, erro, vazio e sucesso', () => {
 
   it('vazio: filtros sem resultado nas previsões oferecem limpeza', async () => {
     mockApi();
-    renderApp('/previsoes?busca=nao-existe');
+    renderApp('/fila?busca=nao-existe');
     expect(await screen.findByText('Nenhum SKU encontrado')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Limpar filtros' }).length).toBeGreaterThan(0);
   });
@@ -143,8 +143,8 @@ describe('recomendação com dados insuficientes', () => {
 
   it('lista de previsões marca dados insuficientes em vez de quantidade', async () => {
     mockApi();
-    renderApp('/previsoes');
-    const table = await screen.findByRole('region', { name: /Previsões/ });
+    renderApp('/fila');
+    const table = await screen.findByRole('region', { name: /Fila operacional/ });
     const row = within(table).getByText(SKU_SHORT).closest('tr')!;
     expect(within(row).getByText('Dados insuficientes')).toBeInTheDocument();
     expect(within(row).getByText('Investigar dados')).toBeInTheDocument();
