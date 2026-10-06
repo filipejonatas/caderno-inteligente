@@ -74,7 +74,8 @@ def responses(tmp_path_factory):
     current = client.post("/api/runs").json()["id"]
     paths = {
         "overview": "/api/overview", "priorities": "/api/priorities", "quality": "/api/data-quality", "config": "/api/config",
-        "runs": "/api/runs", "b2b": "/api/b2b2c/visibility", "forecasts": "/api/forecasts", "revenueForecast": "/api/revenue-forecast", "events": "/api/events", "skuDetail": f"/api/priorities/{SKU}",
+        "runs": "/api/runs", "b2b": "/api/b2b2c/visibility", "forecasts": "/api/forecasts", "revenueForecast": "/api/revenue-forecast", "events": "/api/events",
+        "directChannels": "/api/direct-channels", "directChannel": "/api/direct-channels/E-commerce", "channelFindings": "/api/data-quality/channels", "skuDetail": f"/api/priorities/{SKU}",
         "partners": "/api/partners", "partnerDetail": f"/api/partners/{PARTNER}", "partnerSkus": f"/api/partners/{PARTNER}/skus?limit=50",
         "commercial": "/api/commercial-recommendations?limit=50", "validation": "/api/validation/summary",
         "runComparison": f"/api/run-comparisons?base={legacy}&target={current}", "system": "/api/system",

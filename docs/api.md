@@ -14,6 +14,8 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/forecasts` | Previsão e recomendação resumida de todos os SKUs | — |
 | GET | `/api/revenue-forecast` | Faturamento estimado (previsão em unidades × preço vigente), por SKU, família e total | — |
 | GET | `/api/events` | Calendário de eventos: alertas por SKU, evidência histórica por família e cenário com evento | — |
+| GET | `/api/direct-channels` · `/api/direct-channels/{canal}` | Canais diretos (E-commerce, Marketplace, Loja própria): faturamento observado, tendência, carteira e sugestão por SKU | — |
+| GET | `/api/data-quality/channels` | Achados entre abas que afetam a leitura dos canais | — |
 | GET | `/api/capacity/{family}` | Capacidade semanal da família | — |
 | GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
@@ -91,6 +93,16 @@ Usa o `Calendario_Eventos` como alerta e como cenário explícito. Camada deriva
 - SKU com `seasonal_naive_12` recebe só alertas (`scenario = null` e a explicação em `scenario_note`); evento sem histórico direto nunca gera fator.
 
 `GET /api/priorities/{sku}` inclui `event_alerts` e `event_scenario` (`null` se a análise falhar, sem afetar o restante).
+
+## `GET /api/direct-channels` e `GET /api/direct-channels/{canal}`
+
+Visão observada dos canais diretos, definidos pelo cadastro (`Parceiros_Canais.Tipo = "Canal direto"`). A fonte é o faturamento de `Vendas_24m`; os canais diretos não têm Sell_In nem Sell_Out e a base não tem estoque por canal. Camada somente leitura: não altera previsão, ranking nem `/api/data-quality`.
+
+- lista: `totals` (faturamento direto e participação), `channels[]` (faturamento e unidades de 24 meses, participação, tendência, variação sobre o ano anterior, série mensal, concentração, carteira aberta, contagem de sinais e de sugestões, cobertura declarada × observada), `findings[]`, rótulos, `field_nature` e `limitations`;
+- detalhe: `channel` e `items[]` (um por SKU, por faturamento): `revenue_24m`, `rank`, `share_in_channel`, `cumulative_share`, `trend`, `change_ratio`, `yoy_ratio`, contexto dos parceiros, carteira aberta, `signals[]` e `suggestion` (`code`, `label`, `reason`, `requires_human_review`). Filtros `signal`, `suggestion` e `search`;
+- SKU sem faturamento no canal tem valores `null` e o sinal `NOT_SOLD`; nunca zero;
+- 404 para canal inexistente (inclusive parceiro B2B); 422 para `signal` ou `suggestion` inválidos;
+- `GET /api/data-quality/channels` devolve `findings[]` (cobertura declarada dos canais diretos sem linhas em Sell_Out; Sell_In dos parceiros que difere do faturado), com evidência numérica e tratamento. Nada é reconciliado.
 
 ## `GET /api/b2b2c/visibility`
 

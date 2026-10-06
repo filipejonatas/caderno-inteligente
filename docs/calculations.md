@@ -73,6 +73,20 @@ data de decisão = início do evento − lead time do SKU
 - **Sem fator inventado:** evento sem histórico direto, família com histórico curto ou sem ocorrência mensurável geram só alerta.
 - **Quantidade oficial:** não muda; o cenário mostra a quantidade que resultaria se o próximo mês fosse afetado.
 
+### 3.3 Canais diretos (`direct_channels.py`)
+
+```text
+tendência = média mensal dos últimos 3 meses ÷ média dos 3 meses anteriores − 1   (faixa neutra ±10%)
+participação = faturamento do canal ÷ faturamento de todos os canais em Vendas_24m
+variação anual = últimos 3 meses ÷ os mesmos 3 meses do ano anterior − 1
+```
+
+- **Sinais por SKU e canal:** `NOT_SOLD` (nenhum faturamento nos 24 meses), `STOPPED` (vendeu e ficou 2 meses ou mais sem faturar), `DECLINING`, `GROWING`, `DISCONTINUING_PRODUCT` (`Produtos.Status`) e `OPEN_BACKLOG` (pedido não encerrado no canal).
+- **Sugestão (precedência):** sem faturamento e produto ativo → ampliar mix; sem faturamento e produto em descontinuação → monitorar saída de linha; parou de vender → reativar; produto em descontinuação ainda vendido → monitorar saída de linha; queda → investigar; crescimento → acompanhar; senão, sem ação. Toda sugestão exige revisão humana.
+- **Concentração:** participação dos 5 maiores SKUs e número de SKUs para chegar a 80% do canal.
+- **Ausência não é zero:** SKU sem faturamento fica com valores nulos. Não há estoque por canal.
+- Limiares em `config/direct_channel_thresholds.json`.
+
 ## 4. Recomendação operacional (`recommendations.py`)
 
 ```text

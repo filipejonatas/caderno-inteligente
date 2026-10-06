@@ -24,7 +24,7 @@ export function RevenueTrend({ observed, months, values, label }: { observed: Ob
         </g>;
       })}
     </svg>
-    <figcaption><span><i className="revenue-key" /> Observado</span><span><i className="revenue-key revenue-key-estimated" /> Estimativa</span></figcaption>
+    <figcaption><span><i className="revenue-key" /> Observado</span>{months.length > 0 && <span><i className="revenue-key revenue-key-estimated" /> Estimativa</span>}</figcaption>
   </figure>;
 }
 

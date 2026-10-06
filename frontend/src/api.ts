@@ -1,4 +1,5 @@
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
+import type { ChannelFinding, DirectChannelDetail, DirectChannelsOverview } from './types-channels';
 import type { EventAnalysis } from './types-events';
 import type { RevenueForecast } from './types-revenue';
 import type { RunComparison } from './types-runs';
@@ -85,6 +86,9 @@ export const api = {
   partnerSkus: (code: string, query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/partners/${encodeURIComponent(code)}/skus?${query}`, { signal }),
   commercialRecommendations: (query: URLSearchParams, signal?: AbortSignal) => request<CommercialPage<CommercialRow>>(`/commercial-recommendations?${query}`, { signal }),
   forecasts: (signal?: AbortSignal) => request<ForecastRecommendationSummary[]>('/forecasts', { signal }),
+  directChannels: (signal?: AbortSignal) => request<DirectChannelsOverview>('/direct-channels', { signal }),
+  directChannel: (code: string, query: URLSearchParams, signal?: AbortSignal) => request<DirectChannelDetail>(`/direct-channels/${encodeURIComponent(code)}?${query}`, { signal }),
+  channelFindings: (signal?: AbortSignal) => request<{ findings: ChannelFinding[] }>('/data-quality/channels', { signal }),
   events: (signal?: AbortSignal) => request<EventAnalysis>('/events', { signal }),
   revenueForecast: (signal?: AbortSignal) => request<RevenueForecast>('/revenue-forecast', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),

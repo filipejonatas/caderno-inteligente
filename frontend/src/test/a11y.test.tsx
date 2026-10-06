@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import axe from 'axe-core';
 import { describe, expect, it } from 'vitest';
-import { PARTNER, SKU_SHORT } from './fixtures';
+import { CHANNEL, PARTNER, SKU_SHORT } from './fixtures';
 import { setViewport } from './setup';
 import { mockApi, renderApp } from './utils';
 
@@ -18,6 +18,8 @@ const PAGES: Array<[string, string]> = [
   ['/qualidade', 'Posso confiar na planilha?'],
   ['/parceiros', 'Onde há oportunidade de reposição'],
   [`/parceiros/${encodeURIComponent(PARTNER)}`, 'Parceiro sintético'],
+  ['/parceiros?aba=diretos', 'Onde há oportunidade de reposição'],
+  [`/canais/${encodeURIComponent(CHANNEL)}`, 'Loja própria'],
   ['/cenarios', 'E se o peso de um sinal mudar?'],
   ['/execucoes?base=1&alvo=2', 'O que mudou entre duas execuções'],
   ['/decisoes', 'Registrar a decisão'],

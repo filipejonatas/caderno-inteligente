@@ -13,6 +13,8 @@
     "/cenarios": { "fixed": 55, "perRow": 12, "perEvidence": 90, "numbers": 6, "blocks": 1, "columns": 5, "alerts": 0 },
     "/execucoes": { "fixed": 60, "perRow": 20, "perEvidence": 90, "numbers": 30, "blocks": 2, "columns": 5, "alerts": 0 },
     "/decisoes": { "fixed": 120, "perRow": 20, "perEvidence": 90, "numbers": 4, "blocks": 2, "columns": 5, "alerts": 0 },
+    "/parceiros?aba=diretos": { "fixed": 70, "perRow": 22, "perEvidence": 90, "numbers": 6, "blocks": 3, "columns": 4, "alerts": 1 },
+    "/canais/Loja%20pr%C3%B3pria": { "fixed": 80, "perRow": 22, "perEvidence": 90, "numbers": 12, "blocks": 4, "columns": 5, "alerts": 1 },
     "/guia": { "fixed": 400, "perRow": 20, "perEvidence": 90, "numbers": 8, "blocks": 4, "columns": 5, "alerts": 0 },
     "/validacao": { "fixed": 300, "perRow": 25, "perEvidence": 90, "numbers": 20, "blocks": 7, "columns": 4, "alerts": 1 }
   }

@@ -17,6 +17,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 | Preciso produzir? Quanto? | Detalhe do SKU e Previsão: previsão de 3 meses, ação e quantidade sugerida, com o cálculo |
 | Algum parceiro tem risco ou oportunidade? | Parceiros: matriz parceiro–SKU com sell-in, sell-out, estoque estimado e sugestão comercial |
 | Quanto vamos faturar nos próximos meses? | Previsão e ação: faturamento estimado (previsão em unidades × preço vigente), sempre rotulado como estimativa, com erro do teste e, no SKU, o cálculo |
+| Como vão os canais diretos? | Parceiros › Canais diretos: faturamento observado, tendência, carteira e sugestão por SKU, sem estoque por canal; achados entre abas em Dados da planilha |
 | Que evento do calendário vem aí e quando decidir? | Início e Previsão: alertas de eventos com data de decisão (início − lead time); no SKU, evidência histórica e cenário com evento, sempre como estimativa |
 | Quanto confiar na análise? | Qualidade e Validação: cobertura de sell-out, baseline de previsão, casos congelados e falhas conhecidas |
 | Por que a prioridade mudou? | Execuções: comparação entre snapshots, com decomposição do score |
@@ -77,6 +78,7 @@ O menu tem 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Av
 | `/previsoes` | Produção › Previsão e ação: ação e quantidade sugeridas por SKU; por padrão, só os que pedem atenção |
 | `/skus/:sku` | Detalhe compartilhável: ação sugerida no topo, cálculo, dados do SKU, riscos e evidências, contexto dos parceiros; botões "Registrar decisão" e "Criar caso" |
 | `/parceiros` | Parceiros › Oportunidades (padrão) e `?aba=parceiros`; filtros `regiao`, `canal`, `ordem` |
+| `/parceiros?aba=diretos` e `/canais/:canal` | Parceiros › Canais diretos (faturamento, tendência, carteira) e o detalhe por SKU de cada canal, com filtros `sinal` e `busca` |
 | `/parceiros/:codigo` | Matriz parceiro–SKU com evidências mensais na própria linha |
 | `/casos` | Decisões › Casos; aceita `?sku=` |
 | `/qualidade` | Confiança › Dados da planilha: integridade, lacunas e cobertura de sell-out |
@@ -119,6 +121,7 @@ Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend.
 | Limiares das regras | `config/rule_thresholds.json` |
 | Limiares comerciais | `config/commercial_thresholds.json` |
 | Fator de eventos (teto, janela de linha de base, antecedência) | `config/event_factors.json` |
+| Canais diretos (janela da tendência, faixa neutra, inatividade) | `config/direct_channel_thresholds.json` |
 | Linha de base, casos congelados e histórico de ajustes da validação | `config/validation_center.json` |
 
 Variáveis de ambiente do backend (exemplo em `.env.example`):
@@ -188,3 +191,4 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Etapa 9 — Documentação, deploy e demonstração](docs/etapa-9-documentacao-demo.md)
 - [Etapa 10 — Previsão de faturamento (plano de aderência ao desafio)](docs/etapa-10-faturamento-estimado.md)
 - [Etapa 11 — Sazonalidade e eventos (plano de aderência ao desafio)](docs/etapa-11-eventos-sazonalidade.md)
+- [Etapa 12 — Visão dos canais diretos (plano de aderência ao desafio)](docs/etapa-12-canais-diretos.md)

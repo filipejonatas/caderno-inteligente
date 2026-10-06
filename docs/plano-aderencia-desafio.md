@@ -127,6 +127,8 @@ Este é o ponto mais importante do desenho; sem ele o fator inflaria a previsão
 
 ## 7. Etapa 12 — Visão dos canais diretos
 
+> **Status: implementada** (ver [etapa-12-canais-diretos.md](etapa-12-canais-diretos.md)). Ajustes em relação ao desenho abaixo: nos dados atuais os três canais vendem os 50 SKUs em todos os meses, então não há SKU parado nem lacuna de mix (os sinais existem e são testados); a comparação direto × parceiros é só contexto por SKU; os dois achados de qualidade ficam em um endpoint próprio (`/api/data-quality/channels`), sem alterar `/api/data-quality`; os rótulos "ampliar mix" e "reativação" já existem aqui como sugestões e serão mapeados na Etapa 13.
+
 **Resposta ao PDF:** "Parceiro/Canal", "dados de canais diretos" e "padrões por canal", usando a melhor visibilidade da base.
 
 ### Escopo

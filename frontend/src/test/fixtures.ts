@@ -1,6 +1,7 @@
 // Synthetic fixtures typed against the frontend contracts. Never application data: codes start with TEST/KA-T.
 import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
+import type { ChannelFinding, ChannelSkuRow, ChannelSummary, DirectChannelDetail, DirectChannelsOverview } from '../types-channels';
 import type { EventAlert, EventAnalysis, EventItem, EventScenario } from '../types-events';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
@@ -155,6 +156,45 @@ export const eventAnalysis: EventAnalysis = {
   family_factors: [{ family: 'Família A', month: 11, month_name: 'novembro', factor_raw: 1.35, factor: 1.35, capped: false }],
   field_nature: { factor: { nature: 'estimado', origin: 'histórico' } }, limitations: ['Cenário indicativo.'],
 };
+
+const channelMonths = ['2025-09-01', '2025-10-01', '2025-11-01', '2025-12-01', '2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01', '2026-07-01', '2026-08-01'];
+const channelSummary = (code: string, name: string, revenue: number, share: number): ChannelSummary => ({
+  code, name, region: 'Nacional', declared_coverage: 'Completo', declared_skus: 50, sell_out_rows: 0, observed_skus: 49, catalog_skus: 50,
+  revenue_24m: revenue, units_24m: 180000, share_of_revenue: share, share_of_units: share, revenue_recent: 1376541, revenue_previous: 1361604, trend: 'estável', change_ratio: 0.011, yoy_ratio: 0.04,
+  monthly: { months: channelMonths, revenue: channelMonths.map(() => 450000), units: channelMonths.map(() => 6000) },
+  concentration: { top5_share: 0.27, skus_for_target_share: 25, target_share: 0.8 },
+  backlog: { open_orders: 7, open_quantity: 2464, skus: 6 }, signal_counts: { GROWING: 1, NOT_SOLD: 1, OPEN_BACKLOG: 1 }, suggestion_counts: { acompanhar_crescimento: 1, avaliar_ampliacao_mix: 1, sem_acao_necessaria: 1 },
+});
+export const CHANNEL = 'Loja própria';
+const channelMeta: Pick<DirectChannelDetail, 'reference_month' | 'signal_labels' | 'suggestion_labels' | 'field_nature' | 'limitations' | 'settings'> = {
+  reference_month: '2026-08-01',
+  signal_labels: { NOT_SOLD: 'Sem faturamento no canal', STOPPED: 'Parou de vender no canal', DECLINING: 'Em queda', GROWING: 'Em crescimento', DISCONTINUING_PRODUCT: 'Produto em descontinuação', OPEN_BACKLOG: 'Pedido em carteira' },
+  suggestion_labels: { avaliar_ampliacao_mix: 'Avaliar ampliação de mix', avaliar_reativacao: 'Avaliar reativação', investigar_queda: 'Investigar queda', monitorar_saida_de_linha: 'Monitorar saída de linha', acompanhar_crescimento: 'Acompanhar crescimento', sem_acao_necessaria: 'Sem ação necessária' },
+  field_nature: { stock: { nature: 'ausente', origin: 'Estoque_Atual só tem o CD Central' } }, limitations: ['Visibilidade vem do faturamento.'], settings: { trend_months: 3 },
+};
+const channelRow = (sku: string, over: Partial<ChannelSkuRow>): ChannelSkuRow => ({
+  sku, product: `Produto ${sku}`, family: 'Família A', product_status: 'Ativo', months_sold: 24, first_month: '2024-09-01', last_month: '2026-08-01', units_24m: 9000, revenue_24m: 770000,
+  share_in_channel: 0.066, rank: 1, cumulative_share: 0.066, units_recent: 1048, units_previous: 1072, trend: 'estável', change_ratio: -0.02, yoy_ratio: 0.24, partners_units_recent: 1195,
+  direct_share_of_sku_recent: 0.28, backlog_open_quantity: null, backlog_open_orders: 0, signals: [],
+  suggestion: { code: 'sem_acao_necessaria', label: 'Sem ação necessária', reason: 'Sem sinal de queda, parada, crescimento relevante ou lacuna de mix.', requires_human_review: true }, ...over,
+});
+export const channelRows: ChannelSkuRow[] = [
+  channelRow('CH-001', {}),
+  channelRow('CH-002', { rank: 2, trend: 'crescente', change_ratio: 0.15, signals: ['GROWING', 'OPEN_BACKLOG'], backlog_open_quantity: 300, backlog_open_orders: 1, suggestion: { code: 'acompanhar_crescimento', label: 'Acompanhar crescimento', reason: 'Média mensal recente acima da faixa neutra.', requires_human_review: true } }),
+  channelRow('CH-003', { months_sold: 0, first_month: null, last_month: null, units_24m: null, revenue_24m: null, share_in_channel: null, rank: null, cumulative_share: null, units_recent: null, units_previous: null, trend: 'indeterminada', change_ratio: null, yoy_ratio: null, partners_units_recent: null, direct_share_of_sku_recent: null, signals: ['NOT_SOLD'], suggestion: { code: 'avaliar_ampliacao_mix', label: 'Avaliar ampliação de mix', reason: 'Produto ativo sem nenhum faturamento neste canal nos 24 meses.', requires_human_review: true } }),
+];
+export const channelFindings: ChannelFinding[] = [
+  { code: 'DIRECT_COVERAGE_NOT_IN_SELL_OUT', severity: 'atenção', affects: ['E-commerce', CHANNEL], title: 'Cobertura dos canais diretos sem Sell_Out', summary: 'O cadastro declara cobertura completa.', treatment_label: 'Usa Vendas_24m',
+    evidence: [{ channel: 'E-commerce', declared_coverage: 'Completo', declared_skus: 50, sell_out_rows: 0, billing_observed_skus: 50 }, { channel: CHANNEL, declared_coverage: 'Completo', declared_skus: 50, sell_out_rows: 0, billing_observed_skus: 49 }],
+    treatment: 'A visão dos canais diretos usa o faturamento de Vendas_24m.' },
+  { code: 'KA_SELL_IN_DIFFERS_FROM_BILLING', severity: 'atenção', affects: ['KA-01'], title: 'Sell_In difere do faturado', summary: 'As quantidades diferem.', treatment_label: 'Não reconciliado',
+    evidence: { overlapping_pairs: 600, equal_pairs: 0, median_sell_in_over_billing: 2.79, billing_skus_per_partner: 50, sell_in_skus_per_partner: 10, billing_months: 24, sell_in_months: 12 }, treatment: 'Não reconciliado.' },
+];
+export const directChannels: DirectChannelsOverview = {
+  ...channelMeta, totals: { direct_revenue_24m: 28164228, total_revenue_24m: 41288943, direct_share_of_revenue: 0.6821, direct_share_of_units: 0.6822 },
+  channels: [channelSummary('E-commerce', 'E-commerce próprio', 11606120, 0.2811), channelSummary(CHANNEL, 'Loja própria', 7447799, 0.1804)], findings: channelFindings,
+};
+export const directChannelDetail: DirectChannelDetail = { ...channelMeta, channel: channelSummary(CHANNEL, 'Loja própria', 7447799, 0.1804), total: channelRows.length, items: channelRows };
 
 export const skuDetailOk: SkuDetail = {
   indicator: indicator(SKU_OK),

@@ -757,6 +757,9 @@ def _describe_error(message: str, error: Exception) -> str:
 
 
 app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json", _describe_error))
+from backend.direct_channels import create_direct_channel_router  # noqa: E402
+
+app.include_router(create_direct_channel_router(lambda: pipeline()[0], ROOT / "config/direct_channel_thresholds.json", _describe_error))
 
 # Additive Week 4 validation view: read-only, reuses the cached pipeline and existing recommendations.
 from backend.validation import create_validation_router  # noqa: E402

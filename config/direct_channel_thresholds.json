@@ -1,0 +1,6 @@
+{
+  "trend_months": 3,
+  "trend_band": 0.1,
+  "inactive_months": 2,
+  "concentration_share": 0.8
+}

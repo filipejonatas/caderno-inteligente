@@ -66,7 +66,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
 export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
   { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
   { id: 'production', label: 'Produção', description: 'Fila, previsão e ação', to: '/prioridades', icon: 'priorities', paths: ['/prioridades', '/previsoes', '/skus'] },
-  { id: 'partners', label: 'Parceiros', description: 'Oportunidades e cobertura', to: '/parceiros', icon: 'b2b', paths: ['/parceiros'] },
+  { id: 'partners', label: 'Parceiros', description: 'Oportunidades e cobertura', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
   { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria'] },
   { id: 'decisions', label: 'Decisões', description: 'Registro e casos', to: '/decisoes', icon: 'feedback', paths: ['/decisoes', '/casos'] },
   { id: 'advanced', label: 'Avançado', description: 'Cenários e execuções', to: '/cenarios', icon: 'scenarios', paths: ['/cenarios', '/execucoes'] },
@@ -136,7 +136,7 @@ export function SubNav() {
 
 /** Regra de uso dita uma vez, no topo de toda página com dados. */
 /** Páginas com sugestão em lista (Início, Previsão e ação, Parceiros). No detalhe do SKU a regra vive no cartão da ação; nas demais não é repetida. */
-export const showsRule = (pathname: string) => pathname === '/' || pathname === '/previsoes' || pathname.startsWith('/parceiros');
+export const showsRule = (pathname: string) => pathname === '/' || pathname === '/previsoes' || pathname.startsWith('/parceiros') || pathname.startsWith('/canais');
 
 export function RuleLine() {
   return <p className="rule-line" role="note"><strong>Apoio à decisão:</strong> toda sugestão exige revisão humana e não é ordem de produção. <Link to="/guia">Ajuda</Link></p>;
