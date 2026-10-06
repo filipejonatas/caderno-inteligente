@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { MOBILE_MENU_QUERY, useMediaQuery } from './hooks/useMediaQuery';
 import type { ReactNode } from 'react';
 import { Link, matchPath, useLocation } from 'react-router-dom';
 import type { PageId, Priority } from './types';
@@ -83,15 +84,9 @@ const inGroup = (pathname: string, paths: string[]) => paths.some((path) => path
 export const groupFor = (pathname: string) => menuGroups.find((group) => inGroup(pathname, group.paths));
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 820px)').matches);
+  const mobile = useMediaQuery(MOBILE_MENU_QUERY);
   const aside = useRef<HTMLElement>(null);
   const { pathname } = useLocation();
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 820px)');
-    const change = () => setMobile(media.matches);
-    media.addEventListener('change', change);
-    return () => media.removeEventListener('change', change);
-  }, []);
   useEffect(() => { aside.current?.toggleAttribute('inert', mobile && !open); }, [mobile, open]);
   // Mobile drawer: move focus into the menu when it opens, close with Escape and return focus to the trigger.
   useEffect(() => {

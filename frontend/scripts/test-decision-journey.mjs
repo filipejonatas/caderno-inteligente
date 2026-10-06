@@ -19,7 +19,8 @@ async function compile(file, replacements = {}) {
   return dataUrl(code);
 }
 const sharedUrl = await compile('../src/pages/shared.ts');
-const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
+const mediaQueryUrl = await compile('../src/hooks/useMediaQuery.ts');
+const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl, './hooks/useMediaQuery': mediaQueryUrl });
 const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
 // A faixa de eventos busca a API sozinha (coberta pelo Vitest); aqui só se renderiza o conteúdo próprio da página.
 const eventAlertsStub = dataUrl('export const UpcomingEvents = () => null;');

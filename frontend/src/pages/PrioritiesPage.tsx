@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Icon, PageIntro, PriorityTable, SectionCard } from '../components';
+import { MOBILE_LIST_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import type { PageProps } from './shared';
 
 export default function PrioritiesPage({ data, onSelect }: PageProps<'priorities' | 'config'>) {
   const [params, setParams] = useSearchParams();
   const [extra, setExtra] = useState(0);
+  const mobile = useMediaQuery(MOBILE_LIST_QUERY);
   const search = params.get('busca') ?? '';
   const family = params.get('familia') ?? '';
   const confidence = params.get('confianca') ?? '';
@@ -23,7 +25,7 @@ export default function PrioritiesPage({ data, onSelect }: PageProps<'priorities
       && (!confidence || item.confidence === confidence);
   }), [confidence, data.priorities, family, search]);
 
-  const pageSize = (window.matchMedia('(max-width: 620px)').matches ? 10 : 25) + extra;
+  const pageSize = (mobile ? 10 : 25) + extra;
   const visible = filtered.slice(0, pageSize);
   return <>
     <PageIntro title="Em que ordem analisar os SKUs" />

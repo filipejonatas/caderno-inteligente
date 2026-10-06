@@ -4,7 +4,7 @@ import type { ChallengeAction, ChallengeCode } from '../types-actions';
 
 const TONE: Record<ChallengeCode, string> = {
   priorizar_producao: 'high', priorizar_parceiro: 'high', produzir: 'info', repor: 'info', ampliar_mix: 'info', recomendar_recompra: 'info',
-  reativar: 'info', monitorar: 'neutral', investigar: 'medium', sem_acao_necessaria: 'good',
+  reativar: 'info', monitorar: 'neutral', investigar: 'medium', sem_acao_necessaria: 'neutral',
 };
 
 const evidenceValue = (value: string | number) => typeof value === 'number' ? displayNumber(value) : value;

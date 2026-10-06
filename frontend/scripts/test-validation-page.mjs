@@ -18,7 +18,8 @@ async function compile(file, replacements = {}) {
   return dataUrl(code);
 }
 const sharedUrl = await compile('../src/pages/shared.ts');
-const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
+const mediaQueryUrl = await compile('../src/hooks/useMediaQuery.ts');
+const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl, './hooks/useMediaQuery': mediaQueryUrl });
 const exportUrl = await compile('../src/validation-export.ts');
 const stub = dataUrl('export const api = {}; export function useApiResource() { return {}; } export function usePageLoadStatus() {}');
 const { ValidationContent, AuditoriaContent } = await import(await compile('../src/pages/ValidationPage.tsx', {

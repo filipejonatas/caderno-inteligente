@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
+import { MOBILE_LIST_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { Alert, Badge, EmptyState, ErrorState, Icon, LoadingState, PageIntro, SectionCard, confidenceTone } from '../components';
 import type { ForecastRecommendationSummary, SelectedSku } from '../types';
 import { ChallengeBadge } from '../components/ChallengeAction';
@@ -20,10 +21,8 @@ function recommendationTone(action: ForecastRecommendationSummary['operational_r
   if (action === 'investigar_dados' || action === 'produzir_validar_capacidade') return 'medium';
   if (action === 'produzir') return 'info';
   if (action === 'monitorar_excesso') return 'neutral';
-  return 'good';
+  return 'neutral';
 }
-
-const isMobile = () => window.matchMedia('(max-width: 620px)').matches;
 
 export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (item: SelectedSku) => void; refreshToken: number }) {
   const { data: items, error, loading, loadedAt, refresh: load } = useApiResource(api.forecasts, refreshToken);
@@ -34,6 +33,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
   usePageLoadStatus(loading, error, loadedAt);
   const [params, setParams] = useSearchParams();
   const [extra, setExtra] = useState(0);
+  const mobile = useMediaQuery(MOBILE_LIST_QUERY);
   const search = params.get('busca') ?? '';
   const family = params.get('familia') ?? '';
   const action = params.get('acao') ?? '';
@@ -78,7 +78,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
   const production = source.filter((item) => ['produzir', 'produzir_validar_capacidade'].includes(item.operational_recommendation.action)).length;
   const capacity = source.filter((item) => item.operational_recommendation.capacity_status === 'requires_review').length;
   const investigate = source.filter((item) => item.forecast.status === 'insufficient_data' || item.operational_recommendation.action === 'investigar_dados').length;
-  const pageSize = (isMobile() ? 10 : 25) + extra;
+  const pageSize = (mobile ? 10 : 25) + extra;
   const visible = filtered.slice(0, pageSize);
   const noFilters = !action && !label && !search.trim();
 

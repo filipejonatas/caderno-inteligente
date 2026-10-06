@@ -54,6 +54,15 @@ function shortOrigin(origin: string) {
   return `Planilha, aba ${origin.split('.')[0].split('_').join(' ')}`;
 }
 
+export type AnswerTone = 'info' | 'review' | 'blocked' | 'success';
+
+/** Aparência do cartão de resposta: só reflete o que a recomendação já diz; azul é sugestão, âmbar exige revisão. Verde/vermelho não são produzidos aqui (nenhuma ação do SKU é "concluída" ou bloqueada). */
+export function answerToneFor(action: string, capacityStatus: string, confidence: string, rankingConfidence: string, insufficient: boolean): AnswerTone {
+  if (insufficient || action === 'investigar_dados' || action === 'produzir_validar_capacidade' || capacityStatus === 'requires_review'
+    || confidence === 'baixa' || rankingConfidence === 'baixa') return 'review';
+  return 'info';
+}
+
 export default function SkuDetailPage({ refreshToken }: { refreshToken: number }) {
   const { sku = '' } = useParams();
   const location = useLocation();
@@ -77,6 +86,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   const delayDays = positiveDelayDays(indicator.first_promised_date, indicator.first_production_completion);
   const insufficient = forecast.status === 'insufficient_data';
   const quantity = recommendation.suggested_quantity;
+  const answerTone = answerToneFor(recommendation.action, recommendation.capacity_status, recommendation.confidence, rankingConfidence, insufficient);
   const answer = insufficient ? `${recommendation.action_label}: sem histórico suficiente para sugerir quantidade.`
     : `${recommendation.action_label}${quantity && quantity > 0 ? ` · ${displayQuantity(quantity)} un.` : ''}`;
   const why = `Necessidade: ${displayQuantity(calc.demand_to_cover)} a cobrir + ${displayQuantity(calc.safety_stock_quantity)} de segurança − ${displayQuantity(calc.current_stock)} em estoque − ${displayQuantity(calc.open_production_quantity)} em produção${recommendation.raw_quantity === null ? '' : ` = ${displayQuantity(recommendation.raw_quantity)} un.`}${quantity && quantity > 0 ? `; arredondada ao lote mínimo de ${displayQuantity(recommendation.minimum_lot)}.` : '.'}`;
@@ -85,7 +95,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   return <div className="sku-detail-page">
     <PageIntro title={indicator.SKU} description={`${priorityNumber === null ? 'Fora do ranking oficial' : `Posição ${priorityNumber} na fila de atenção`} · ${indicator.Produto} · ${indicator.family}`} action={<button className="secondary-button" onClick={() => navigate(backTarget)}>Voltar</button>} />
     {error && <Alert title="Não foi possível atualizar o SKU" tone="warning" action={<button className="secondary-button" onClick={() => void load()}>Tentar novamente</button>}>{error} A última carga permanece exibida.</Alert>}
-    <section className="answer-card" aria-labelledby="answer-title">
+    <section className={`answer-card answer-card-${answerTone}`} data-tone={answerTone} aria-labelledby="answer-title">
       <div className="answer-main">
         <span className="eyebrow" id="answer-title">Ação operacional sugerida</span>
         <p className="answer-sentence">{answer}</p>
