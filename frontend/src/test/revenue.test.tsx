@@ -119,7 +119,7 @@ describe('Faturamento previsto: página própria', () => {
 describe('Detalhe do SKU: faturamento estimado', () => {
   it('exibe o cálculo unidades × preço e o selo de estimativa', async () => {
     mockApi();
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=impacto`);
     const block = (await screen.findByText('Faturamento estimado', { selector: 'summary' })).closest('details') as HTMLElement;
     expect(within(block).getAllByText('Estimativa').length).toBeGreaterThan(0);
     expect(within(block).getByText(/Precos_Produtos/)).toBeInTheDocument();
@@ -130,7 +130,7 @@ describe('Detalhe do SKU: faturamento estimado', () => {
 
   it('SKU sem previsão: não mostra valor em reais e explica o motivo', async () => {
     mockApi();
-    renderApp(`/skus/${encodeURIComponent(SKU_SHORT)}`);
+    renderApp(`/skus/${encodeURIComponent(SKU_SHORT)}?tab=impacto`);
     const block = (await screen.findByText('Faturamento estimado', { selector: 'summary' })).closest('details') as HTMLElement;
     expect(within(block).getByText('Sem previsão')).toBeInTheDocument();
     expect(within(block).getByText(/ausência não é faturamento zero/)).toBeInTheDocument();
@@ -141,16 +141,18 @@ describe('Detalhe do SKU: faturamento estimado', () => {
     const detail = { ...(await import('./fixtures')).skuDetailOk } as Record<string, unknown>;
     delete detail.revenue_forecast;
     mockApi({ skuDetail: detail });
-    renderApp(`/skus/${SKU_OK}`);
-    expect(await screen.findByText('Riscos e evidências')).toBeInTheDocument();
+    renderApp(`/skus/${SKU_OK}?tab=impacto`);
+    expect(await screen.findByRole('tab', { name: 'Impacto financeiro', selected: true })).toBeInTheDocument();
     expect(screen.queryByText('Faturamento estimado', { selector: 'summary' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Ação operacional sugerida' })).toBeInTheDocument();
   });
 
   it('estimativa indisponível (null) mantém a previsão em unidades visível', async () => {
     const { skuDetailOk } = await import('./fixtures');
     mockApi({ skuDetail: { ...skuDetailOk, revenue_forecast: null } });
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=impacto`);
     expect(await screen.findByText(/Estimativa de faturamento indisponível no momento/)).toBeInTheDocument();
-    expect(screen.getByText('Sobre a previsão')).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('tab', { name: 'Evidências' }));
+    expect(await screen.findByText('Sobre a previsão')).toBeInTheDocument();
   });
 });

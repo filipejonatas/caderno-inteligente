@@ -115,10 +115,10 @@ describe('estados de carregamento, erro, vazio e sucesso', () => {
 
   it('falha só do contexto comercial não impede o detalhe operacional do SKU', async () => {
     mockApi({ commercial: fail(500, 'Análise comercial indisponível') });
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=parceiros`);
     expect(await screen.findByRole('heading', { level: 2, name: SKU_OK })).toBeInTheDocument();
     expect(await screen.findByText('Análise comercial indisponível')).toBeInTheDocument();
-    expect(screen.getByText('Dados do SKU')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Ação operacional sugerida' })).toBeInTheDocument();
   });
 
   it('SKU inexistente mostra erro com retorno', async () => {

@@ -1,9 +1,10 @@
 import { useCallback } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../api';
 import { PartnerSkuContext } from '../components/PartnerSkuContext';
 import { ChallengeBadge } from '../components/ChallengeAction';
-import { SkuEventsBlock } from '../components/EventAlerts';
+import { SkuEventsBlock, UrgentEventLine } from '../components/EventAlerts';
+import { TabBar, TabPanel } from '../components/Tabs';
 import { SkuRevenueBlock } from '../components/RevenueForecast';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
@@ -54,6 +55,15 @@ function shortOrigin(origin: string) {
   return `Planilha, aba ${origin.split('.')[0].split('_').join(' ')}`;
 }
 
+const TABS = [
+  { id: 'resumo', label: 'Resumo' },
+  { id: 'evidencias', label: 'Evidências' },
+  { id: 'parceiros', label: 'Parceiros' },
+  { id: 'impacto', label: 'Impacto financeiro' },
+] as const;
+export type SkuTab = (typeof TABS)[number]['id'];
+const isTab = (value: string | null): value is SkuTab => TABS.some((tab) => tab.id === value);
+
 export type AnswerTone = 'info' | 'review' | 'blocked' | 'success';
 
 /** Aparência do cartão de resposta: só reflete o que a recomendação já diz; azul é sugestão, âmbar exige revisão. Verde/vermelho não são produzidos aqui (nenhuma ação do SKU é "concluída" ou bloqueada). */
@@ -67,6 +77,11 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   const { sku = '' } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const requestedTab = params.get('tab');
+  const tab: SkuTab = isTab(requestedTab) ? requestedTab : 'resumo';
+  // Troca de aba mantém o estado de origem do "Voltar" e não empilha histórico.
+  const selectTab = (next: SkuTab) => { const query = new URLSearchParams(params); if (next === 'resumo') query.delete('tab'); else query.set('tab', next); setParams(query, { replace: true, state: location.state }); };
   const loader = useCallback((signal: AbortSignal) => api.skuDetail(sku, signal), [sku]);
   const { data: detail, error, loading, loadedAt, refresh: load } = useApiResource(loader, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
@@ -117,16 +132,22 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <p className="human-review-line"><strong>Revisão humana obrigatória</strong>{insufficient ? '. Sem histórico suficiente não há quantidade sugerida; ausência de previsão não equivale a demanda zero.' : '. A sugestão não cria nem libera ordem de produção.'}</p>
     </section>
 
-    {insufficient && <SkuEventsBlock alerts={detail.event_alerts} scenario={detail.event_scenario} />}
+    <TabBar tabs={TABS} active={tab} onChange={selectTab} label="Detalhes do SKU" prefix="sku" className="sku-tabs" />
 
-    {!insufficient && <details className="detail-block" open>
-      <summary>Sobre a previsão</summary>
-      <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
-      <SkuEventsBlock embedded alerts={detail.event_alerts} scenario={detail.event_scenario} />
-    </details>}
+    <TabPanel id="resumo" active={tab === 'resumo'} prefix="sku">
+      <UrgentEventLine alerts={detail.event_alerts} onOpen={() => selectTab('evidencias')} />
+      <p className="fact-line">{indicator.missing_data.length > 0 ? <><strong>Dados ausentes:</strong> {indicator.missing_data.map((field) => missingDataNames[field] ?? field.split('_').join(' ')).join(', ')} (ausência não é zero).</> : <><strong>Dados ausentes:</strong> nenhum nos campos desta análise.</>}</p>
+      {recommendation.capacity_status === 'requires_review' && <p className="fact-line"><strong>Capacidade:</strong> valide a capacidade da família antes de produzir.</p>}
+      <p className="fact-line">Cálculo, riscos e origem dos dados estão em <button type="button" className="link-button" onClick={() => selectTab('evidencias')}>Evidências</button>.</p>
+    </TabPanel>
 
-    <SkuRevenueBlock item={detail.revenue_forecast} />
-
+    <TabPanel id="evidencias" active={tab === 'evidencias'} prefix="sku">
+      {insufficient && <SkuEventsBlock alerts={detail.event_alerts} scenario={detail.event_scenario} />}
+      {!insufficient && <details className="detail-block" open>
+        <summary>Sobre a previsão</summary>
+        <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
+        <SkuEventsBlock embedded alerts={detail.event_alerts} scenario={detail.event_scenario} />
+      </details>}
     <details className="detail-block">
       <summary>Dados do SKU</summary>
       <dl className="fact-list">
@@ -140,7 +161,6 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
         <div><dt>Previsão comercial (planilha)</dt><dd>{displayUnits(indicator.forecast_quantity)} <Badge tone="info">previsto</Badge></dd></div>
       </dl>
       <p className="fact-line">{indicator.first_promised_date ? `Prometido para ${formatDate(indicator.first_promised_date)}` : 'Sem data prometida'} · {indicator.first_production_completion ? `produção prevista para ${formatDate(indicator.first_production_completion)}${delayDays !== null ? ` (${delayDays} ${delayDays === 1 ? 'dia' : 'dias'} depois)` : ''}` : 'sem conclusão de produção prevista'}</p>
-      <p className="fact-line">{indicator.missing_data.length > 0 ? <><strong>Dados ausentes:</strong> {indicator.missing_data.map((field) => missingDataNames[field] ?? field.split('_').join(' ')).join(', ')} (ausência não é zero).</> : <><strong>Dados ausentes:</strong> nenhum nos campos desta análise.</>}</p>
     </details>
 
     <details className="detail-block" open>
@@ -148,6 +168,14 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <p className="score-sum">{attentionScore === null ? 'SKU fora do ranking oficial.' : <>Pontos de atenção <Hint term="score" />: <strong>{attentionScore}</strong>{contributions.length > 0 && <> = {contributions.map((item, index) => <span key={item.code}>{index > 0 && ' + '}<strong>{item.weight}</strong> ({reasonNames[item.code] ?? item.code})</span>)}</>}</>}</p>
       {detail.issues.map((issue) => <article className="issue-card" key={issue.code}><div><Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge><strong>{reasonNames[issue.code] ?? issue.code}</strong></div><dl>{Object.entries(issue.values_used).map(([key, value]) => <div key={key}><dt>{evidenceLabel(issue.code, key)}</dt><dd>{evidenceValue(issue.code, key, value)}</dd></div>)}</dl><small>Origem: {[...new Set(issue.data_origin.map(shortOrigin))].join(' · ')}</small></article>)}
     </details>
-    <PartnerSkuContext sku={sku} refreshToken={refreshToken} />
+    </TabPanel>
+
+    <TabPanel id="parceiros" active={tab === 'parceiros'} prefix="sku">
+      <PartnerSkuContext sku={sku} refreshToken={refreshToken} />
+    </TabPanel>
+
+    <TabPanel id="impacto" active={tab === 'impacto'} prefix="sku">
+      <SkuRevenueBlock item={detail.revenue_forecast} />
+    </TabPanel>
   </div>;
 }

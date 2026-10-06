@@ -82,7 +82,7 @@ describe('detalhe do SKU: resposta primeiro e próximo passo', () => {
     expect(within(answer).getByRole('link', { name: 'Registrar decisão' })).toHaveAttribute('href', `/decisoes?sku=${SKU_OK}&rotulo=priorizar_producao`);
     expect(within(answer).getByRole('link', { name: 'Criar caso' })).toHaveAttribute('href', `/casos?sku=${SKU_OK}`);
     // Evidências continuam a um clique: o bloco de riscos abre por padrão.
-    expect(screen.getByText(/Riscos e evidências/)).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Evidências' })).toBeInTheDocument();
   });
 
   it('o formulário de decisão aceita o SKU da URL, inclusive fora do ranking', async () => {

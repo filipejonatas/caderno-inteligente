@@ -74,7 +74,7 @@ describe('Detalhe do SKU: eventos e sazonalidade', () => {
 
   it('mostra alertas com data de decisão e evidência, e o cenário rotulado como estimativa', async () => {
     mockApi();
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     const details = await block();
     const alerts = within(details).getByRole('region', { name: 'Eventos que afetam este SKU' });
     const friday = within(alerts).getByText('Black Friday').closest('tr') as HTMLElement;
@@ -95,7 +95,7 @@ describe('Detalhe do SKU: eventos e sazonalidade', () => {
 
   it('sem histórico a evidência é explicada no tooltip, sem fator', async () => {
     mockApi();
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     const details = await block();
     const tips = within(details).getAllByRole('tooltip', { hidden: true }).map((node) => node.textContent);
     expect(tips.some((text) => text?.includes('o calendário indica impacto, a evidência não'))).toBe(true);
@@ -105,7 +105,7 @@ describe('Detalhe do SKU: eventos e sazonalidade', () => {
   it('SKU sem previsão não ganha cenário e diz o motivo', async () => {
     const detail = { ...skuDetailOk, event_alerts: [], event_scenario: { applicable: false, note: 'Sem previsão de unidades; não há como montar cenário.', scenario: null } };
     mockApi({ skuDetail: detail });
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     expect(await screen.findByText('Riscos e evidências')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 4, name: 'Eventos e sazonalidade' })).not.toBeInTheDocument();
   });
@@ -113,7 +113,7 @@ describe('Detalhe do SKU: eventos e sazonalidade', () => {
   it('previsão sazonal mostra o alerta e explica por que não há cenário', async () => {
     const note = 'A previsão já incorpora a sazonalidade do ano anterior (modelo sazonal de 12 meses); não há cenário, para não contar duas vezes.';
     mockApi({ skuDetail: { ...skuDetailOk, event_scenario: { applicable: false, note, scenario: null } } });
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     const details = await block();
     expect(within(details).getByText(note)).toBeInTheDocument();
     expect(within(details).queryByRole('region', { name: 'Cenário com evento' })).not.toBeInTheDocument();
@@ -124,12 +124,12 @@ describe('Detalhe do SKU: eventos e sazonalidade', () => {
     const old = { ...skuDetailOk } as Record<string, unknown>;
     delete old.event_alerts; delete old.event_scenario;
     mockApi({ skuDetail: old });
-    const { unmount } = renderApp(`/skus/${SKU_OK}`);
+    const { unmount } = renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     expect(await screen.findByText('Riscos e evidências')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { level: 4, name: 'Eventos e sazonalidade' })).not.toBeInTheDocument();
     unmount();
     mockApi({ skuDetail: { ...skuDetailOk, event_alerts: null, event_scenario: null } });
-    renderApp(`/skus/${SKU_OK}`);
+    renderApp(`/skus/${SKU_OK}?tab=evidencias`);
     expect(await screen.findByText(/Análise de eventos indisponível no momento/)).toBeInTheDocument();
     expect(screen.getByText('Sobre a previsão')).toBeInTheDocument();
   });

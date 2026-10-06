@@ -196,3 +196,11 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--slate-1
   .responsive-table td.queue-sku::before { display: none; }
   .responsive-table td.queue-sku > div, .responsive-table td.queue-sku > div > * { text-align: left; }
 }
+
+/* Detalhe do SKU: abas sob o cartão da ação */
+.sku-tabs { margin: 0 0 var(--space-4); }
+.sku-detail-page .tab-panel:focus-visible { outline-offset: 4px; }
+@media (max-width: 620px) {
+  .sku-tabs { width: 100%; }
+  .sku-tabs button { flex: 1 1 auto; padding: 9px 10px; font-size: 13px; }
+}

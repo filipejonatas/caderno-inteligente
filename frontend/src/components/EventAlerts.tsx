@@ -30,6 +30,13 @@ export function EventBadge({ item }: { item: EventItem | undefined }) {
   return <Badge tone="info" title={item.alerts.map((alert) => `${alert.event}: ${period(alert.start, alert.end)}`).join('; ')}>Evento: {main.event}{extra > 0 ? ` +${extra}` : ''}</Badge>;
 }
 
+/** Uma linha com o evento mais urgente do SKU; o quadro completo fica nas evidências. */
+export function UrgentEventLine({ alerts, onOpen }: { alerts: EventAlert[] | null | undefined; onOpen: () => void }) {
+  const main = alerts ? mainAlert(alerts) : undefined;
+  if (!main) return null;
+  return <p className="fact-line"><strong>Evento mais urgente:</strong> {main.event}, {period(main.start, main.end)}{main.decision_date ? `; decidir até ${formatDate(main.decision_date)}` : ''}. <button type="button" className="link-button" onClick={onOpen}>Ver eventos e cenário</button></p>;
+}
+
 /** Faixa do Início. Camada aditiva: sem a análise, a página segue completa. */
 export function UpcomingEvents() {
   const { data, error } = useApiResource(api.events);
