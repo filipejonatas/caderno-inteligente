@@ -28,6 +28,7 @@ const ROUTES: Array<[string, RegExp]> = [
   ['directChannels', /^\/api\/direct-channels$/],
   ['channelFindings', /^\/api\/data-quality\/channels$/],
   ['runs', /^\/api\/runs$/],
+  ['case', /^\/api\/cases\/\d+$/],
   ['cases', /^\/api\/cases$/],
   ['feedback', /^\/api\/feedback$/],
   ['config', /^\/api\/config$/],
@@ -43,7 +44,7 @@ const DEFAULTS: Record<string, Value> = {
   directChannels: fx.directChannels, directChannel: fx.directChannelDetail, channelFindings: { findings: fx.channelFindings },
   runs: fx.runs, system: fx.system, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
   skuDetail: (url: URL) => decodeURIComponent(url.pathname.split('/').pop() ?? '') === fx.SKU_SHORT ? fx.skuDetailShort : fx.skuDetailOk,
-  'POST runs': { id: 3 }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
+  'POST runs': { id: 3 }, 'PUT case': { status: 'updated' }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
   'POST scenario': { is_simulation: true, warning: 'Cenário hipotético.', weights: fx.config.weights, thresholds: fx.config.thresholds, ranking: fx.priorities },
 };
 

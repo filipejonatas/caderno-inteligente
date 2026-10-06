@@ -77,6 +77,8 @@ describe('formulários por teclado', () => {
     const api = mockApi();
     renderApp('/decisoes');
     const sku = await screen.findByLabelText('SKU');
+    expect(sku).toHaveValue('');
+    await user.selectOptions(sku, 'TEST-001');
     const fields = [sku, screen.getByLabelText('O que você decidiu?'), screen.getByLabelText('O dado do parceiro ajudou?'), screen.getByLabelText(/Tempo de análise/), screen.getByLabelText('Usuário'), screen.getByLabelText('Observação')];
     sku.focus();
     for (const field of fields.slice(1)) { await user.tab(); expect(field).toHaveFocus(); }
@@ -92,7 +94,7 @@ describe('formulários por teclado', () => {
   it('tempo de análise informado é enviado como número; erro do servidor é exibido', async () => {
     const user = userEvent.setup();
     const api = mockApi({ 'POST feedback': fail(422, 'Tempo de análise deve ser um número inteiro não negativo') });
-    renderApp('/decisoes');
+    renderApp('/decisoes?sku=TEST-001');
     await user.type(await screen.findByLabelText(/Tempo de análise/), '15');
     await user.click(screen.getByRole('button', { name: 'Registrar decisão' }));
     expect(await screen.findByText('Tempo de análise deve ser um número inteiro não negativo')).toBeInTheDocument();
@@ -104,9 +106,10 @@ describe('formulários por teclado', () => {
     const api = mockApi();
     renderApp('/casos');
     await user.selectOptions(await screen.findByLabelText('SKU'), 'TEST-003');
-    await user.type(screen.getByLabelText('Responsável'), 'PCP');
-    await user.selectOptions(screen.getByLabelText('Status'), 'em_investigacao');
-    expect(screen.getByLabelText('Prazo')).toHaveAttribute('type', 'date');
+    const form = within(document.getElementById('new-case') as HTMLElement);
+    await user.type(form.getByLabelText('Responsável'), 'PCP');
+    await user.selectOptions(form.getByLabelText('Status'), 'em_investigacao');
+    expect(form.getByLabelText('Prazo')).toHaveAttribute('type', 'date');
     await user.click(screen.getByRole('button', { name: 'Criar caso' }));
     expect(await screen.findByText('Caso criado e incluído no acompanhamento.')).toBeInTheDocument();
     expect(api.calls.find((call) => call.method === 'POST')).toMatchObject({ path: '/api/cases', body: { sku: 'TEST-003', owner: 'PCP', status: 'em_investigacao', due_date: '' } });

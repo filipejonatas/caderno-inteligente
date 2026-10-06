@@ -58,7 +58,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'b2b', path: '/parceiros', label: 'Parceiros', description: 'Oportunidades e cobertura' },
   { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações seguras' },
   { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Histórico e comparação' },
-  { id: 'feedback', path: '/decisoes', label: 'Registrar decisão', description: 'Decisão do PCP' },
+  { id: 'feedback', path: '/decisoes', label: 'Histórico de decisões', description: 'Decisões registradas pelo PCP' },
   { id: 'validation', path: '/validacao', label: 'Confiança nas recomendações', description: 'Validação dos resultados' },
   { id: 'audit', path: '/auditoria', label: 'Auditoria', description: 'Casos de teste, método e histórico' },
 ];
@@ -69,14 +69,14 @@ export const menuGroups: Array<{ id: string; label: string; description: string;
   { id: 'production', label: 'Planejamento', description: 'Fila operacional e faturamento previsto', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/prioridades', '/previsoes', '/skus'] },
   { id: 'partners', label: 'Comercial', description: 'Oportunidades, parceiros e canais', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
   { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria'] },
-  { id: 'decisions', label: 'Decisões', description: 'Registro e casos', to: '/decisoes', icon: 'feedback', paths: ['/decisoes', '/casos'] },
+  { id: 'decisions', label: 'Acompanhamento', description: 'Casos e histórico de decisões', to: '/casos', icon: 'feedback', paths: ['/decisoes', '/casos'] },
   { id: 'advanced', label: 'Avançado', description: 'Cenários e execuções', to: '/cenarios', icon: 'scenarios', paths: ['/cenarios', '/execucoes'] },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
   production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Faturamento previsto', to: '/faturamento' }],
   trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Auditoria', to: '/auditoria' }],
-  decisions: [{ label: 'Registrar decisão', to: '/decisoes' }, { label: 'Casos', to: '/casos' }],
+  decisions: [{ label: 'Casos', to: '/casos' }, { label: 'Histórico de decisões', to: '/decisoes' }],
   advanced: [{ label: 'Cenários', to: '/cenarios' }, { label: 'Execuções', to: '/execucoes' }],
 };
 

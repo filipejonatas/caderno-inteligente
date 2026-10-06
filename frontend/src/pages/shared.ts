@@ -62,6 +62,14 @@ export const decisionActionNames: Record<string, string> = {
 
 export const toUtcDate = (value: string) => new Date(`${value.slice(0, 10)}T00:00:00Z`);
 export const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' }).format(toUtcDate(value)) : 'Não disponível';
+/** Data local de hoje como 'YYYY-MM-DD' (o prazo do caso é uma data sem horário). */
+export const todayIso = (now = new Date()) => `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+/** Dias de atraso de um caso aberto com prazo no passado; `null` se concluído, sem prazo ou dentro do prazo. */
+export function caseOverdueDays(item: { status: string; due_date: string }, today = todayIso()): number | null {
+  if (item.status === 'concluido' || !/^\d{4}-\d{2}-\d{2}$/.test(item.due_date)) return null;
+  const days = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${item.due_date}T00:00:00Z`)) / 86_400_000);
+  return days > 0 ? days : null;
+}
 const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 /** 'YYYY-MM-DD' → 'set/26'. */
 export const formatMonth = (value?: string | null) => value ? `${MONTHS_PT[Number(value.slice(5, 7)) - 1] ?? value.slice(5, 7)}/${value.slice(2, 4)}` : 'Não disponível';

@@ -27,7 +27,7 @@ const PAGES: Array<[string, string]> = [
   [`/canais/${encodeURIComponent(CHANNEL)}`, 'Loja própria'],
   ['/cenarios', 'E se o peso de um sinal mudar?'],
   ['/execucoes?base=1&alvo=2', 'O que mudou entre duas execuções'],
-  ['/decisoes', 'Registrar a decisão'],
+  ['/decisoes', 'Histórico de decisões'],
   ['/validacao', 'Quanto confiar nas recomendações'],
   ['/auditoria', 'Auditoria: como os resultados foram testados'],
   ['/rota-inexistente', 'Página não encontrada'],

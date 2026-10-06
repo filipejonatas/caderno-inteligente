@@ -58,7 +58,7 @@ describe('modo da publicação', () => {
   it('403 do servidor é exibido mesmo se a interface não souber do modo', async () => {
     const user = userEvent.setup();
     mockApi({ system: fail(500, 'indisponível'), 'POST feedback': fail(403, 'Registro desabilitado nesta publicação (modo somente leitura).') });
-    renderApp('/decisoes');
+    renderApp('/decisoes?sku=TEST-001');
     await user.click(await screen.findByRole('button', { name: 'Registrar decisão' }));
     expect(await screen.findByText('Registro desabilitado nesta publicação (modo somente leitura).')).toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe('validação de entrada', () => {
   it('erros de validação em lista viram mensagem legível', async () => {
     const user = userEvent.setup();
     mockApi({ 'POST feedback': () => ({ __failure: true, status: 422, detail: [{ loc: ['body', 'note'], msg: 'String should have at most 2000 characters' }] }) });
-    renderApp('/decisoes');
+    renderApp('/decisoes?sku=TEST-001');
     await user.click(await screen.findByRole('button', { name: 'Registrar decisão' }));
     expect(await screen.findByText('Dados inválidos: observação — String should have at most 2000 characters')).toBeInTheDocument();
   });

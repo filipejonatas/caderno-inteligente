@@ -17,7 +17,7 @@ const ROUTES: Array<[string, string, string]> = [
   ['/parceiros', 'Parceiros', 'Onde há oportunidade de reposição'],
   ['/cenarios', 'Cenários', 'E se o peso de um sinal mudar?'],
   ['/execucoes', 'Execuções', 'O que mudou entre duas execuções'],
-  ['/decisoes', 'Registrar decisão', 'Registrar a decisão'],
+  ['/decisoes', 'Histórico de decisões', 'Histórico de decisões'],
   ['/validacao', 'Confiança nas recomendações', 'Quanto confiar nas recomendações'],
   ['/auditoria', 'Auditoria', 'Auditoria: como os resultados foram testados'],
 ];

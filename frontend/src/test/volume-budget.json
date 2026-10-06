@@ -8,7 +8,7 @@
     "/parceiros": { "fixed": 70, "perRow": 14, "perEvidence": 90, "numbers": 6, "blocks": 3, "columns": 5, "alerts": 1 },
     "/parceiros?aba=parceiros": { "fixed": 120, "perRow": 20, "perEvidence": 90, "numbers": 20, "blocks": 3, "columns": 5, "alerts": 1 },
     "/parceiros/KA%20T1": { "fixed": 90, "perRow": 16, "perEvidence": 90, "numbers": 8, "blocks": 3, "columns": 5, "alerts": 1 },
-    "/casos": { "fixed": 110, "perRow": 20, "perEvidence": 90, "numbers": 8, "blocks": 3, "columns": 5, "alerts": 0 },
+    "/casos": { "fixed": 110, "perRow": 20, "perEvidence": 90, "numbers": 10, "blocks": 4, "columns": 5, "alerts": 0 },
     "/qualidade": { "fixed": 70, "perRow": 20, "perEvidence": 90, "numbers": 8, "blocks": 2, "columns": 5, "alerts": 0 },
     "/cenarios": { "fixed": 55, "perRow": 12, "perEvidence": 90, "numbers": 6, "blocks": 1, "columns": 5, "alerts": 0 },
     "/execucoes": { "fixed": 60, "perRow": 20, "perEvidence": 90, "numbers": 30, "blocks": 2, "columns": 5, "alerts": 0 },
