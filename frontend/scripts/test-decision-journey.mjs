@@ -77,7 +77,7 @@ test('alerts and tooltips expose consistent accessibility semantics', () => {
 
 // O selo de rótulo é coberto pelo Vitest; aqui só se renderiza o conteúdo próprio da matriz.
 const challengeBadgeStub = dataUrl('export const ChallengeBadge = () => null;');
-const { CommercialMatrix } = await import(await compile('../src/components/CommercialMatrix.tsx', { '../components': componentsUrl, '../pages/shared': sharedUrl, './ChallengeAction': challengeBadgeStub }));
+const { CommercialMatrix } = await import(await compile('../src/components/CommercialMatrix.tsx', { '../components': componentsUrl, '../pages/shared': sharedUrl, './ChallengeAction': challengeBadgeStub, '../hooks/useMediaQuery': mediaQueryUrl }));
 test('commercial view keeps null separate from observed zero and names its real key', () => {
   const row = {
     partner: 'Loja própria', partner_name: 'Teste comercial', sku: 'TEST / SKU', product: 'Teste', region: 'Sul', channel: 'Loja',

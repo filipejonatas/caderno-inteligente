@@ -109,7 +109,7 @@ describe('Detalhe do canal', () => {
     mockApi();
     renderApp(`/canais/${encoded}`);
     await screen.findByRole('heading', { level: 2, name: 'Loja própria' });
-    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Parceiros/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Comercial/ })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Voltar aos canais' })).toHaveAttribute('href', '/parceiros?aba=diretos');
   });
 });

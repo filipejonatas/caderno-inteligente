@@ -67,7 +67,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
 export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
   { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
   { id: 'production', label: 'Planejamento', description: 'Fila operacional e faturamento previsto', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/prioridades', '/previsoes', '/skus'] },
-  { id: 'partners', label: 'Parceiros', description: 'Oportunidades e cobertura', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
+  { id: 'partners', label: 'Comercial', description: 'Oportunidades, parceiros e canais', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
   { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria'] },
   { id: 'decisions', label: 'Decisões', description: 'Registro e casos', to: '/decisoes', icon: 'feedback', paths: ['/decisoes', '/casos'] },
   { id: 'advanced', label: 'Avançado', description: 'Cenários e execuções', to: '/cenarios', icon: 'scenarios', paths: ['/cenarios', '/execucoes'] },

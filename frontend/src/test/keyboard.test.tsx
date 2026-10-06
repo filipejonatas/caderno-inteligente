@@ -22,7 +22,7 @@ describe('navegação por teclado', () => {
     renderApp('/');
     await screen.findByRole('heading', { level: 2, name: 'O que olhar primeiro' });
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    const parceiros = within(nav).getByRole('link', { name: /Parceiros/ });
+    const parceiros = within(nav).getByRole('link', { name: /Comercial/ });
     parceiros.focus();
     await user.keyboard('{Enter}');
     expect(await screen.findByRole('heading', { level: 1, name: 'Parceiros' })).toHaveFocus();

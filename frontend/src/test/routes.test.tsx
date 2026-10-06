@@ -50,7 +50,7 @@ describe('deep links', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Parceiro sintético' })).toBeInTheDocument();
     expect(api.gets()).toContain(`/api/partners/${encodeURIComponent(PARTNER)}`);
     expect(api.gets().some((path) => path.startsWith(`/api/partners/${encodeURIComponent(PARTNER)}/skus?`))).toBe(true);
-    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Parceiros/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Comercial/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('abre a comparação de execuções pela URL', async () => {
