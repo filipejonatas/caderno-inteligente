@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { PartnerSkuContext } from '../components/PartnerSkuContext';
+import { SkuEventsBlock } from '../components/EventAlerts';
 import { SkuRevenueBlock } from '../components/RevenueForecast';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
@@ -105,9 +106,12 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <p className="human-review-line"><strong>Revisão humana obrigatória</strong>{insufficient ? '. Sem histórico suficiente não há quantidade sugerida; ausência de previsão não equivale a demanda zero.' : '. A sugestão não cria nem libera ordem de produção.'}</p>
     </section>
 
+    {insufficient && <SkuEventsBlock alerts={detail.event_alerts} scenario={detail.event_scenario} />}
+
     {!insufficient && <details className="detail-block" open>
       <summary>Sobre a previsão</summary>
       <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
+      <SkuEventsBlock embedded alerts={detail.event_alerts} scenario={detail.event_scenario} />
     </details>}
 
     <SkuRevenueBlock item={detail.revenue_forecast} />

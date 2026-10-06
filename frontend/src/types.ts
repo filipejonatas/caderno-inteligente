@@ -1,3 +1,4 @@
+import type { EventAlert, SkuEventScenario } from './types-events';
 import type { RevenueItem } from './types-revenue';
 
 export type PageId =
@@ -278,6 +279,9 @@ export interface SkuDetail {
   forecast: DemandForecast;
   /** Camada aditiva: ausente em respostas antigas e nula quando a estimativa falha. */
   revenue_forecast?: RevenueItem | null;
+  /** Camadas aditivas de eventos: ausentes em respostas antigas, nulas quando a análise falha. */
+  event_alerts?: EventAlert[] | null;
+  event_scenario?: SkuEventScenario | null;
   operational_recommendation: OperationalRecommendation;
   limitation: string;
 }

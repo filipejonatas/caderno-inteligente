@@ -5,6 +5,7 @@ import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { Alert, Badge, EmptyState, ErrorState, Icon, LoadingState, PageIntro, SectionCard, confidenceTone } from '../components';
 import type { ForecastRecommendationSummary, SelectedSku } from '../types';
+import { EventBadge } from '../components/EventAlerts';
 import { RevenueSummaryCard } from '../components/RevenueForecast';
 import { displayQuantity } from './shared';
 
@@ -26,6 +27,8 @@ const isMobile = () => window.matchMedia('(max-width: 620px)').matches;
 export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (item: SelectedSku) => void; refreshToken: number }) {
   const { data: items, error, loading, loadedAt, refresh: load } = useApiResource(api.forecasts, refreshToken);
   // Camada aditiva: a estimativa de faturamento carrega à parte e nunca bloqueia a tela operacional.
+  const { data: events } = useApiResource(api.events, refreshToken);
+  const eventsBySku = useMemo(() => new Map((events?.items ?? []).map((item) => [item.sku, item])), [events]);
   const { data: revenue, error: revenueError, loading: revenueLoading, refresh: loadRevenue } = useApiResource(api.revenueForecast, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
   const [params, setParams] = useSearchParams();
@@ -92,7 +95,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
           const rec = item.operational_recommendation;
           return <tr key={item.sku}>
             <td data-label="SKU"><button type="button" className="link-button" onClick={() => onSelect(item)} aria-label={`Ver detalhes de ${item.sku}`}><strong>{item.sku}</strong></button><small>{item.product}</small></td>
-            <td className="cell-stack" data-label="Ação sugerida"><Badge tone={recommendationTone(rec.action)}>{rec.action_label}</Badge>{rec.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{item.forecast.forecast_confidence !== 'alta' && <Badge tone={confidenceTone(item.forecast.forecast_confidence)}>Previsão com confiança {item.forecast.forecast_confidence}</Badge>}</td>
+            <td className="cell-stack" data-label="Ação sugerida"><Badge tone={recommendationTone(rec.action)}>{rec.action_label}</Badge>{rec.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{item.forecast.forecast_confidence !== 'alta' && <Badge tone={confidenceTone(item.forecast.forecast_confidence)}>Previsão com confiança {item.forecast.forecast_confidence}</Badge>}<EventBadge item={eventsBySku.get(item.sku)} /></td>
             <td data-label="Quantidade"><strong>{displayQuantity(rec.suggested_quantity)}</strong></td>
             <td data-label="Próximo mês">{item.forecast.status === 'ok' ? displayQuantity(item.forecast.forecast_next_month) : <Badge tone="medium">Dados insuficientes</Badge>}</td>
           </tr>;

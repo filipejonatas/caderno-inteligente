@@ -17,6 +17,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 | Preciso produzir? Quanto? | Detalhe do SKU e Previsão: previsão de 3 meses, ação e quantidade sugerida, com o cálculo |
 | Algum parceiro tem risco ou oportunidade? | Parceiros: matriz parceiro–SKU com sell-in, sell-out, estoque estimado e sugestão comercial |
 | Quanto vamos faturar nos próximos meses? | Previsão e ação: faturamento estimado (previsão em unidades × preço vigente), sempre rotulado como estimativa, com erro do teste e, no SKU, o cálculo |
+| Que evento do calendário vem aí e quando decidir? | Início e Previsão: alertas de eventos com data de decisão (início − lead time); no SKU, evidência histórica e cenário com evento, sempre como estimativa |
 | Quanto confiar na análise? | Qualidade e Validação: cobertura de sell-out, baseline de previsão, casos congelados e falhas conhecidas |
 | Por que a prioridade mudou? | Execuções: comparação entre snapshots, com decomposição do score |
 | O que foi decidido? | Casos e Decisões: responsável, prazo, ação, efeito do dado do parceiro e tempo de análise |
@@ -117,6 +118,7 @@ Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend.
 | Pesos do ranking | `config/prioritization_weights.json` |
 | Limiares das regras | `config/rule_thresholds.json` |
 | Limiares comerciais | `config/commercial_thresholds.json` |
+| Fator de eventos (teto, janela de linha de base, antecedência) | `config/event_factors.json` |
 | Linha de base, casos congelados e histórico de ajustes da validação | `config/validation_center.json` |
 
 Variáveis de ambiente do backend (exemplo em `.env.example`):
@@ -185,3 +187,4 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Etapa 8 — Segurança e modo de demonstração](docs/etapa-8-seguranca-modo-demo.md)
 - [Etapa 9 — Documentação, deploy e demonstração](docs/etapa-9-documentacao-demo.md)
 - [Etapa 10 — Previsão de faturamento (plano de aderência ao desafio)](docs/etapa-10-faturamento-estimado.md)
+- [Etapa 11 — Sazonalidade e eventos (plano de aderência ao desafio)](docs/etapa-11-eventos-sazonalidade.md)

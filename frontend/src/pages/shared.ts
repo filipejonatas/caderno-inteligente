@@ -81,7 +81,7 @@ export function sortReasons<T extends { code: string; severity: string }>(reason
     || (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0) || a.code.localeCompare(b.code));
 }
 
-export type GlossaryTerm = 'score' | 'wape' | 'baseline' | 'holdout' | 'sellin' | 'sellout' | 'leadtime' | 'cobertura' | 'ausente' | 'confianca_dados' | 'confianca_previsao' | 'op' | 'faturamento_estimado';
+export type GlossaryTerm = 'score' | 'wape' | 'baseline' | 'holdout' | 'sellin' | 'sellout' | 'leadtime' | 'cobertura' | 'ausente' | 'confianca_dados' | 'confianca_previsao' | 'op' | 'faturamento_estimado' | 'cenario_evento';
 export const glossary: Record<GlossaryTerm, { name: string; text: string }> = {
   score: { name: 'Pontos de atenção', text: 'Soma dos pesos dos problemas encontrados no SKU. Ordena o que analisar primeiro; não é a quantidade a produzir.' },
   wape: { name: 'Erro médio da previsão (WAPE)', text: 'Quanto, em %, a previsão errou nos últimos 3 meses, somando todos os SKUs. Menor é melhor; não garante a precisão futura.' },
@@ -95,6 +95,7 @@ export const glossary: Record<GlossaryTerm, { name: string; text: string }> = {
   confianca_dados: { name: 'Confiança nos dados do SKU', text: 'Qualidade da evidência usada no ranking (por exemplo, se há sell-out observado). Baixa pede validação humana.' },
   confianca_previsao: { name: 'Confiança na previsão', text: 'Calculada pelo erro do modelo no teste dos últimos 3 meses. Não é garantia de atendimento.' },
   faturamento_estimado: { name: 'Faturamento estimado', text: 'Previsão em unidades × preço vigente da tabela de preços, mantido constante: sem reajuste, desconto ou campanha. É receita bruta e global por SKU, não por parceiro ou canal. Estimativa, não faturamento realizado; SKU sem preço ou sem previsão fica de fora, nunca vira R$ 0.' },
+  cenario_evento: { name: 'Cenário com evento', text: 'Previsão base × fator do mês, medido no histórico da própria família (mês do evento ÷ média dos meses sem evento). É estimativa indicativa com poucas ocorrências, não prevê campanhas e não substitui a previsão nem a quantidade oficial. Sem histórico direto ou com previsão sazonal de 12 meses (que já repete o ano anterior), só há alerta.' },
   op: { name: 'Ordem de produção (OP)', text: 'Registro que manda produzir. Este sistema nunca cria nem libera uma OP.' },
 };
 

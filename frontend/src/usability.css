@@ -160,3 +160,7 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--slate-1
 .revenue-trend figcaption { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; color: var(--slate-700); font-size: 12px; }
 .revenue-key { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; border-radius: 2px; background: var(--blue-700); }
 .revenue-key-estimated { background: var(--blue-100); border: 1.5px dashed var(--blue-700); }
+
+/* Eventos e sazonalidade (etapa 11) */
+.event-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--slate-100); }
+.event-section h4 { margin: 0 0 8px; font-size: 14px; color: var(--slate-900); }

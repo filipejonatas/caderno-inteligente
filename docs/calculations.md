@@ -58,6 +58,21 @@ faturamento estimado do mês = previsão em unidades do mês × preço unitário
 - **Forecast comercial:** `Forecast_Comercial` × mesmo preço, somente nos meses em comum com a previsão; é comparação, não erro.
 - **Limites:** preço constante, receita bruta, global por SKU. Estimativa, não faturamento realizado.
 
+### 3.2 Eventos e sazonalidade (`events.py`)
+
+```text
+fator do mês (família) = média das ocorrências de [unidades do mês ÷ média dos meses sem evento num raio de 6 meses]
+cenário do mês = previsão base × fator do mês  (fator 1 sem evento ou sem evidência)
+data de decisão = início do evento − lead time do SKU
+```
+
+- **Linha de base:** meses sem evento que afete a família, raio de 6 meses, mínimo de 3 meses; acompanha a tendência da família.
+- **Fator:** média das ocorrências (mínimo de 1 e 12 meses de histórico da família), limitada por `config/event_factors.json` (padrão 0,5 a 3,0, com `capped` registrado).
+- **Alerta:** evento que cobre a família, não terminou e (começa até o fim do horizonte **ou** `início − lead time − 30 dias` cai dentro do horizonte).
+- **Sem dupla contagem:** SKU com previsão `seasonal_naive_12` só recebe alerta.
+- **Sem fator inventado:** evento sem histórico direto, família com histórico curto ou sem ocorrência mensurável geram só alerta.
+- **Quantidade oficial:** não muda; o cenário mostra a quantidade que resultaria se o próximo mês fosse afetado.
+
 ## 4. Recomendação operacional (`recommendations.py`)
 
 ```text

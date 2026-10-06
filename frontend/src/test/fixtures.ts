@@ -1,6 +1,7 @@
 // Synthetic fixtures typed against the frontend contracts. Never application data: codes start with TEST/KA-T.
 import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
+import type { EventAlert, EventAnalysis, EventItem, EventScenario } from '../types-events';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
@@ -127,6 +128,34 @@ export const revenueForecast: RevenueForecast = {
   field_nature: { revenue_values: { nature: 'estimado', origin: 'calculado' } }, limitations: ['Estimativa, não faturamento realizado.', 'O preço é mantido constante.'],
 };
 
+const evidenceUp = { family: 'Família A', factor: 1.35, factor_raw: 1.35, capped: false, occurrences: 2, months_used: ['novembro'], evidence_status: 'aumento' as const, note: null };
+const evidenceFlat = { family: 'Família A', factor: 1.0, factor_raw: 1.0, capped: false, occurrences: 4, months_used: ['janeiro', 'fevereiro'], evidence_status: 'sem_alteracao' as const, note: 'O histórico não mostra variação relevante neste período para a família; o calendário indica impacto, a evidência não.' };
+const evidenceNone = { family: 'Família A', factor: null, factor_raw: null, capped: false, occurrences: 0, months_used: [], evidence_status: 'sem_historico_direto' as const, note: 'Evento sem histórico direto: apenas alerta; nenhum fator é estimado.' };
+export const eventAlerts: EventAlert[] = [
+  { event_id: 'lancamento', event: 'Lançamento Coleção Teste', start: '2026-10-15', end: '2026-10-31', impact: 'Alta', observation: 'Novos SKUs sem histórico direto', days_to_start: 45, decision_date: '2026-10-01', in_horizon: true, evidence: evidenceNone },
+  { event_id: 'black-friday', event: 'Black Friday', start: '2026-11-20', end: '2026-11-30', impact: 'Alta', observation: 'Desconto', days_to_start: 81, decision_date: '2026-11-06', in_horizon: true, evidence: evidenceUp },
+  { event_id: 'volta-as-aulas', event: 'Volta às Aulas', start: '2027-01-05', end: '2027-02-20', impact: 'Alta', observation: 'Pico', days_to_start: 127, decision_date: '2026-12-22', in_horizon: false, evidence: evidenceFlat },
+];
+export const eventScenario: EventScenario = {
+  months: ['2026-09-01', '2026-10-01', '2026-11-01'], base_units: [100, 110, 120], factors: [null, null, 1.35], events: [null, 'Lançamento Coleção Teste', 'Black Friday'],
+  scenario_units: [100, 110, 162], base_total_3m: 330, scenario_total_3m: 372, incremental_units_3m: 42, unit_price: 12.5, scenario_revenue_total_3m: 4650, base_revenue_total_3m: 4125,
+  next_month_affected: false, nature: 'estimado', formula: 'Cenário = previsão base × fator do mês (histórico da família); meses sem evento ou sem evidência ficam com fator 1',
+  quantity: { official: 500, with_event: 500, differs: false, note: 'A quantidade oficial cobre só o próximo mês.' },
+};
+export const eventItemOk: EventItem = { sku: SKU_OK, family: 'Família A', model: 'moving_average_3', lead_time_days: 14, scenario_applicable: true, scenario_note: null, alerts: eventAlerts, scenario: eventScenario };
+export const eventItemShort: EventItem = { sku: SKU_SHORT, family: 'Família B', model: null, lead_time_days: 14, scenario_applicable: false, scenario_note: 'Sem previsão de unidades; não há como montar cenário.', alerts: [], scenario: null };
+export const eventAnalysis: EventAnalysis = {
+  reference_month: '2026-08-01', reference_date: '2026-08-31', horizon_end: '2026-11-30', settings: { maximum_factor: 3 },
+  events: [
+    { id: 'lancamento', name: 'Lançamento Coleção Teste', start: '2026-10-15', end: '2026-10-31', impact: 'Alta', observation: 'Novos SKUs sem histórico direto', all_families: false, families: [evidenceNone], unknown_families: [], has_history: false, days_to_start: 45, in_horizon: true, past: false, decision_date_earliest: '2026-09-29', skus_alerted: 26 },
+    { id: 'black-friday', name: 'Black Friday', start: '2026-11-20', end: '2026-11-30', impact: 'Alta', observation: 'Desconto', all_families: true, families: [evidenceUp], unknown_families: [], has_history: true, days_to_start: 81, in_horizon: true, past: false, decision_date_earliest: '2026-10-24', skus_alerted: 50 },
+    { id: 'passado', name: 'Evento passado', start: '2026-06-01', end: '2026-06-30', impact: 'Média', observation: null, all_families: true, families: [], unknown_families: [], has_history: true, days_to_start: -91, in_horizon: false, past: true, decision_date_earliest: null, skus_alerted: 0 },
+  ],
+  ignored_events: [], items: [eventItemOk, eventItemShort],
+  family_factors: [{ family: 'Família A', month: 11, month_name: 'novembro', factor_raw: 1.35, factor: 1.35, capped: false }],
+  field_nature: { factor: { nature: 'estimado', origin: 'histórico' } }, limitations: ['Cenário indicativo.'],
+};
+
 export const skuDetailOk: SkuDetail = {
   indicator: indicator(SKU_OK),
   issues: [{ sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', code: 'RUP_LEAD_TIME', description: 'Cobertura de estoque abaixo do lead time.', severity: 'alta', values_used: { coverage_days: 5 }, data_origin: ['Estoque_Atual.Estoque atual'] }],
@@ -134,6 +163,8 @@ export const skuDetailOk: SkuDetail = {
   score_contributions: [{ code: 'RUP_LEAD_TIME', weight: 8, description: 'Cobertura abaixo do lead time.' }],
   forecast: forecastOk,
   revenue_forecast: revenueOk,
+  event_alerts: eventAlerts,
+  event_scenario: { applicable: true, note: null, scenario: eventScenario },
   operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Demanda a cobrir sintética.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 } },
   limitation: 'A base não vincula pedidos a OPs por semana.',
 };
@@ -144,6 +175,8 @@ export const skuDetailShort: SkuDetail = {
   priority: [priorities[1]],
   forecast: forecastShort,
   revenue_forecast: revenueShort,
+  event_alerts: [],
+  event_scenario: { applicable: false, note: eventItemShort.scenario_note, scenario: null },
   operational_recommendation: { ...recommendationBase, action: 'investigar_dados', action_label: 'Investigar dados', suggested_quantity: null, raw_quantity: null, forecast_next_month: null, safety_stock_quantity: null, capacity_status: 'not_evaluated', confidence: 'baixa', confidence_reason: 'Histórico insuficiente para produzir uma previsão quantitativa.', rationale: ['Investigar e completar o histórico antes de sugerir produção.'], calculation: {} },
 };
 

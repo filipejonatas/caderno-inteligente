@@ -21,7 +21,9 @@ async function compile(file, replacements = {}) {
 const sharedUrl = await compile('../src/pages/shared.ts');
 const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
 const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
-const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl }));
+// A faixa de eventos busca a API sozinha (coberta pelo Vitest); aqui só se renderiza o conteúdo próprio da página.
+const eventAlertsStub = dataUrl('export const UpcomingEvents = () => null;');
+const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../components/EventAlerts': eventAlertsStub }));
 const render = element => renderToStaticMarkup(element);
 
 // Suppress React Router's expected SSR-only useLayoutEffect warning; preserve other warnings.

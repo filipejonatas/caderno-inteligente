@@ -10,9 +10,10 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/system` | Ambiente, modo demonstração, escrita habilitada e limites de texto | — |
 | GET | `/api/overview` | Indicadores da visão geral | — |
 | GET | `/api/priorities` | Ranking oficial (`family`, `confidence`, `search`) | — |
-| GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão, faturamento estimado (`revenue_forecast`) e recomendação | — |
+| GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão, faturamento estimado (`revenue_forecast`), eventos (`event_alerts`, `event_scenario`) e recomendação | — |
 | GET | `/api/forecasts` | Previsão e recomendação resumida de todos os SKUs | — |
 | GET | `/api/revenue-forecast` | Faturamento estimado (previsão em unidades × preço vigente), por SKU, família e total | — |
+| GET | `/api/events` | Calendário de eventos: alertas por SKU, evidência histórica por família e cenário com evento | — |
 | GET | `/api/capacity/{family}` | Capacidade semanal da família | — |
 | GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
@@ -78,6 +79,18 @@ Estimativa de faturamento dos 3 meses previstos: `previsão em unidades × preç
 - SKU sem preço ou sem previsão retorna valores `null` e entra em `skus_excluded`; nunca R$ 0.
 
 `GET /api/priorities/{sku}` inclui o mesmo item em `revenue_forecast` (`null` se a estimativa falhar, sem afetar o restante).
+
+## `GET /api/events`
+
+Usa o `Calendario_Eventos` como alerta e como cenário explícito. Camada derivada e somente leitura: não altera previsão, score, ranking nem a quantidade oficial, e `GET /api/forecasts` não ganhou campos.
+
+- `events[]`: período, impacto, `has_history`, `in_horizon`, `past`, `decision_date_earliest`, `skus_alerted` e a evidência por família (`factor`, `factor_raw`, `capped`, `occurrences`, `months_used`, `evidence_status`, `note`);
+- `items[]` (um por SKU): `alerts[]` (evento, período, `days_to_start`, `decision_date` = início − lead time, `in_horizon`, `evidence`), `scenario_applicable`, `scenario_note` e `scenario` (`base_units`, `factors`, `scenario_units`, `incremental_units_3m`, faturamento no cenário, `quantity` oficial × com cenário);
+- `family_factors[]`: fator por família e mês, com as ocorrências usadas;
+- `settings` (de `config/event_factors.json`), `ignored_events[]` (linhas do calendário descartadas, com o motivo), `field_nature` e `limitations`;
+- SKU com `seasonal_naive_12` recebe só alertas (`scenario = null` e a explicação em `scenario_note`); evento sem histórico direto nunca gera fator.
+
+`GET /api/priorities/{sku}` inclui `event_alerts` e `event_scenario` (`null` se a análise falhar, sem afetar o restante).
 
 ## `GET /api/b2b2c/visibility`
 

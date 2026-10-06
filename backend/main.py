@@ -23,6 +23,7 @@ from caderno_inteligente.feedback import (  # noqa: E402
     PARTNER_DATA_EFFECTS,
 )
 from caderno_inteligente.forecasting import build_demand_forecasts  # noqa: E402
+from caderno_inteligente.events import build_event_analysis, load_event_settings  # noqa: E402
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
@@ -39,6 +40,7 @@ CASES_DB = ROOT / "runtime/cases.db"
 RUNS_DB = ROOT / "runtime/runs.db"
 WEIGHTS_FILE = ROOT / "config/prioritization_weights.json"
 THRESHOLDS_FILE = ROOT / "config/rule_thresholds.json"
+EVENT_FACTORS_FILE = ROOT / "config/event_factors.json"
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("caderno_inteligente.api")
@@ -164,6 +166,51 @@ def _revenue_item(sku: str) -> dict | None:
         return next((item for item in revenue_forecast()["items"] if item["sku"] == sku), None)
     except Exception:  # noqa: BLE001
         logger.exception("revenue_forecast_failed sku=%s", sku)
+        return None
+
+
+_events_cache: tuple[object, tuple[int, int], dict] | None = None
+
+
+def event_analysis() -> dict:
+    """Alertas e cenário de eventos derivados da previsão base; invalida com o pipeline e com config/event_factors.json."""
+    global _events_cache
+    built = pipeline()
+    signature = _file_signature(EVENT_FACTORS_FILE)
+    cached = _events_cache
+    if cached is not None and cached[0] is built and cached[1] == signature:
+        return cached[2]
+    dataset, _, indicators, issues, _, forecasts = built
+    prices = {item["sku"]: item["unit_price"] for item in revenue_forecast()["items"] if item["status"] == "ok"}
+    result = build_event_analysis(
+        forecasts, dataset["Produtos"], dataset["Vendas_24m"], dataset["Calendario_Eventos"], load_event_settings(EVENT_FACTORS_FILE), prices,
+    )
+    indicator_by_sku = {row["SKU"]: row for row in _records(indicators)}
+    codes_by_sku: dict[str, list[str]] = {}
+    for row in issues.to_dict("records"):
+        codes_by_sku.setdefault(row["sku"], []).append(row["code"])
+    for item in result["items"]:
+        scenario, indicator = item["scenario"], indicator_by_sku.get(item["sku"])
+        if scenario is None or indicator is None:
+            continue
+        forecast = _forecast_record(forecasts, item["sku"])
+        codes = [{"code": code} for code in codes_by_sku.get(item["sku"], [])]
+        official = _recommendation_for(indicator, forecast, codes)["suggested_quantity"]
+        with_event = _recommendation_for(indicator, {**forecast, "forecast_next_month": scenario["scenario_units"][0]}, codes)["suggested_quantity"]
+        scenario["quantity"] = {
+            "official": official, "with_event": with_event, "differs": official != with_event,
+            "note": "A quantidade oficial cobre só o próximo mês; o evento fora dele não altera a quantidade, e sim a data de decisão.",
+        }
+    _events_cache = (built, signature, result)
+    return result
+
+
+def _event_item(sku: str) -> dict | None:
+    """Camada aditiva: falha em eventos não pode derrubar o detalhe operacional do SKU."""
+    try:
+        return next((item for item in event_analysis()["items"] if item["sku"] == sku), None)
+    except Exception:  # noqa: BLE001
+        logger.exception("event_analysis_failed sku=%s", sku)
         return None
 
 
@@ -304,6 +351,15 @@ def revenue_forecast_summary():
     return revenue_forecast()
 
 
+@app.get("/api/events")
+def event_summary():
+    """Calendário de eventos como alerta e cenário explícito; não altera previsão, ranking nem quantidade oficial."""
+    try:
+        return event_analysis()
+    except (ValueError, KeyError) as error:
+        raise HTTPException(422, _describe_error("Análise de eventos bloqueada por dados/configuração inválidos", error)) from error
+
+
 @app.get("/api/forecasts")
 def forecast_summaries():
     """Consolidate cached forecasts and recommendations without changing the official ranking."""
@@ -381,6 +437,7 @@ def detail(sku: str):
     indicator = _records(row)[0]
     forecast = _forecast_record(forecasts, sku)
     recommendation = _recommendation_for(indicator, forecast, item_issues)
+    event_item = _event_item(sku)
     return {
         "indicator": indicator,
         "issues": item_issues,
@@ -388,6 +445,8 @@ def detail(sku: str):
         "score_contributions": contributions,
         "forecast": forecast,
         "revenue_forecast": _revenue_item(sku),
+        "event_alerts": None if event_item is None else event_item["alerts"],
+        "event_scenario": None if event_item is None else {"applicable": event_item["scenario_applicable"], "note": event_item["scenario_note"], "scenario": event_item["scenario"]},
         "operational_recommendation": recommendation,
         "limitation": "A base não vincula pedidos a OPs por semana; capacidade é contexto familiar, não promessa de viabilidade individual.",
     }

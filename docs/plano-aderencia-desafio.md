@@ -79,6 +79,8 @@ Medidos na planilha em 2026-10-06:
 
 ## 6. Etapa 11 — Sazonalidade e eventos (alerta e fator explícito)
 
+> **Status: implementada** (ver [etapa-11-eventos-sazonalidade.md](etapa-11-eventos-sazonalidade.md)). Ajustes em relação ao desenho abaixo: teto do fator em 3,0 (o histórico mostra ×2,41 para Escolar); alertas e cenário ficam dentro de "Sobre a previsão" no detalhe do SKU, por causa do orçamento de blocos da tela; a faixa "Eventos próximos" do Início se chama "Eventos que pedem decisão"; o selo por SKU vai na Previsão.
+
 **Resposta ao PDF:** "analisar sazonalidade" e usar calendário e campanhas como sinal, **sem mexer no modelo base**.
 
 ### Duas camadas separadas

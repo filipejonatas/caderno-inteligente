@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { UpcomingEvents } from '../components/EventAlerts';
 import { Badge, EmptyState, Icon, MetricCard, PageIntro, PriorityTable, SectionCard, confidenceTone, mainReason, severityTone } from '../components';
 import type { PageProps } from './shared';
 import { formatDate, positiveDelayDays, reasonNames, sortReasons } from './shared';
@@ -26,6 +27,7 @@ export default function OverviewPage({ data, onSelect }: PageProps<'overview' | 
       <MetricCard label="Pedidos sem ordem de produção" value={data.overview.order_without_production} detail="pedidos em carteira sem OP" tone="amber" icon="cases" />
       <MetricCard label="Com confiança baixa" value={data.overview.low_confidence} detail={`de ${data.overview.prioritized} SKUs na fila`} tone="slate" icon="b2b" />
     </div>
+    <UpcomingEvents />
     <SectionCard title={`Fila de atenção (${data.overview.prioritized} de ${data.overview.total_skus})`} action={<Link className="secondary-button" to="/prioridades">Ver a fila completa</Link>}><PriorityTable rows={data.priorities.slice(0, 5)} onSelect={onSelect} weights={weights} /></SectionCard>
   </div>;
 }

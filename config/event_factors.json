@@ -1,0 +1,11 @@
+{
+  "minimum_factor": 0.5,
+  "maximum_factor": 3.0,
+  "lookahead_buffer_days": 30,
+  "baseline_radius_months": 6,
+  "minimum_baseline_months": 3,
+  "minimum_history_months": 12,
+  "minimum_occurrences": 1,
+  "neutral_band": 0.1,
+  "no_history_markers": ["sem histórico"]
+}
