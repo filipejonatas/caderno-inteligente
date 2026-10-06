@@ -14,7 +14,6 @@ type IconName =
   | 'cases'
   | 'quality'
   | 'b2b'
-  | 'scenarios'
   | 'runs'
   | 'feedback'
   | 'validation'
@@ -32,7 +31,6 @@ const iconPaths: Record<IconName, ReactNode> = {
   cases: <><path d="M9 5h6l1 2h4v13H4V7h4l1-2Z"/><path d="M9 12h6M9 16h4"/></>,
   quality: <><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-5"/></>,
   b2b: <><circle cx="8" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-4 2-7 5-7s5 3 5 7M14 14c3-1 6 1 7 5"/></>,
-  scenarios: <><path d="M5 4v16M5 7h8a3 3 0 0 1 0 6H5M13 13l6 6"/></>,
   runs: <><path d="M12 3a9 9 0 1 1-8 5"/><path d="M3 3v6h6M12 7v5l3 2"/></>,
   feedback: <><path d="M4 4h16v13H9l-5 4V4Z"/><path d="M8 9h8M8 13h5"/></>,
   validation: <><path d="M9 3h6v3H9z"/><path d="M7 4.5H5v16h14v-16h-2"/><path d="m8.5 13 2.5 2.5 4.5-5"/></>,
@@ -56,28 +54,26 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
   { id: 'b2b', path: '/parceiros', label: 'Parceiros', description: 'Oportunidades e cobertura' },
-  { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações seguras' },
-  { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Histórico e comparação' },
+  { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações sem alterar o ranking' },
+  { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Histórico e comparação entre execuções' },
   { id: 'feedback', path: '/decisoes', label: 'Histórico de decisões', description: 'Decisões registradas pelo PCP' },
   { id: 'validation', path: '/validacao', label: 'Confiança nas recomendações', description: 'Validação dos resultados' },
   { id: 'audit', path: '/auditoria', label: 'Auditoria', description: 'Casos de teste, método e histórico' },
 ];
 
-/** Menu principal: 6 entradas. As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
+/** Menu principal: 5 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
 export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
   { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
-  { id: 'production', label: 'Planejamento', description: 'Fila operacional e faturamento previsto', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/prioridades', '/previsoes', '/skus'] },
+  { id: 'production', label: 'Planejamento', description: 'Fila, faturamento e cenários', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/cenarios', '/prioridades', '/previsoes', '/skus'] },
   { id: 'partners', label: 'Comercial', description: 'Oportunidades, parceiros e canais', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
-  { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria'] },
   { id: 'decisions', label: 'Acompanhamento', description: 'Casos e histórico de decisões', to: '/casos', icon: 'feedback', paths: ['/decisoes', '/casos'] },
-  { id: 'advanced', label: 'Avançado', description: 'Cenários e execuções', to: '/cenarios', icon: 'scenarios', paths: ['/cenarios', '/execucoes'] },
+  { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria', '/execucoes'] },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
-  production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Faturamento previsto', to: '/faturamento' }],
-  trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Auditoria', to: '/auditoria' }],
+  production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Faturamento previsto', to: '/faturamento' }, { label: 'Cenários', to: '/cenarios' }],
+  trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }],
   decisions: [{ label: 'Casos', to: '/casos' }, { label: 'Histórico de decisões', to: '/decisoes' }],
-  advanced: [{ label: 'Cenários', to: '/cenarios' }, { label: 'Execuções', to: '/execucoes' }],
 };
 
 const inGroup = (pathname: string, paths: string[]) => paths.some((path) => path === '/' ? pathname === '/' : !!matchPath({ path, end: false }, pathname));
@@ -236,7 +232,3 @@ export function SectionCard({ title, subtitle, action, children, className = '' 
   return <section className={`section-card ${className}`}><div className="section-heading"><div><h3>{title}</h3>{subtitle && <p>{subtitle}</p>}</div>{action}</div>{children}</section>;
 }
 
-export function ProgressBar({ value, tone = 'blue', label = 'Cobertura observada' }: { value: number; tone?: string; label?: string }) {
-  const percent = Math.max(0, Math.min(100, value * 100));
-  return <div className="progress" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)} aria-valuetext={`${Math.round(percent)}%`}><span className={`progress-${tone}`} style={{ width: `${percent}%` }} /></div>;
-}

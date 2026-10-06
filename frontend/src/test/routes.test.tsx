@@ -101,7 +101,7 @@ describe('menu', () => {
     mockApi();
     renderApp('/prioridades');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(6);
+    expect(within(nav).getAllByRole('link')).toHaveLength(5);
     expect(within(nav).getByRole('link', { name: /Planejamento/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Início/ })).not.toHaveAttribute('aria-current');
     await user.click(within(nav).getByRole('link', { name: /Confiança/ }));

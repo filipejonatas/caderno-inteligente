@@ -92,13 +92,6 @@ export function positiveDelayDays(promisedDate: string | null, completionDate: s
   return days > 0 ? days : null;
 }
 
-export function partnerLevelTone(level: string) {
-  if (level === 'Estratégico') return 'good';
-  if (level === 'Sem visibilidade') return 'low';
-  if (level === 'Essencial') return 'medium';
-  return 'neutral';
-}
-
 export const severityRank: Record<string, number> = { crítica: 4, alta: 3, média: 2, baixa: 1 };
 
 /** Sinais do mais pesado para o mais leve (peso do ranking; desempate por severidade e código). Só muda a ordem de exibição. */

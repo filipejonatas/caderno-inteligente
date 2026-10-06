@@ -73,22 +73,23 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
-O menu agrupa as rotas em 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Avançado); Confiança reúne `/validacao`, `/qualidade` e `/auditoria`; dentro de cada grupo as rotas viram abas (`SubNav`), e `/parceiros` tem as abas `?aba=oportunidades|parceiros`. Nenhuma URL mudou. `/prioridades` e `/` também leem `/api/config` (pesos) para ordenar os sinais por peso.
+O menu agrupa as rotas em 5 entradas: Início; Planejamento (`/fila`, `/faturamento`, `/cenarios` e o detalhe `/skus/:sku`); Comercial (`/parceiros`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`, `/qualidade`, `/auditoria`, `/execucoes`). Dentro de cada grupo as rotas viram abas (`SubNav`); `/parceiros` tem as abas `?aba=oportunidades|parceiros|diretos` e `/skus/:sku` tem `?tab=resumo|evidencias|parceiros|impacto`. Não existe grupo "Avançado". `/prioridades` e `/previsoes` continuam abrindo e redirecionam para `/fila` com os mesmos parâmetros.
 
 | URL | Página | Dados consultados |
 |---|---|---|
 | `/guia` | Guia de uso | Nenhum (funciona com a API fora do ar) |
 | `/` | Início | `overview`, `priorities`, `data-quality`, `config` |
-| `/prioridades` | Fila de atenção — filtros `busca`, `familia`, `confianca` na URL | `priorities`, `config` |
-| `/previsoes` | Previsão e recomendações — filtros `busca`, `familia`, `acao`, `confianca`, `tendencia`, `atencao`, `ordem` | `forecasts` |
-| `/skus/:sku` | Detalhe do SKU (compartilhável) | `priorities/{sku}`, `commercial-recommendations?sku=` |
-| `/casos` | Casos | `cases`, `priorities`, `config` |
+| `/fila` | Fila operacional — filtros `busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos` na URL; junta posição e ação pelo SKU no cliente | `priorities`, `forecasts`, `config`, `events` |
+| `/faturamento` | Faturamento previsto — filtros `busca`, `familia` | `revenue-forecast` |
+| `/prioridades`, `/previsoes` | Redirecionam para `/fila` (mesmos parâmetros) | Nenhum |
+| `/skus/:sku` | Detalhe do SKU (compartilhável), abas em `?tab=`; o contexto comercial só carrega na aba Parceiros | `priorities/{sku}`, `commercial-recommendations?sku=` (aba Parceiros) |
+| `/casos` | Casos — edição por linha (`PUT cases/{id}`), filtros `status`, `responsavel` | `cases`, `priorities`, `config` |
 | `/qualidade` | Dados da planilha | `data-quality` |
-| `/parceiros` | Parceiros (oportunidades e lista) — filtros `regiao`, `canal`, `ordem`, `aba` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
+| `/parceiros` | Comercial (oportunidades, parceiros e canais) — filtros `busca`, `regiao`, `canal`, `ordem`, `aba` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
 | `/parceiros/:codigo` | Detalhe do parceiro — filtros `sku`, `acao`, `qualidade`, `offset` | `partners/{codigo}`, `partners/{codigo}/skus` |
 | `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
 | `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |
-| `/decisoes` | Decisões (feedback do PCP) | `feedback`, `priorities`, `config` |
+| `/decisoes` | Histórico de decisões (feedback do PCP) | `feedback`, `priorities`, `config` |
 | `/validacao` | Central de validação (resumo, falhas e 2 abas) | `validation/summary` |
 | `/auditoria` | Auditoria: casos de teste, verificações, limitações, ajustes e método comercial | `validation/summary`, `partners?limit=1` |
 | `*` | Página não encontrada | Nenhum |

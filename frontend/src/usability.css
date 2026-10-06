@@ -29,7 +29,7 @@
 .answer-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .answer-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
 .answer-actions a { text-decoration: none; }
-.answer-figures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.answer-figures { display: grid; gap: 10px;}
 .answer-figures > div { display: flex; flex-direction: column; gap: 3px; padding: 13px; border: 1px solid var(--slate-200); border-radius: 10px; background: white; }
 .answer-figures span { color: var(--slate-500); font-size: 12px; font-weight: 650; }
 .answer-figures strong { font-size: 22px; line-height: 1.15; }
@@ -43,9 +43,9 @@
 .detail-block > summary + * { margin-top: 14px; }
 .score-sum { color: var(--slate-700); font-size: 14px; line-height: 1.6; }
 .plain-list { margin: 10px 0 0; padding-left: 18px; color: var(--slate-700); font-size: 13px; line-height: 1.5; }
-.section-details { margin-top: 18px; padding: 4px 16px 16px; border: 1px solid var(--slate-200); border-radius: var(--radius-md); background: white; }
-.section-details > summary { cursor: pointer; padding: 12px 0; font-weight: 750; }
-.details-heading { margin: 18px 0 4px; font-size: 15px; }
+
+
+
 .details-note { margin: 0 0 16px; color: var(--slate-700); font-size: 13px; line-height: 1.5; }
 .show-more { display: flex; justify-content: center; padding: 16px; }
 .more-filters { grid-column: 1 / -1; }
@@ -54,26 +54,26 @@
 .more-filters-grid label { display: flex; flex-direction: column; gap: 5px; color: var(--slate-500); font-size: 12px; font-weight: 700; }
 
 /* Tabelas com linha expansível */
-.row-more { margin-top: 6px; }
-.row-more > summary { cursor: pointer; color: var(--blue-700); font-size: 12px; font-weight: 700; }
-.row-more-body { display: grid; gap: 6px; margin: 8px 0 0; padding: 10px; border-radius: 8px; background: var(--slate-50); }
-.row-more-body > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
-.row-more-body dt { color: var(--slate-500); font-size: 12px; }
-.row-more-body dd { margin: 0; font-size: 12px; font-weight: 650; }
-.row-more-signals { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+
+
+
+
+
+
+
 .data-table td .badge + .badge { margin-left: 5px; }
 .evidence-row > td { padding: 0 !important; background: var(--slate-50); }
 .evidence-body { padding: 16px 18px; font-size: 13px; line-height: 1.55; }
 .evidence-body p { margin: 8px 0; }
-.evidence-figures { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 10px; }
+.evidence-figures { display: grid; gap: 10px; margin: 0 0 10px;}
 .evidence-figures > div { padding: 10px; border: 1px solid var(--slate-200); border-radius: 9px; background: white; }
 .evidence-figures dt { color: var(--slate-500); font-size: 12px; font-weight: 650; }
 .evidence-figures dd { margin: 4px 0 0; font-weight: 750; }
 .evidence-figures small { display: block; margin-top: 2px; color: var(--slate-500); font-size: 12px; font-weight: 400; }
 .evidence-toggle { white-space: nowrap; padding: 7px 10px; font-size: 12px; }
 .commercial-table { min-width: 860px; }
-.forecast-page-table .data-table { min-width: 0; }
-.forecast-page-table td { white-space: normal; }
+
+
 .priority-table { min-width: 0; }
 .cell-action { text-align: right; }
 
@@ -120,7 +120,7 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--slate-1
   .responsive-table td.cell-action > * { text-align: center; }
   .responsive-table tr.evidence-row { padding: 0; margin-top: -4px; background: var(--slate-50); }
   .responsive-table tr.evidence-row > td { display: block; text-align: left; }
-  .responsive-table .row-more, .responsive-table .row-more * { text-align: left; }
+  
   .answer-figures, .evidence-figures, .more-filters-grid { grid-template-columns: 1fr; }
   .answer-card { padding: 16px; }
   .subnav a { padding: 8px 11px; }
@@ -129,8 +129,8 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--slate-1
   .topbar .help-link { width: 39px; padding: 0; }
 }
 
-.forecast-page-table th { white-space: normal; }
-.forecast-page-table .data-table th, .forecast-page-table .data-table td { padding-left: 10px; padding-right: 10px; }
+
+
 
 .link-button { padding: 0; border: 0; background: none; color: var(--blue-700); font-weight: 750; text-align: left; text-decoration: underline; }
 .link-button:hover { color: var(--navy-800); }

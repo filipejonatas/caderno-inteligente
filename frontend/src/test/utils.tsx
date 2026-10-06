@@ -80,5 +80,5 @@ function LocationProbe() {
 export const currentLocation = () => document.querySelector('[data-testid="location"]')?.textContent ?? '';
 
 export function renderApp(path = '/') {
-  return render(<MemoryRouter initialEntries={[path]}><App /><LocationProbe /></MemoryRouter>);
+  return render(<MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><App /><LocationProbe /></MemoryRouter>);
 }
