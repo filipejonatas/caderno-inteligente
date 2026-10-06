@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
-import { LoadingState, Sidebar, SystemBanner, Topbar, navigation } from './components';
+import { LoadingState, RuleLine, Sidebar, SubNav, SystemBanner, Topbar, navigation } from './components';
 import type { SelectedSku } from './types';
 import { PageLoadContext } from './hooks/usePageLoadStatus';
 import { SystemInfoContext } from './hooks/useSystemInfo';
@@ -10,6 +10,7 @@ import type { SystemInfo } from './hooks/useSystemInfo';
 import { api } from './api';
 import type { PageLoadStatus } from './hooks/usePageLoadStatus';
 import './App.css';
+import './usability.css';
 
 const GuidePage = lazy(() => import('./pages/GuidePage'));
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
@@ -27,8 +28,8 @@ const SkuDetailPage = lazy(() => import('./pages/SkuDetailPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PAGE_FIELDS = {
-  OverviewPage: ['overview', 'priorities', 'quality'],
-  PrioritiesPage: ['priorities'],
+  OverviewPage: ['overview', 'priorities', 'quality', 'config'],
+  PrioritiesPage: ['priorities', 'config'],
   CasesPage: ['cases', 'priorities', 'config'],
   QualityPage: ['quality'],
   ScenariosPage: ['config'],
@@ -85,9 +86,11 @@ function App() {
     <a className="skip-link" href="#conteudo" onClick={(event) => { event.preventDefault(); document.getElementById('page-title')?.focus(); }}>Pular para o conteúdo</a>
     <Sidebar open={menuOpen} onClose={closeMenu} />
     <main className="main-content" id="conteudo">
-      <Topbar title={current.label} subtitle={current.description} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
+      <Topbar title={current.label} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
       <div className="page-content">
         {!staticPage && <SystemBanner info={systemInfo} />}
+        {!staticPage && <RuleLine />}
+        <SubNav />
         <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
             <Route path="/guia" element={<GuidePage />} />

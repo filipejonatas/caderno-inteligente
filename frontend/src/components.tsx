@@ -1,7 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link, matchPath, useLocation } from 'react-router-dom';
 import type { PageId, Priority } from './types';
+import { displayUnits, formatDate, glossary, reasonNames, sortReasons } from './pages/shared';
+import type { GlossaryTerm } from './pages/shared';
 
 type IconName =
   | 'guide'
@@ -44,23 +46,45 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
   return <svg className="icon" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconPaths[name]}</svg>;
 }
 
+/** Título (h1 e aba do navegador) de cada rota. Um nome só por página. */
 export const navigation: Array<{ id: PageId; path: string; label: string; description: string }> = [
-  { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Comece por aqui' },
-  { id: 'overview', path: '/', label: 'Visão geral', description: 'Pulso da operação' },
-  { id: 'priorities', path: '/prioridades', label: 'Prioridades', description: 'Fila de atenção' },
-  { id: 'forecasts', path: '/previsoes', label: 'Previsão e recomendações', description: 'Demanda e ação sugerida' },
+  { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
+  { id: 'overview', path: '/', label: 'Início', description: 'O que olhar primeiro' },
+  { id: 'priorities', path: '/prioridades', label: 'Fila de atenção', description: 'Ordem de análise dos SKUs' },
+  { id: 'forecasts', path: '/previsoes', label: 'Previsão e ação', description: 'Demanda e quantidade sugerida' },
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
-  { id: 'quality', path: '/qualidade', label: 'Qualidade', description: 'Confiabilidade dos dados' },
-  { id: 'b2b', path: '/parceiros', label: 'Visibilidade B2B2C', description: 'Cobertura dos parceiros' },
+  { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
+  { id: 'b2b', path: '/parceiros', label: 'Parceiros', description: 'Oportunidades e cobertura' },
   { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações seguras' },
-  { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Snapshots auditáveis' },
-  { id: 'feedback', path: '/decisoes', label: 'Decisões', description: 'Feedback do PCP' },
-  { id: 'validation', path: '/validacao', label: 'Validação', description: 'Evidência da Semana 4' },
+  { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Histórico e comparação' },
+  { id: 'feedback', path: '/decisoes', label: 'Registrar decisão', description: 'Decisão do PCP' },
+  { id: 'validation', path: '/validacao', label: 'Confiança nas recomendações', description: 'Validação dos resultados' },
 ];
+
+/** Menu principal: 6 entradas. As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
+export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
+  { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
+  { id: 'production', label: 'Produção', description: 'Fila, previsão e ação', to: '/prioridades', icon: 'priorities', paths: ['/prioridades', '/previsoes', '/skus'] },
+  { id: 'partners', label: 'Parceiros', description: 'Oportunidades e cobertura', to: '/parceiros', icon: 'b2b', paths: ['/parceiros'] },
+  { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade'] },
+  { id: 'decisions', label: 'Decisões', description: 'Registro e casos', to: '/decisoes', icon: 'feedback', paths: ['/decisoes', '/casos'] },
+  { id: 'advanced', label: 'Avançado', description: 'Cenários e execuções', to: '/cenarios', icon: 'scenarios', paths: ['/cenarios', '/execucoes'] },
+];
+
+export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
+  production: [{ label: 'Fila de atenção', to: '/prioridades' }, { label: 'Previsão e ação', to: '/previsoes' }],
+  trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }],
+  decisions: [{ label: 'Registrar decisão', to: '/decisoes' }, { label: 'Casos', to: '/casos' }],
+  advanced: [{ label: 'Cenários', to: '/cenarios' }, { label: 'Execuções', to: '/execucoes' }],
+};
+
+const inGroup = (pathname: string, paths: string[]) => paths.some((path) => path === '/' ? pathname === '/' : !!matchPath({ path, end: false }, pathname));
+export const groupFor = (pathname: string) => menuGroups.find((group) => inGroup(pathname, group.paths));
 
 export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 820px)').matches);
   const aside = useRef<HTMLElement>(null);
+  const { pathname } = useLocation();
   useEffect(() => {
     const media = window.matchMedia('(max-width: 820px)');
     const change = () => setMobile(media.matches);
@@ -85,25 +109,45 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu"><Icon name="close" /></button>
       </div>
       <nav aria-label="Navegação principal">
-        {navigation.map((item) => <NavLink key={item.id} to={item.path} end={item.path === '/'} className={({ isActive }) => isActive ? 'active' : ''} onClick={onClose}>
-          <span className="nav-icon"><Icon name={item.id} /></span>
-          <span><strong>{item.label}</strong><small>{item.description}</small></span>
-        </NavLink>)}
+        {menuGroups.map((item) => {
+          const active = inGroup(pathname, item.paths);
+          return <Link key={item.id} to={item.to} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={onClose}>
+            <span className="nav-icon"><Icon name={item.icon} /></span>
+            <span><strong>{item.label}</strong><small>{item.description}</small></span>
+          </Link>;
+        })}
       </nav>
-      <div className="sidebar-note"><span className="status-dot" />Sistema de apoio à decisão<strong>Não libera produção automaticamente</strong></div>
     </aside>
   </>;
 }
 
-export function Topbar({ title, subtitle, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false }: { title: string; subtitle: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
-  const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
+/** Abas entre as rotas de um mesmo grupo do menu (as URLs continuam as mesmas). */
+export function SubNav() {
+  const { pathname } = useLocation();
+  const group = groupFor(pathname);
+  const items = group ? subNavigation[group.id] : undefined;
+  if (!items) return null;
+  return <nav className="subnav" aria-label="Seções desta área">{items.map((item) => {
+    const active = !!matchPath({ path: item.to, end: false }, pathname);
+    return <Link key={item.to} to={item.to} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined}>{item.label}</Link>;
+  })}</nav>;
+}
+
+/** Regra de uso dita uma vez, no topo de toda página com dados. */
+export function RuleLine() {
+  return <p className="rule-line" role="note"><strong>Apoio à decisão:</strong> toda sugestão exige revisão humana e não é ordem de produção. <Link to="/guia">Ajuda</Link></p>;
+}
+
+export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false }: { title: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
+  const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
   return <header className="topbar">
     <div className="topbar-title">
       <button id="menu-button" className="icon-button menu-button" onClick={onMenu} aria-label="Abrir menu" aria-expanded={menuOpen} aria-controls="menu-principal"><Icon name="menu" /></button>
-      <div><p>{subtitle}</p><h1 id="page-title" tabIndex={-1}>{title}</h1></div>
+      <h1 id="page-title" tabIndex={-1}>{title}</h1>
     </div>
     <div className="topbar-actions">
-      <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Última carga: ${timestamp} (Brasília)` : 'Ainda sem carga concluída'}</small></div>
+      <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Carregado às ${timestamp} (Brasília)` : 'Ainda sem carga concluída'}</small></div>
+      <Link className="secondary-button help-link" to="/guia" aria-label="Ajuda: abrir o guia de uso"><Icon name="guide" size={17} /><span>Ajuda</span></Link>
       {showRefresh && <button className="secondary-button" onClick={onRefresh} disabled={refreshing} aria-label={refreshing ? 'Atualizando dados' : 'Atualizar dados desta página'}><Icon name="refresh" /><span>{refreshing ? 'Atualizando…' : 'Atualizar'}</span></button>}
     </div>
   </header>;
@@ -120,6 +164,12 @@ export function Tooltip({ label, children }: { label: string; children: ReactNod
   return <span className={`tooltip ${open ? 'is-open' : ''} ${dismissed ? 'is-dismissed' : ''}`} onMouseEnter={() => setDismissed(false)}><button type="button" className="tooltip-trigger" aria-label={label} aria-describedby={id} aria-expanded={open} onFocus={() => setDismissed(false)} onClick={() => { setDismissed(false); setOpen(value => !value); }} onBlur={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') { setOpen(false); setDismissed(true); } }}>?</button><span id={id} role="tooltip" className="tooltip-content">{children}</span></span>;
 }
 
+/** "?" com a definição em linguagem simples de um termo do glossário. */
+export function Hint({ term }: { term: GlossaryTerm }) {
+  const entry = glossary[term];
+  return <Tooltip label={`O que é: ${entry.name}`}>{entry.text}</Tooltip>;
+}
+
 export function SystemBanner({ info }: { info: { demo_mode: boolean; write_enabled: boolean; notice: string | null } | null }) {
   if (!info || (!info.demo_mode && info.write_enabled)) return null;
   return <div className="system-banner" role="note" aria-label="Modo da publicação">
@@ -128,12 +178,8 @@ export function SystemBanner({ info }: { info: { demo_mode: boolean; write_enabl
   </div>;
 }
 
-export function DecisionBoundary() {
-  return <Alert title="Prioridade de análise não é ordem de produção">O score indica o que investigar primeiro. A recomendação considera demanda, estoque e produção aberta. Um SKU pode ter prioridade alta e estar sem ação necessária de produção. Isso não elimina seus riscos nem dispensa revisão humana.</Alert>;
-}
-
-export function PageIntro({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: ReactNode }) {
-  return <div className="page-intro"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2><p>{description}</p></div>{action}</div>;
+export function PageIntro({ title, description, action }: { title: string; description?: ReactNode; action?: ReactNode }) {
+  return <div className="page-intro"><div><h2>{title}</h2>{description && <p>{description}</p>}</div>{action}</div>;
 }
 
 export function Badge({ children, tone = 'neutral', title }: { children: ReactNode; tone?: string; title?: string }) {
@@ -151,40 +197,37 @@ export function confidenceTone(confidence: string) {
   return confidence === 'baixa' ? 'low' : confidence === 'alta' ? 'good' : 'medium';
 }
 
-const shortReason: Record<string, string> = {
-  RUP_LEAD_TIME: 'Cobertura abaixo do lead time',
-  RUP_SAFETY_STOCK: 'Abaixo do estoque de segurança',
-  ORDER_WITHOUT_PRODUCTION: 'Pedido sem produção',
-  PRODUCTION_AFTER_PROMISE: 'Produção após a promessa',
-  CAPACITY_CONFLICT: 'Capacidade pressionada',
-  EXCESS_COVERAGE: 'Excesso de cobertura',
-  LOW_SELLOUT_VISIBILITY: 'Baixa visibilidade de sell-out',
-};
+/** Sinal que mais pesa no score (o primeiro da lista da API é só a ordem alfabética dos códigos). */
+export function mainReason(reasons: Priority['reasons'], weights?: Record<string, number>) {
+  return sortReasons(reasons, weights)[0];
+}
 
 export function MetricCard({ label, value, detail, tone = 'blue', icon }: { label: string; value: ReactNode; detail: string; tone?: string; icon: IconName }) {
   return <article className={`metric-card metric-${tone}`}><div className="metric-icon"><Icon name={icon} /></div><div><span>{label}</span><strong>{value}</strong><small>{detail}</small></div></article>;
 }
 
-const formatDate = (value: string | null) => value
-  ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' }).format(new Date(value))
-  : 'Não disponível';
+const criticalDateOrigin = (reason: Priority['critical_date_reason']) => reason === 'first_promised_date' ? 'Data prometida' : reason === 'first_production_completion' ? 'Conclusão prevista' : 'Sem data operacional';
 
-const formatQuantity = (value: number | null) => value === null
-  ? 'Não disponível'
-  : new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value);
-
-export function PriorityTable({ rows, onSelect, compact = false }: { rows: Priority[]; onSelect: (row: Priority) => void; compact?: boolean }) {
+export function PriorityTable({ rows, onSelect, compact = false, weights }: { rows: Priority[]; onSelect: (row: Priority) => void; compact?: boolean; weights?: Record<string, number> }) {
   if (!rows.length) return <EmptyState title="Nenhuma prioridade encontrada" description="Ajuste os filtros ou atualize os dados." />;
-  return <div className="table-shell" tabIndex={0} role="region" aria-label="Prioridades; role horizontalmente para ver todas as colunas"><table className={`data-table priority-table ${compact ? 'is-compact' : ''}`}><caption>Prioridade de análise · não é autorização de produção</caption><thead><tr><th>Prioridade</th><th>SKU / Produto</th><th>Família</th><th>Motivo principal</th>{!compact && <><th>Data crítica</th><th>Lacuna operacional</th></>}<th>Score <Tooltip label="O que significa o score?">Soma dos pesos dos sinais. Ordena a atenção, não a quantidade a produzir.</Tooltip></th><th>Confiança <Tooltip label="O que significa a confiança?">Qualidade da evidência para análise; não é garantia de atendimento ou previsão.</Tooltip></th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>{rows.map((row) => <tr key={row.sku} onClick={() => onSelect(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onSelect(row); }}>
-    <td><span className={`rank ${row.priority <= 3 ? 'top' : ''}`}>{row.priority}</span></td>
-    <td><strong>{row.sku}</strong><small>{row.product}</small></td>
-    <td>{row.family}</td>
-    <td><Badge tone={severityTone(row.reasons[0]?.severity)}>{shortReason[row.reasons[0]?.code] ?? row.reasons[0]?.description ?? 'Sem motivo'}</Badge>{!compact && row.reasons.length > 1 && <small className="more-reasons">+{row.reasons.length - 1} sinais</small>}</td>
-    {!compact && <><td><strong>{formatDate(row.critical_date)}</strong><small>{row.critical_date_reason === 'first_promised_date' ? 'Data prometida' : row.critical_date_reason === 'first_production_completion' ? 'Conclusão prevista' : 'Sem data operacional'}</small></td><td><strong>{formatQuantity(row.operational_gap_quantity)}</strong><small>Quantidade para análise</small></td></>}
-    <td><strong className="score">{row.attention_score}</strong></td>
-    <td><Badge tone={confidenceTone(row.confidence)}>{row.confidence}</Badge></td>
-    <td><button className="icon-button table-detail-button" aria-label={`Abrir evidências de ${row.sku}`} onClick={event => { event.stopPropagation(); onSelect(row); }}><Icon name="arrow" size={17} /></button></td>
-  </tr>)}</tbody></table></div>;
+  return <div className="table-shell" tabIndex={0} role="region" aria-label="Prioridades; role horizontalmente para ver todas as colunas"><table className={`data-table priority-table responsive-table ${compact ? 'is-compact' : ''}`}><caption className="sr-only">Prioridade de análise · não é autorização de produção</caption><thead><tr><th>Posição</th><th>SKU / Produto</th><th>Motivo principal</th><th>Pontos <Hint term="score" /></th><th>Confiança nos dados <Hint term="confianca_dados" /></th><th><span className="sr-only">Abrir</span></th></tr></thead><tbody>{rows.map((row) => {
+    const ordered = sortReasons(row.reasons, weights);
+    const main = ordered[0];
+    return <tr key={row.sku} onClick={() => onSelect(row)} tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter' && event.target === event.currentTarget) onSelect(row); }}>
+      <td data-label="Posição"><span className={`rank ${row.priority <= 3 ? 'top' : ''}`}>{row.priority}</span></td>
+      <td data-label="SKU"><strong>{row.sku}</strong><small>{row.product} · {row.family}</small></td>
+      <td className="cell-stack" data-label="Motivo principal"><Badge tone={severityTone(main?.severity)}>{reasonNames[main?.code] ?? main?.description ?? 'Sem motivo'}</Badge>{row.reasons.length > 1 && <small className="more-reasons">+{row.reasons.length - 1} sinais</small>}
+        {!compact && <details className="row-more" onClick={(event) => event.stopPropagation()}><summary>Ver sinais, data e lacuna</summary>
+          <div className="row-more-body">
+            <div className="row-more-signals">{ordered.map((reason) => <Badge key={reason.code} tone={severityTone(reason.severity)}>{reasonNames[reason.code] ?? reason.description}</Badge>)}</div>
+            <dl><div><dt>Data crítica</dt><dd>{formatDate(row.critical_date)} · {criticalDateOrigin(row.critical_date_reason)}</dd></div><div><dt>Lacuna operacional</dt><dd>{displayUnits(row.operational_gap_quantity)}</dd></div></dl>
+          </div></details>}
+      </td>
+      <td data-label="Pontos"><strong className="score">{row.attention_score}</strong></td>
+      <td data-label="Confiança nos dados"><Badge tone={confidenceTone(row.confidence)}>{row.confidence}</Badge></td>
+      <td className="cell-action"><button className="icon-button table-detail-button" aria-label={`Abrir evidências de ${row.sku}`} onClick={event => { event.stopPropagation(); onSelect(row); }}><Icon name="arrow" size={17} /></button></td>
+    </tr>;
+  })}</tbody></table></div>;
 }
 
 export function LoadingState() {

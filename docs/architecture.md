@@ -73,16 +73,18 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
+O menu agrupa as rotas em 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Avançado); dentro de cada grupo as rotas viram abas (`SubNav`), e `/parceiros` tem as abas `?aba=oportunidades|parceiros`. Nenhuma URL mudou. `/prioridades` e `/` também leem `/api/config` (pesos) para ordenar os sinais por peso.
+
 | URL | Página | Dados consultados |
 |---|---|---|
 | `/guia` | Guia de uso | Nenhum (funciona com a API fora do ar) |
-| `/` | Visão geral | `overview`, `priorities`, `data-quality` |
-| `/prioridades` | Prioridades — filtros `busca`, `familia`, `confianca` na URL | `priorities` |
+| `/` | Início | `overview`, `priorities`, `data-quality`, `config` |
+| `/prioridades` | Fila de atenção — filtros `busca`, `familia`, `confianca` na URL | `priorities`, `config` |
 | `/previsoes` | Previsão e recomendações — filtros `busca`, `familia`, `acao`, `confianca`, `tendencia`, `atencao`, `ordem` | `forecasts` |
 | `/skus/:sku` | Detalhe do SKU (compartilhável) | `priorities/{sku}`, `commercial-recommendations?sku=` |
 | `/casos` | Casos | `cases`, `priorities`, `config` |
 | `/qualidade` | Qualidade dos dados | `data-quality` |
-| `/parceiros` | Parceiros e canais — filtros `regiao`, `canal`, `ordem` | `partners` |
+| `/parceiros` | Parceiros (oportunidades e lista) — filtros `regiao`, `canal`, `ordem`, `aba` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
 | `/parceiros/:codigo` | Detalhe do parceiro — filtros `sku`, `acao`, `qualidade`, `offset` | `partners/{codigo}`, `partners/{codigo}/skus` |
 | `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
 | `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |

@@ -170,3 +170,7 @@ Com `WRITE_ENABLED=false`, `POST /api/feedback`, `POST /api/cases`, `PUT /api/ca
 - Erro não tratado retorna 500 com `detail` contendo o código de referência. Em `APP_ENV=production` a mensagem é genérica; em desenvolvimento inclui o tipo e a mensagem, já sem connection strings.
 - Em produção, erros 422 de validação retornam somente `type`, `loc` e `msg`, sem ecoar o valor enviado.
 - CORS aceita apenas as origens válidas de `CORS_ORIGINS`, os métodos GET, POST, PUT e OPTIONS e o cabeçalho `Content-Type`, sem credenciais.
+
+## Etapa de usabilidade — sem mudança de contrato
+
+A etapa de usabilidade (`docs/etapa-usabilidade.md`) não adicionou, removeu nem alterou campos ou rotas. A interface passou a usar rotas que já existiam: `GET /api/config` (pesos, para ordenar os sinais por peso) em `/` e `/prioridades`, `GET /api/commercial-recommendations?action=avaliar_reposicao` na lista de oportunidades de `/parceiros` e `score_contributions` de `GET /api/priorities/{sku}` (decomposição do score).

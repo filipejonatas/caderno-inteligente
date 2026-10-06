@@ -29,32 +29,32 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
 
 ## 0:00–1:00 — Problema e linha de base
 
-**Tela:** `/validacao`, bloco "Comparação com o processo atual".
+**Tela:** `/validacao`, aba "Processo atual" (já aberta), bloco "Comparação com o processo atual". O resumo e as falhas conhecidas ficam acima das abas.
 
 - O PCP decide o que, quanto e quando produzir com dados fragmentados. A empresa informa:
   - 22 horas semanais de análise manual;
   - 89% de pedidos no prazo, com meta de 96%;
   - MAPE de 31% no forecast comercial;
   - 78% de aderência ao plano.
-- A visibilidade do parceiro é parcial: só 20% dos pares parceiro–SKU têm sell-out registrado.
+- A visibilidade do parceiro é parcial: só 20% dos pares parceiro–SKU têm sell-out registrado (50 de 250). Esse número aparece em `/` ("Detalhes"), em `/qualidade` e em `/parceiros`, não em `/validacao`.
 - O protótipo separa o que a empresa **informou**, o que ele **recalculou** e a **meta**. O que a base não permite recalcular aparece como "não disponível", nunca como um número inventado.
 
 ## 1:00–2:00 — Visão geral
 
 **Tela:** `/`.
 
-- O primeiro da fila é o **CI-0041** (prioridade #1, score 33), com cinco sinais:
+- O primeiro da fila é o **CI-0041** (posição 1, 33 pontos). O motivo principal mostrado é o sinal de maior peso, "Abaixo do estoque de segurança"; os cinco sinais são:
   - abaixo da segurança;
   - abaixo do lead time;
   - produção após a promessa;
   - capacidade pressionada;
   - sem sell-out.
 - 16 SKUs têm risco de ruptura (15 abaixo do lead time e 13 abaixo da segurança), há 12 pedidos sem OP e 20 SKUs priorizados têm confiança baixa por falta de sell-out.
-- **Mensagem:** é uma **ordem de análise**, com motivos e evidências, não uma ordem de produção.
+- **Mensagem:** é uma **ordem de análise**, com motivos e evidências, não uma ordem de produção. A regra aparece uma vez, na linha amarela sob o título de toda página.
 
 ## 2:00–3:00 — Prioridade e recomendação operacional
 
-**Telas:** clicar em "Abrir evidências de CI-0041" (`/skus/CI-0041`) e depois abrir `/skus/CI-0014`.
+**Telas:** clicar em "Abrir evidências de CI-0041" (`/skus/CI-0041`) e depois abrir `/skus/CI-0014`. A resposta (ação e quantidade) está no topo da página; o cálculo fica no bloco "Por que esta quantidade" e as evidências em "Riscos e evidências".
 
 - **CI-0041:** apesar da prioridade #1, a recomendação é **"Sem ação necessária"**. Estoque e produção aberta já cobrem a demanda do próximo mês. O risco continua exigindo análise, e a tela diz isso explicitamente.
 - **CI-0014:** a recomendação é **"Produzir após validar capacidade"**, com **400 unidades**.
@@ -65,7 +65,7 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
 
 ## 3:00–4:00 — Parceiro e recomendação comercial
 
-**Tela:** `/parceiros` → **Papelaria Horizonte (KA-01)** → `/parceiros/KA-01?sku=CI-0011`.
+**Tela:** `/parceiros` (aba "Oportunidades": as 12 oportunidades de 5 parceiros em uma lista) → **Papelaria Horizonte (KA-01)** → `/parceiros/KA-01?sku=CI-0011`. Em cada linha, "Ver evidências" abre o detalhe mensal na própria linha.
 
 - A recomendação comercial é por **parceiro e SKU** e usa só dados daquele parceiro.
 - **CI-0011 na KA-01: "Avaliar reposição".**
@@ -77,7 +77,7 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
 
 ## 4:00–5:00 — Validação e comportamento seguro
 
-**Tela:** `/validacao`, blocos "Desempenho dos modelos", "Casos congelados" e "Comportamento seguro".
+**Tela:** `/validacao`: resumo e falhas conhecidas no topo; depois as abas "Modelos de previsão", "Casos de teste" e "Segurança e limitações".
 
 - **Previsão:**
   - WAPE ponderado de 6,9% contra 8,0% da baseline ingênua;

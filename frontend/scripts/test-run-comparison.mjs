@@ -17,8 +17,8 @@ async function compile(file, replacements = {}) {
   for (const [name, url] of Object.entries(replacements)) code = code.replaceAll(`'${name}'`, JSON.stringify(url)).replaceAll(`"${name}"`, JSON.stringify(url));
   return dataUrl(code);
 }
-const componentsUrl = await compile('../src/components.tsx');
 const sharedUrl = await compile('../src/pages/shared.ts');
+const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
 const stub = dataUrl('export const api = {}; export function useApiResource() { return {}; }');
 const { RunComparisonContent } = await import(await compile('../src/components/RunComparisonView.tsx', {
   '../api': stub, '../hooks/useApiResource': stub, '../components': componentsUrl, '../pages/shared': sharedUrl,
@@ -63,7 +63,7 @@ test('incompatible sections are refused with the reason and absent values stay a
   const html = render(fixture);
   assert.ok(html.includes('Comparação não disponível nesta seção'));
   assert.ok(html.includes('não preserva previsão e recomendação'));
-  assert.ok(html.includes('snapshot anterior à Etapa 6'));
+  assert.ok(html.includes('execução antiga, só com ranking'));
   assert.ok(html.includes('não disponível'));
   assert.ok(html.includes('href="/parceiros/KA%2001"'));
 });

@@ -17,8 +17,8 @@ async function compile(file, replacements = {}) {
   for (const [name, url] of Object.entries(replacements)) code = code.replaceAll(`'${name}'`, JSON.stringify(url)).replaceAll(`"${name}"`, JSON.stringify(url));
   return dataUrl(code);
 }
-const componentsUrl = await compile('../src/components.tsx');
 const sharedUrl = await compile('../src/pages/shared.ts');
+const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
 const exportUrl = await compile('../src/validation-export.ts');
 const stub = dataUrl('export const api = {}; export function useApiResource() { return {}; } export function usePageLoadStatus() {}');
 const { ValidationContent } = await import(await compile('../src/pages/ValidationPage.tsx', {

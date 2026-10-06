@@ -9,23 +9,23 @@ describe('navegação por teclado', () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/prioridades');
-    await screen.findByRole('heading', { level: 2, name: 'Prioridades explicáveis' });
+    await screen.findByRole('heading', { level: 2, name: 'Em que ordem analisar os SKUs' });
     await user.tab();
     expect(screen.getByRole('link', { name: 'Pular para o conteúdo' })).toHaveFocus();
     await user.keyboard('{Enter}');
-    expect(screen.getByRole('heading', { level: 1, name: 'Prioridades' })).toHaveFocus();
+    expect(screen.getByRole('heading', { level: 1, name: 'Fila de atenção' })).toHaveFocus();
   });
 
   it('no desktop o menu é alcançável e ativado por teclado', async () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/');
-    await screen.findByRole('heading', { level: 2, name: 'Da atenção à decisão humana' });
+    await screen.findByRole('heading', { level: 2, name: 'O que olhar primeiro' });
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    const casos = within(nav).getByRole('link', { name: /Casos/ });
-    casos.focus();
+    const parceiros = within(nav).getByRole('link', { name: /Parceiros/ });
+    parceiros.focus();
     await user.keyboard('{Enter}');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Casos' })).toHaveFocus();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Parceiros' })).toHaveFocus();
   });
 
   it('no celular o menu abre com foco, fecha com Esc e devolve o foco ao botão', async () => {
@@ -56,8 +56,8 @@ describe('navegação por teclado', () => {
     mockApi();
     renderApp('/');
     await user.click(screen.getByRole('button', { name: 'Abrir menu' }));
-    await user.click(within(document.getElementById('menu-principal')!).getByRole('link', { name: /Qualidade/ }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Qualidade' })).toBeInTheDocument();
+    await user.click(within(document.getElementById('menu-principal')!).getByRole('link', { name: /Confiança/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Confiança nas recomendações' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Abrir menu' })).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -78,7 +78,7 @@ describe('formulários por teclado', () => {
     const api = mockApi();
     renderApp('/decisoes');
     const sku = await screen.findByLabelText('SKU');
-    const fields = [sku, screen.getByLabelText('Ação tomada'), screen.getByLabelText('Efeito do dado do parceiro'), screen.getByLabelText(/Tempo de análise/), screen.getByLabelText('Usuário'), screen.getByLabelText('Observação')];
+    const fields = [sku, screen.getByLabelText('O que você decidiu?'), screen.getByLabelText('O dado do parceiro ajudou?'), screen.getByLabelText(/Tempo de análise/), screen.getByLabelText('Usuário'), screen.getByLabelText('Observação')];
     sku.focus();
     for (const field of fields.slice(1)) { await user.tab(); expect(field).toHaveFocus(); }
     await user.type(screen.getByLabelText('Observação'), 'Decisão por teclado');

@@ -65,21 +65,23 @@ Acesse `http://127.0.0.1:5173`. O Vite encaminha `/api` para `127.0.0.1:8000`.
 
 ## Interface
 
-| URL | Página |
+O menu tem 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Avançado) e o botão **Ajuda** (guia) na barra superior. As rotas agrupadas aparecem como abas e continuam abrindo por URL.
+
+| URL | Menu · página |
 |---|---|
-| `/guia` | Guia de uso: fluxo, glossário, perguntas frequentes e roteiro de 5 minutos. Funciona com a API fora do ar |
-| `/` | Visão geral: primeiro da fila, riscos, atalhos e qualidade da decisão |
-| `/prioridades` | Ranking oficial com filtros na URL (`busca`, `familia`, `confianca`) |
-| `/previsoes` | Previsão, erro no holdout, ação e quantidade sugerida para todos os SKUs |
-| `/skus/:sku` | Detalhe compartilhável: indicadores, sinais, cálculo da recomendação e contexto dos parceiros |
-| `/parceiros` | Parceiros e canais com cobertura medida |
-| `/parceiros/:codigo` | Matriz parceiro–SKU, sugestões comerciais e evidências mensais |
-| `/casos` | Casos com responsável, prazo e status |
-| `/qualidade` | Integridade, lacunas e cobertura de sell-out |
-| `/cenarios` | Simulação de pesos sem alterar o ranking oficial |
-| `/execucoes` | Snapshots auditáveis; `?base=&alvo=` compara duas execuções |
-| `/decisoes` | Registro da decisão humana |
-| `/validacao` | Central de validação da Semana 4, com exportação CSV e impressão |
+| `/guia` | Ajuda: trilhas por papel (PCP, Comercial, Gestão), glossário e perguntas frequentes. Funciona com a API fora do ar |
+| `/` | Início: primeiro da fila e o porquê, 4 números, fila de atenção e, recolhido, qualidade da evidência |
+| `/prioridades` | Produção › Fila de atenção: ranking oficial com filtros na URL (`busca`, `familia`, `confianca`); o motivo principal é o sinal de maior peso |
+| `/previsoes` | Produção › Previsão e ação: ação e quantidade sugeridas por SKU, com previsão e erro recolhidos |
+| `/skus/:sku` | Detalhe compartilhável: ação sugerida no topo, cálculo, dados do SKU, riscos e evidências, contexto dos parceiros; botões "Registrar decisão" e "Criar caso" |
+| `/parceiros` | Parceiros › Oportunidades (padrão) e `?aba=parceiros`; filtros `regiao`, `canal`, `ordem` |
+| `/parceiros/:codigo` | Matriz parceiro–SKU com evidências mensais na própria linha |
+| `/casos` | Decisões › Casos; aceita `?sku=` |
+| `/qualidade` | Confiança › Dados da planilha: integridade, lacunas e cobertura de sell-out |
+| `/cenarios` | Avançado › Cenários: simulação de 2 pesos sem alterar o ranking oficial |
+| `/execucoes` | Avançado › Execuções: `?base=&alvo=` compara duas execuções |
+| `/decisoes` | Decisões › Registrar decisão; aceita `?sku=` |
+| `/validacao` | Confiança › Validação: resumo, falhas conhecidas e abas, com exportação CSV e impressão |
 
 Rotas inexistentes mostram uma página 404. O `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar qualquer URL interna.
 

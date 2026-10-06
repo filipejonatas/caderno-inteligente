@@ -9,19 +9,19 @@ import { mockApi, renderApp } from './utils';
 const OPTIONS: axe.RunOptions = { rules: { 'color-contrast': { enabled: false } }, resultTypes: ['violations'] };
 
 const PAGES: Array<[string, string]> = [
-  ['/', 'Da atenção à decisão humana'],
+  ['/', 'O que olhar primeiro'],
   ['/guia', 'Entenda o Caderno Inteligente em poucos minutos'],
-  ['/prioridades', 'Prioridades explicáveis'],
-  ['/previsoes', 'Previsão e recomendações'],
+  ['/prioridades', 'Em que ordem analisar os SKUs'],
+  ['/previsoes', 'Preciso produzir? Quanto?'],
   [`/skus/${encodeURIComponent(SKU_SHORT)}`, SKU_SHORT],
-  ['/casos', 'Casos operacionais'],
-  ['/qualidade', 'Qualidade dos dados'],
-  ['/parceiros', 'Parceiros e canais'],
+  ['/casos', 'Casos em acompanhamento'],
+  ['/qualidade', 'Posso confiar na planilha?'],
+  ['/parceiros', 'Onde há oportunidade de reposição'],
   [`/parceiros/${encodeURIComponent(PARTNER)}`, 'Parceiro sintético'],
-  ['/cenarios', 'Simulação de cenários'],
-  ['/execucoes?base=1&alvo=2', 'Execuções registradas'],
-  ['/decisoes', 'Feedback do PCP'],
-  ['/validacao', 'Central de validação'],
+  ['/cenarios', 'E se o peso de um sinal mudar?'],
+  ['/execucoes?base=1&alvo=2', 'O que mudou entre duas execuções'],
+  ['/decisoes', 'Registrar a decisão'],
+  ['/validacao', 'Quanto confiar nas recomendações'],
   ['/rota-inexistente', 'Página não encontrada'],
 ];
 

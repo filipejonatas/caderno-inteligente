@@ -12,7 +12,7 @@ describe('robustez', () => {
     renderApp('/');
     expect(await screen.findByRole('heading', { name: 'Esta página não pôde ser exibida' })).toBeInTheDocument();
     expect(screen.getByText(/Os dados de origem não foram alterados/)).toBeInTheDocument();
-    await user.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Guia de uso/ }));
+    await user.click(screen.getByRole('link', { name: /Ajuda: abrir/ }));
     expect(await screen.findByRole('heading', { level: 2, name: 'Entenda o Caderno Inteligente em poucos minutos' })).toBeInTheDocument();
   });
 
@@ -29,12 +29,12 @@ describe('robustez', () => {
     const api = mockApi({ forecasts: () => new Promise((resolve) => { release = resolve; }) });
     renderApp('/previsoes');
     await waitFor(() => expect(api.gets()).toContain('/api/forecasts'));
-    await user.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Qualidade/ }));
-    expect(await screen.findByRole('heading', { level: 2, name: 'Qualidade dos dados' })).toBeInTheDocument();
+    await user.click(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Confiança/ }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Quanto confiar nas recomendações' })).toBeInTheDocument();
     release([]);
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(screen.getByRole('heading', { level: 2, name: 'Qualidade dos dados' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Previsão e recomendações' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Quanto confiar nas recomendações' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Preciso produzir? Quanto?' })).not.toBeInTheDocument();
     expect((api.fetchMock.mock.calls[0][1] as RequestInit).signal?.aborted).toBe(true);
   });
 });

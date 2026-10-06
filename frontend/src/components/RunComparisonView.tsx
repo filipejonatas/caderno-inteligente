@@ -18,7 +18,7 @@ function Refused({ section }: { section: Unavailable }) {
 }
 
 function RunCard({ label, run }: { label: string; run: RunMeta }) {
-  return <div className="run-compare-meta"><span className="eyebrow">{label}</span><strong>Execução #{run.id}</strong><small>{formatDateTime(run.created_at)}</small><code title={run.source_hash}>{run.source_hash.slice(0, 16)}…</code><small>{run.prioritized_skus} SKUs no ranking · {run.comparison_schema_version ? `snapshot ampliado v${run.comparison_schema_version}` : 'snapshot anterior à Etapa 6'}</small></div>;
+  return <div className="run-compare-meta"><span className="eyebrow">{label}</span><strong>Execução #{run.id}</strong><small>{formatDateTime(run.created_at)}</small><code title={run.source_hash}>{run.source_hash.slice(0, 16)}…</code><small>{run.prioritized_skus} SKUs no ranking · {run.comparison_schema_version ? `execução completa (versão ${run.comparison_schema_version})` : 'execução antiga, só com ranking'}</small></div>;
 }
 
 function Changes({ title, changes }: { title: string; changes: KeyChange[] }) {

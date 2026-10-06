@@ -6,17 +6,17 @@ import { setViewport } from './setup';
 import { currentLocation, mockApi, renderApp } from './utils';
 
 const ROUTES: Array<[string, string, string]> = [
-  ['/', 'Visão geral', 'Da atenção à decisão humana'],
+  ['/', 'Início', 'O que olhar primeiro'],
   ['/guia', 'Guia de uso', 'Entenda o Caderno Inteligente em poucos minutos'],
-  ['/prioridades', 'Prioridades', 'Prioridades explicáveis'],
-  ['/previsoes', 'Previsão e recomendações', 'Previsão e recomendações'],
-  ['/casos', 'Casos', 'Casos operacionais'],
-  ['/qualidade', 'Qualidade', 'Qualidade dos dados'],
-  ['/parceiros', 'Visibilidade B2B2C', 'Parceiros e canais'],
-  ['/cenarios', 'Cenários', 'Simulação de cenários'],
-  ['/execucoes', 'Execuções', 'Execuções registradas'],
-  ['/decisoes', 'Decisões', 'Feedback do PCP'],
-  ['/validacao', 'Validação', 'Central de validação'],
+  ['/prioridades', 'Fila de atenção', 'Em que ordem analisar os SKUs'],
+  ['/previsoes', 'Previsão e ação', 'Preciso produzir? Quanto?'],
+  ['/casos', 'Casos', 'Casos em acompanhamento'],
+  ['/qualidade', 'Dados da planilha', 'Posso confiar na planilha?'],
+  ['/parceiros', 'Parceiros', 'Onde há oportunidade de reposição'],
+  ['/cenarios', 'Cenários', 'E se o peso de um sinal mudar?'],
+  ['/execucoes', 'Execuções', 'O que mudou entre duas execuções'],
+  ['/decisoes', 'Registrar decisão', 'Registrar a decisão'],
+  ['/validacao', 'Confiança nas recomendações', 'Quanto confiar nas recomendações'],
 ];
 
 describe.each(['desktop', 'mobile'] as const)('rotas em %s', (viewport) => {
@@ -47,7 +47,7 @@ describe('deep links', () => {
     expect(await screen.findByRole('heading', { level: 2, name: 'Parceiro sintético' })).toBeInTheDocument();
     expect(api.gets()).toContain(`/api/partners/${encodeURIComponent(PARTNER)}`);
     expect(api.gets().some((path) => path.startsWith(`/api/partners/${encodeURIComponent(PARTNER)}/skus?`))).toBe(true);
-    expect(screen.getByRole('link', { name: /Visibilidade B2B2C/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Parceiros/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('abre a comparação de execuções pela URL', async () => {
@@ -86,8 +86,9 @@ describe('404 e guia offline', () => {
     expect(screen.getByText('Não consulta a API')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Atualizar/ })).not.toBeInTheDocument();
     expect(api.fetchMock).not.toHaveBeenCalled();
-    const pages = screen.getAllByRole('link', { name: /Abrir página/ });
-    expect(pages.length).toBeGreaterThanOrEqual(ROUTES.length - 1);
+    // Trilhas por papel (PCP, Comercial, Gestão) levam às telas principais, todas offline.
+    const trails = screen.getAllByRole('link').filter((link) => link.classList.contains('guide-link'));
+    expect(trails.length).toBeGreaterThanOrEqual(8);
   });
 });
 
@@ -97,11 +98,12 @@ describe('menu', () => {
     mockApi();
     renderApp('/prioridades');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    expect(within(nav).getByRole('link', { name: /Prioridades/ })).toHaveAttribute('aria-current', 'page');
-    expect(within(nav).getByRole('link', { name: /Visão geral/ })).not.toHaveAttribute('aria-current');
-    await user.click(within(nav).getByRole('link', { name: /Validação/ }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Validação' })).toHaveFocus();
-    expect(within(nav).getByRole('link', { name: /Validação/ })).toHaveAttribute('aria-current', 'page');
-    expect(document.title).toBe('Validação · Caderno Inteligente');
+    expect(within(nav).getAllByRole('link')).toHaveLength(6);
+    expect(within(nav).getByRole('link', { name: /Produção/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /Início/ })).not.toHaveAttribute('aria-current');
+    await user.click(within(nav).getByRole('link', { name: /Confiança/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Confiança nas recomendações' })).toHaveFocus();
+    expect(within(nav).getByRole('link', { name: /Confiança/ })).toHaveAttribute('aria-current', 'page');
+    expect(document.title).toBe('Confiança nas recomendações · Caderno Inteligente');
   });
 });

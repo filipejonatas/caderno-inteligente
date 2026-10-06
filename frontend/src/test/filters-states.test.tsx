@@ -11,7 +11,7 @@ describe('filtros sincronizados com a URL', () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/prioridades?familia=Fam%C3%ADlia+A');
-    await screen.findByRole('heading', { level: 2, name: 'Prioridades explicáveis' });
+    await screen.findByRole('heading', { level: 2, name: 'Em que ordem analisar os SKUs' });
     expect(screen.getByLabelText('Família')).toHaveValue('Família A');
     expect(rows()).toEqual(['TEST-001', 'TEST-003']);
 

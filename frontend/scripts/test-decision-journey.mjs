@@ -18,9 +18,9 @@ async function compile(file, replacements = {}) {
   for (const [name, url] of Object.entries(replacements)) code = code.replaceAll(`'${name}'`, JSON.stringify(url)).replaceAll(`"${name}"`, JSON.stringify(url));
   return dataUrl(code);
 }
-const componentsUrl = await compile('../src/components.tsx');
 const sharedUrl = await compile('../src/pages/shared.ts');
-const { Topbar, DecisionBoundary, Alert, Tooltip } = await import(componentsUrl);
+const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
+const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
 const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl }));
 const render = element => renderToStaticMarkup(element);
 
@@ -31,13 +31,14 @@ const fixture = {
   overview: { prioritized: 1, total_skus: 1, rupture_sku_count: 1, below_lead_time_count: 1, below_safety_stock_count: 0, order_without_production: 0, low_confidence: 0, decision_count: 0, partner_data_influenced_decision_count: 0, risk_distribution: { RUP_LEAD_TIME: 1 } },
   priorities: [{ sku: 'TEST / SKU', product: 'Produto de teste', family: 'Família de teste', priority: 7, attention_score: 8, confidence: 'média', reasons: [{ code: 'RUP_LEAD_TIME', severity: 'alta', description: 'Sinal de teste' }] }],
   quality: { sell_out_coverage: { coverage: 0.5, observed_pairs: 1, possible_pairs: 2 } },
+  config: { weights: { RUP_LEAD_TIME: 8 } },
 };
 test('overview renders the three blocks, preserves returned priority and links safely', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: fixture, onSelect() {} })));
-  for (const title of ['O que exige atenção', 'Ações sugeridas', 'Qualidade da decisão']) assert.ok(html.includes(title));
-  assert.ok(html.includes('prioridade #7'));
+  for (const title of ['O que olhar primeiro', 'Fila de atenção', 'Detalhes: qualidade da evidência']) assert.ok(html.includes(title));
+  assert.ok(html.includes('posição 7'));
   assert.ok(html.includes('href="/previsoes?busca=TEST%20%2F%20SKU"'));
-  for (const path of ['/prioridades', '/parceiros', '/qualidade', '/decisoes']) assert.ok(html.includes(`href="${path}"`));
+  assert.ok(html.includes('href="/prioridades"'));
   assert.ok(html.includes('Ausência de sell-out nunca é tratada como venda zero'));
 });
 test('empty overview does not invent a priority or action quantity', () => {
@@ -46,18 +47,18 @@ test('empty overview does not invent a priority or action quantity', () => {
   assert.ok(!html.includes('Abrir evidências de TEST'));
   assert.ok(html.includes('href="/previsoes"'));
 });
-test('shared explanation distinguishes analysis priority from production action', () => {
-  const html = render(React.createElement(DecisionBoundary));
-  assert.ok(html.includes('Prioridade de análise não é ordem de produção'));
-  assert.ok(html.includes('prioridade alta e estar sem ação necessária de produção'));
-  assert.ok(html.includes('revisão humana'));
+test('the single rule line says once that suggestions need human review and are not production orders', () => {
+  const html = render(React.createElement(MemoryRouter, null, React.createElement(RuleLine)));
+  assert.ok(html.includes('toda sugestão exige revisão humana'));
+  assert.ok(html.includes('não é ordem de produção'));
 });
 test('header shows successful load time and never invents a timestamp', () => {
-  const props = { title: 'Teste', subtitle: 'Contexto', onMenu() {}, onRefresh() {}, refreshing: false };
+  const props = { title: 'Teste', onMenu() {}, onRefresh() {}, refreshing: false };
+  const render = element => renderToStaticMarkup(React.createElement(MemoryRouter, null, element));
   const empty = render(React.createElement(Topbar, props));
   assert.ok(empty.includes('Ainda sem carga concluída'));
   const loaded = render(React.createElement(Topbar, { ...props, loadedAt: Date.UTC(2026, 9, 5, 20, 48) }));
-  assert.ok(loaded.includes('05/10/2026, 17:48:00'));
+  assert.ok(loaded.includes('Carregado às 17:48'));
   assert.ok(loaded.includes('não indica atualização da planilha'));
   const loading = render(React.createElement(Topbar, { ...props, refreshing: true }));
   assert.ok(loading.includes('disabled=""'));
@@ -85,7 +86,7 @@ test('commercial view keeps null separate from observed zero and names its real 
   const html = render(React.createElement(MemoryRouter, null, React.createElement(CommercialMatrix, { response })));
   assert.ok(html.includes('Recomendação comercial, não operacional'));
   assert.ok(html.includes('Sem recomendação por dados insuficientes'));
-  assert.ok(html.includes('<td>0<small>08/2026'));
+  assert.ok(html.includes('0 un.<small>08/2026'));
   assert.ok(html.includes('Não observado'));
   assert.ok(html.includes('/parceiros/Loja%20pr%C3%B3pria'));
   assert.ok(html.includes('/skus/TEST%20%2F%20SKU'));
