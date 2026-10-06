@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge, EmptyState, Hint, SectionCard } from '../components';
+import { ChallengeBadge } from './ChallengeAction';
 import type { CommercialPage, CommercialRow } from '../types-commercial';
 import { displayDays, displayNumber, displayUnits, formatDate, localizeText } from '../pages/shared';
 
@@ -51,7 +52,7 @@ export function CommercialMatrix({ response }: { response: CommercialPage<Commer
         const expanded = single ? !open.has(key) : open.has(key);
         return [
           <tr key={key} className={expanded ? 'is-expanded' : ''}>
-            <td data-label="Parceiro / SKU"><Link to={`/parceiros/${encodeURIComponent(row.partner)}`}>{row.partner_name}</Link><br /><Link to={`/skus/${encodeURIComponent(row.sku)}`}>{row.sku}</Link><small>{row.product}</small></td>
+            <td data-label="Parceiro / SKU"><Link to={`/parceiros/${encodeURIComponent(row.partner)}`}>{row.partner_name}</Link><br /><Link to={`/skus/${encodeURIComponent(row.sku)}`}>{row.sku}</Link><small>{row.product}</small><ChallengeBadge action={row.challenge_action} /></td>
             {!uniform && <td className="cell-stack" data-label="Ação comercial"><strong className="commercial-action">{row.action_label}</strong>{row.data_quality !== 'sufficient' && <Badge tone="medium">{qualityLabels[row.data_quality]}</Badge>}</td>}
             <td data-label="Estoque estimado">{displayNumber(row.estimated_stock)}</td>
             <td data-label="Cobertura">{displayDays(row.coverage_days)}</td>

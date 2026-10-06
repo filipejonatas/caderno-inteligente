@@ -7,7 +7,7 @@ import { RevenueTrend } from '../components/RevenueForecast';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import type { ChannelSignal } from '../types-channels';
-import { displayCurrency, displayNumber, displayPercent, displayShare, formatMonth } from './shared';
+import { CHALLENGE_NAMES, displayCurrency, displayNumber, displayPercent, displayShare, formatMonth } from './shared';
 
 const PAGE = 25;
 
@@ -16,13 +16,14 @@ export default function ChannelDetailPage({ refreshToken }: { refreshToken: numb
   const location = useLocation();
   const [params, setParams] = useSearchParams();
   const [extra, setExtra] = useState(0);
-  const signal = params.get('sinal') ?? '', search = params.get('busca') ?? '';
+  const signal = params.get('sinal') ?? '', search = params.get('busca') ?? '', label = params.get('rotulo') ?? '';
   const loader = useCallback((abort: AbortSignal) => {
     const query = new URLSearchParams();
     if (signal) query.set('signal', signal);
     if (search.trim()) query.set('search', search.trim());
+    if (label in CHALLENGE_NAMES) query.set('challenge_action', label);
     return api.directChannel(canal, query, abort);
-  }, [canal, signal, search]);
+  }, [canal, signal, search, label]);
   const { data, error, loading, loadedAt, refresh } = useApiResource(loader, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
   const update = (key: string, value: string) => { const next = new URLSearchParams(params); if (value) next.set(key, value); else next.delete(key); setParams(next, { replace: true }); setExtra(0); };
@@ -39,6 +40,7 @@ export default function ChannelDetailPage({ refreshToken }: { refreshToken: numb
     <div className="filter-bar" role="search" aria-label="Filtrar SKUs do canal">
       <label>Buscar<input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="SKU ou produto" /></label>
       <label>Sinal<select value={signal} onChange={(event) => update('sinal', event.target.value)}><option value="">Todos</option>{signals.map((code) => <option key={code} value={code}>{data.signal_labels[code]} ({channel.signal_counts[code]})</option>)}</select></label>
+      <label>Rótulo<select value={label} onChange={(event) => update('rotulo', event.target.value)}><option value="">Todos</option>{['ampliar_mix', 'reativar', 'investigar', 'monitorar', 'sem_acao_necessaria'].map((code) => <option key={code} value={code}>{CHALLENGE_NAMES[code]}</option>)}</select></label>
       {params.size > 0 && <button className="secondary-button" onClick={() => { setParams({}, { replace: true }); setExtra(0); }}>Limpar filtros</button>}
     </div>
     <SectionCard title={`Faturamento por SKU (${data.total})`}>

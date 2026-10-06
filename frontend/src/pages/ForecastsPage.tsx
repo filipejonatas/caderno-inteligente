@@ -5,6 +5,7 @@ import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { Alert, Badge, EmptyState, ErrorState, Icon, LoadingState, PageIntro, SectionCard, confidenceTone } from '../components';
 import type { ForecastRecommendationSummary, SelectedSku } from '../types';
+import { ChallengeBadge } from '../components/ChallengeAction';
 import { EventBadge } from '../components/EventAlerts';
 import { RevenueSummaryCard } from '../components/RevenueForecast';
 import { displayQuantity } from './shared';
@@ -36,10 +37,11 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
   const search = params.get('busca') ?? '';
   const family = params.get('familia') ?? '';
   const action = params.get('acao') ?? '';
+  const label = params.get('rotulo') ?? '';
   const showAll = params.get('todos') === '1';
   const sort = (params.get('ordem') ?? 'priority') as ForecastSort;
   // Padrão da tela: só o que pede atenção. Buscar um SKU ou escolher uma ação mostra tudo o que combina.
-  const attentionOnly = !showAll && !action && !search.trim();
+  const attentionOnly = !showAll && !action && !label && !search.trim();
 
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -54,6 +56,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
     const result = (items ?? []).filter((item) => (!query || item.sku.toLocaleLowerCase('pt-BR').includes(query) || item.product.toLocaleLowerCase('pt-BR').includes(query))
       && (!family || item.family === family)
       && (!action || item.operational_recommendation.action === action)
+      && (!label || item.challenge_action?.code === label)
       && (!attentionOnly || needsAttention(item)));
     return [...result].sort((left, right) => {
       if (sort === 'priority') return (left.priority ?? Number.MAX_SAFE_INTEGER) - (right.priority ?? Number.MAX_SAFE_INTEGER) || left.sku.localeCompare(right.sku);
@@ -64,7 +67,8 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
       if (rightValue === null) return -1;
       return rightValue - leftValue || left.sku.localeCompare(right.sku);
     });
-  }, [action, attentionOnly, family, items, search, sort]);
+  }, [action, attentionOnly, family, items, label, search, sort]);
+  const labels = useMemo(() => [...new Map((items ?? []).filter((item) => item.challenge_action).map((item) => [item.challenge_action!.code, item.challenge_action!.label])).entries()].sort((a, b) => a[1].localeCompare(b[1], 'pt-BR')), [items]);
 
   const filtersActive = params.size > 0;
   if (!items && !error) return <LoadingState />;
@@ -76,7 +80,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
   const investigate = source.filter((item) => item.forecast.status === 'insufficient_data' || item.operational_recommendation.action === 'investigar_dados').length;
   const pageSize = (isMobile() ? 10 : 25) + extra;
   const visible = filtered.slice(0, pageSize);
-  const noFilters = !action && !search.trim();
+  const noFilters = !action && !label && !search.trim();
 
   return <div className="forecast-page">
     <PageIntro title="Preciso produzir? Quanto?" description={`${production} SKUs para produzir · ${capacity} com capacidade a validar${investigate > 0 ? ` · ${investigate} para investigar dados` : ''}`} />
@@ -85,6 +89,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
     <div className="forecast-page-filters" role="search" aria-label="Filtrar previsões">
       <label className="search-field"><span>Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="SKU ou produto" /></label>
       <label><span>Ação</span><select value={action} onChange={(event) => update('acao', event.target.value)}><option value="">Todas</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>
+      {labels.length > 0 && <label><span>Rótulo</span><select value={label} onChange={(event) => update('rotulo', event.target.value)}><option value="">Todos</option>{labels.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></label>}
       <label><span>Família</span><select value={family} onChange={(event) => update('familia', event.target.value)}><option value="">Todas</option>{families.map((item) => <option key={item}>{item}</option>)}</select></label>
       <label><span>Ordenar por</span><select value={sort} onChange={(event) => update('ordem', event.target.value)}><option value="priority">Posição na fila de atenção</option><option value="suggested_quantity">Maior quantidade sugerida</option><option value="forecast_next_month">Maior previsão do próximo mês</option><option value="backtest_wape">Maior erro da previsão</option></select></label>
       <div className="forecast-page-filter-result"><strong>{filtered.length}</strong><span>de {source.length} SKUs</span>{filtersActive && <button onClick={() => { setParams({}, { replace: true }); setExtra(0); }}>Limpar filtros</button>}</div>
@@ -95,7 +100,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
           const rec = item.operational_recommendation;
           return <tr key={item.sku}>
             <td data-label="SKU"><button type="button" className="link-button" onClick={() => onSelect(item)} aria-label={`Ver detalhes de ${item.sku}`}><strong>{item.sku}</strong></button><small>{item.product}</small></td>
-            <td className="cell-stack" data-label="Ação sugerida"><Badge tone={recommendationTone(rec.action)}>{rec.action_label}</Badge>{rec.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{item.forecast.forecast_confidence !== 'alta' && <Badge tone={confidenceTone(item.forecast.forecast_confidence)}>Previsão com confiança {item.forecast.forecast_confidence}</Badge>}<EventBadge item={eventsBySku.get(item.sku)} /></td>
+            <td className="cell-stack" data-label="Ação sugerida"><Badge tone={recommendationTone(rec.action)}>{rec.action_label}</Badge>{rec.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{item.forecast.forecast_confidence !== 'alta' && <Badge tone={confidenceTone(item.forecast.forecast_confidence)}>Previsão com confiança {item.forecast.forecast_confidence}</Badge>}{item.challenge_action?.code === 'priorizar_producao' && <ChallengeBadge action={item.challenge_action} />}<EventBadge item={eventsBySku.get(item.sku)} /></td>
             <td data-label="Quantidade"><strong>{displayQuantity(rec.suggested_quantity)}</strong></td>
             <td data-label="Próximo mês">{item.forecast.status === 'ok' ? displayQuantity(item.forecast.forecast_next_month) : <Badge tone="medium">Dados insuficientes</Badge>}</td>
           </tr>;

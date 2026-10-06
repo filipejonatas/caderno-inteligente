@@ -58,6 +58,10 @@ Monitoramento também é a ação de acompanhamento quando há dados suficientes
 
 As cinco ações possíveis são: Avaliar reposição; Monitorar estoque do parceiro; Investigar divergência; Solicitar atualização dos dados; Sem recomendação por dados insuficientes. Todas exigem revisão humana.
 
+## Rótulos de ação do desafio
+
+As cinco ações acima continuam sendo a fonte. Um segundo campo, `challenge_action`, traduz cada par para o vocabulário do desafio sem alterá-las: `avaliar_reposicao` → **Repor**; `monitorar_estoque` → **Monitorar** (ou **Recomendar recompra** quando o par vende mas está sem sell-in acima do próprio ritmo); `investigar_divergencia`, `solicitar_atualizacao` e `dados_insuficientes` → **Investigar**. No nível do parceiro, **Priorizar parceiro** exige 2 ou mais pares **Repor**, com pelo menos um SKU entre os 10 primeiros da fila de atenção. Parceiro sem sell-out suficiente nunca recebe oportunidade inferida. Detalhes e limiares em [Etapa 13](etapa-13-rotulos-de-acao.md).
+
 ## Decisões por parceiro
 
 O feedback existente possui SKU e efeito genérico do dado de parceiros, mas não código do parceiro. A API retorna atribuição indisponível e itens nulos. Não associa feedback a todos os parceiros que compartilham o SKU. Não foi criada migração ou alteração no contrato de feedback.

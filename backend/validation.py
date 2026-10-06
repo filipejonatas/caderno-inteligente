@@ -6,6 +6,7 @@ from typing import Callable
 
 from fastapi import APIRouter, HTTPException
 
+from caderno_inteligente.action_labels import load_action_settings
 from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds
 from caderno_inteligente.rules import load_rule_thresholds
 from caderno_inteligente.validation_center import (
@@ -31,6 +32,7 @@ def _sha256(path: Path) -> str:
 
 def create_validation_router(*, pipeline: Callable, persistence: Callable, recommendations: Callable, sku_detail: Callable,
                              source: Path, config_file: Path, thresholds_file: Path, commercial_thresholds_file: Path,
+                             challenge_actions_file: Path | None = None,
                              describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
     describe = describe_error or (lambda message, error: f"{message}: {error}")
@@ -56,6 +58,7 @@ def create_validation_router(*, pipeline: Callable, persistence: Callable, recom
         cases = evaluate_frozen_cases(
             config, indicators=indicators, issues=issues, ranking=ranking, forecasts=forecasts,
             partner_items=partner_items, thresholds=load_rule_thresholds(thresholds_file), source_sha256=source_sha256,
+            challenge_settings=None if challenge_actions_file is None else load_action_settings(challenge_actions_file),
         )
 
         safe = safe_behavior_checks(forecasts, recommendations(), partner_items)

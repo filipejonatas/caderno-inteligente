@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { Badge, Hint, SectionCard, Tooltip } from '../components';
+import { ChallengeBadge } from './ChallengeAction';
 import { displayCurrency, displayNumber, displayPercent, displayShare } from '../pages/shared';
 import type { ChannelFinding, ChannelSkuRow, ChannelSuggestionCode, ChannelSummary, ChannelTrend, DirectChannelsOverview } from '../types-channels';
 
@@ -37,6 +38,7 @@ export function DirectChannelsTab({ data }: { data: DirectChannelsOverview }) {
 }
 
 export function SuggestionBadge({ row }: { row: ChannelSkuRow }) {
+  if (row.challenge_action) return <ChallengeBadge action={row.challenge_action} />;
   const { suggestion } = row;
   return <><Badge tone={SUGGESTION_TONE[suggestion.code]}>{suggestion.label}</Badge><Tooltip label={`Por que: ${suggestion.label} em ${row.sku}`}>{suggestion.reason} Sugestão para revisão humana.</Tooltip></>;
 }

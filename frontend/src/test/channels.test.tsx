@@ -74,7 +74,7 @@ describe('Detalhe do canal', () => {
     const missing = within(table).getByText('CH-003').closest('tr') as HTMLElement;
     expect(within(missing).getByText('Sem faturamento no canal')).toBeInTheDocument();
     expect(within(missing).queryByText(/R\$/)).not.toBeInTheDocument();
-    expect(within(missing).getByText('Avaliar ampliação de mix')).toBeInTheDocument();
+    expect(within(missing).getByText('Ampliar mix')).toBeInTheDocument();
     const growing = within(table).getByText('CH-002').closest('tr') as HTMLElement;
     expect(within(growing).getByText('Crescente (+15,0%)')).toBeInTheDocument();
     expect(within(growing).getByText('300 un.')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('Detalhe do canal', () => {
     renderApp(`/canais/${encoded}`);
     const table = await screen.findByRole('region', { name: /SKUs do canal; role horizontalmente/ });
     const tips = within(table).getAllByRole('tooltip', { hidden: true }).map((node) => node.textContent ?? '');
-    expect(tips.some((text) => text.includes('Produto ativo sem nenhum faturamento neste canal') && text.includes('revisão humana'))).toBe(true);
+    expect(tips.some((text) => text.includes('Produto ativo sem nenhum faturamento neste canal') && text.includes('Revisão humana obrigatória'))).toBe(true);
   });
 
   it('o filtro de sinal vai para a URL e para a API', async () => {

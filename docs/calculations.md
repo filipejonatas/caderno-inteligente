@@ -87,6 +87,21 @@ variação anual = últimos 3 meses ÷ os mesmos 3 meses do ano anterior − 1
 - **Ausência não é zero:** SKU sem faturamento fica com valores nulos. Não há estoque por canal.
 - Limiares em `config/direct_channel_thresholds.json`.
 
+### 3.4 Rótulos de ação do desafio (`action_labels.py`)
+
+Camada derivada: não recalcula nada, só lê o que já existe. Limiares em `config/challenge_actions.json`.
+
+```text
+Priorizar produção = ação produzir* E (posição ≤ 10 na fila de atenção OU decisão de evento no horizonte em até 30 dias)
+Priorizar parceiro = parceiro com ≥ 2 pares Repor E ≥ 1 deles em SKU entre os 10 primeiros da fila
+Recomendar recompra = ação comercial "monitorar" E sell-out recente positivo E ≥ 3 meses de sell-in
+                      E meses sem sell-in ≥ max(2, 2 × intervalo típico entre envios do próprio par)
+```
+
+- **Precedência:** dado insuficiente, antigo ou divergente vence tudo e vira "Investigar"; depois, risco/urgência; depois, oportunidade; por último, monitorar.
+- **Sem inferência:** parceiro sem sell-out suficiente nunca recebe "Repor", "Recomendar recompra" ou "Priorizar parceiro". "Ampliar mix" e "Reativar" só saem dos canais diretos, onde a ausência de faturamento é observada.
+- **Evidência:** cada rótulo traz os valores usados (posição na fila, cobertura, último sell-in, etc.), as limitações e `requires_human_review`.
+
 ## 4. Recomendação operacional (`recommendations.py`)
 
 ```text

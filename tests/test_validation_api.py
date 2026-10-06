@@ -28,8 +28,8 @@ def test_validation_summary_contract():
     assert body["requires_human_review"] is True
     natures = {(row["informed"]["nature"], row["recalculated"]["nature"]) for row in body["process_comparison"]}
     assert natures == {("informado", "recalculado")}
-    assert len(body["frozen_cases"]["items"]) == 8
-    assert body["frozen_cases"]["passed"] + body["frozen_cases"]["failed"] + body["frozen_cases"]["not_found"] == 8
+    assert len(body["frozen_cases"]["items"]) == 19
+    assert body["frozen_cases"]["passed"] + body["frozen_cases"]["failed"] + body["frozen_cases"]["not_found"] == 19
     for item in body["frozen_cases"]["items"]:
         assert item["result"] in {"passou", "falhou", "nao_encontrado"}
         assert item["limitation"] and item["adjustment"]

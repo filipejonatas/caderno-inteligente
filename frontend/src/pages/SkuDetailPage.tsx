@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { PartnerSkuContext } from '../components/PartnerSkuContext';
+import { ChallengeBadge } from '../components/ChallengeAction';
 import { SkuEventsBlock } from '../components/EventAlerts';
 import { SkuRevenueBlock } from '../components/RevenueForecast';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
@@ -90,9 +91,9 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
         <p className="answer-sentence">{answer}</p>
         {insufficient ? <p className="answer-why">{forecast.limitation}</p> : <p className="answer-why">{why}</p>}
         {recommendation.action === 'sem_acao_necessaria' && <p className="answer-why">Sem produção neste horizonte; os riscos abaixo continuam.</p>}
-        <div className="answer-badges">{recommendation.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{insufficient ? <><Badge tone="medium">Dados insuficientes</Badge><Badge tone="medium">{recommendation.action_label}</Badge></> : <Badge tone="info">previsto</Badge>}</div>
+        <div className="answer-badges"><ChallengeBadge action={detail.challenge_action} />{recommendation.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{insufficient ? <><Badge tone="medium">Dados insuficientes</Badge><Badge tone="medium">{recommendation.action_label}</Badge></> : <Badge tone="info">previsto</Badge>}</div>
         <div className="answer-actions">
-          <Link className="primary-button" to={`/decisoes?sku=${encodeURIComponent(sku)}`}>Registrar decisão</Link>
+          <Link className="primary-button" to={`/decisoes?sku=${encodeURIComponent(sku)}${detail.challenge_action ? `&rotulo=${detail.challenge_action.code}` : ''}`}>Registrar decisão</Link>
           <Link className="secondary-button" to={`/casos?sku=${encodeURIComponent(sku)}`}>Criar caso</Link>
         </div>
       </div>

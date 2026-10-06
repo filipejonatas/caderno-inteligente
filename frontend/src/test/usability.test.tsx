@@ -79,7 +79,7 @@ describe('detalhe do SKU: resposta primeiro e próximo passo', () => {
     renderApp(`/skus/${SKU_OK}`);
     const answer = await screen.findByRole('region', { name: 'Ação operacional sugerida' });
     expect(within(answer).getByText('Revisão humana obrigatória')).toBeInTheDocument();
-    expect(within(answer).getByRole('link', { name: 'Registrar decisão' })).toHaveAttribute('href', `/decisoes?sku=${SKU_OK}`);
+    expect(within(answer).getByRole('link', { name: 'Registrar decisão' })).toHaveAttribute('href', `/decisoes?sku=${SKU_OK}&rotulo=priorizar_producao`);
     expect(within(answer).getByRole('link', { name: 'Criar caso' })).toHaveAttribute('href', `/casos?sku=${SKU_OK}`);
     // Evidências continuam a um clique: o bloco de riscos abre por padrão.
     expect(screen.getByText(/Riscos e evidências/)).toBeInTheDocument();

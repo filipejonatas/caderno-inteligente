@@ -23,6 +23,7 @@ from caderno_inteligente.feedback import (  # noqa: E402
     PARTNER_DATA_EFFECTS,
 )
 from caderno_inteligente.forecasting import build_demand_forecasts  # noqa: E402
+from caderno_inteligente.action_labels import label_commercial_row, label_operational, label_partner, load_action_settings  # noqa: E402
 from caderno_inteligente.events import build_event_analysis, load_event_settings  # noqa: E402
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators  # noqa: E402
@@ -41,6 +42,7 @@ RUNS_DB = ROOT / "runtime/runs.db"
 WEIGHTS_FILE = ROOT / "config/prioritization_weights.json"
 THRESHOLDS_FILE = ROOT / "config/rule_thresholds.json"
 EVENT_FACTORS_FILE = ROOT / "config/event_factors.json"
+CHALLENGE_ACTIONS_FILE = ROOT / "config/challenge_actions.json"
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("caderno_inteligente.api")
@@ -214,6 +216,34 @@ def _event_item(sku: str) -> dict | None:
         return None
 
 
+def _event_context() -> tuple[dict[str, list[dict]] | None, date | None]:
+    """Alertas por SKU e data de referência; (None, None) se a análise de eventos falhar, sem derrubar os rótulos."""
+    try:
+        analysis = event_analysis()
+        return {item["sku"]: item["alerts"] for item in analysis["items"]}, date.fromisoformat(analysis["reference_date"])
+    except Exception:  # noqa: BLE001
+        logger.exception("event_context_failed")
+        return None, None
+
+
+def _sku_challenge(sku: str, recommendation: dict, priority: int | None, forecast_status: str | None, alerts_by_sku, reference_date, settings: dict) -> dict:
+    alerts = None if alerts_by_sku is None else alerts_by_sku.get(sku, [])
+    return label_operational(recommendation["action"], priority, forecast_status, alerts, recommendation.get("capacity_status"), reference_date, settings)
+
+
+def _enrich_challenge(result: dict) -> dict:
+    """Rótulos do desafio nas linhas parceiro–SKU e no resumo de cada parceiro; os campos existentes não mudam."""
+    settings = load_action_settings(CHALLENGE_ACTIONS_FILE)
+    priority_by_sku = {row["sku"]: row["priority"] for row in _records(pipeline()[4])}
+    by_partner: dict[str, list[dict]] = {}
+    for row in result["items"]:
+        row["challenge_action"] = label_commercial_row(row, settings)
+        by_partner.setdefault(row["partner"], []).append(row)
+    for summary in result["partners"]:
+        summary["challenge_action"] = label_partner(summary, by_partner.get(summary["code"], []), priority_by_sku, settings)
+    return result
+
+
 def data():
     _, quality, indicators, issues, ranking, _ = pipeline()
     return quality, indicators, issues, ranking
@@ -371,6 +401,8 @@ def forecast_summaries():
         issues_by_sku.setdefault(item["sku"], []).append(item)
 
     result = []
+    alerts_by_sku, reference_date = _event_context()
+    challenge_settings = load_action_settings(CHALLENGE_ACTIONS_FILE)
     for indicator in _records(indicators):
         sku = indicator["SKU"]
         ranked = ranking_by_sku.get(sku)
@@ -392,6 +424,7 @@ def forecast_summaries():
                     "SKU fora do ranking oficial; a confiança exibida vem do backtest da previsão."
                 ),
                 "forecast": forecast,
+                "challenge_action": _sku_challenge(sku, recommendation, ranked["priority"] if ranked else None, forecast.get("status"), alerts_by_sku, reference_date, challenge_settings),
                 "operational_recommendation": {
                     key: recommendation[key]
                     for key in (
@@ -438,6 +471,9 @@ def detail(sku: str):
     forecast = _forecast_record(forecasts, sku)
     recommendation = _recommendation_for(indicator, forecast, item_issues)
     event_item = _event_item(sku)
+    alerts_by_sku, reference_date = _event_context()
+    ranked = _records(ranking[ranking.sku == sku])
+    challenge = _sku_challenge(sku, recommendation, ranked[0]["priority"] if ranked else None, forecast.get("status"), alerts_by_sku, reference_date, load_action_settings(CHALLENGE_ACTIONS_FILE))
     return {
         "indicator": indicator,
         "issues": item_issues,
@@ -445,6 +481,7 @@ def detail(sku: str):
         "score_contributions": contributions,
         "forecast": forecast,
         "revenue_forecast": _revenue_item(sku),
+        "challenge_action": challenge,
         "event_alerts": None if event_item is None else event_item["alerts"],
         "event_scenario": None if event_item is None else {"applicable": event_item["scenario_applicable"], "note": event_item["scenario_note"], "scenario": event_item["scenario"]},
         "operational_recommendation": recommendation,
@@ -708,6 +745,7 @@ class Feedback(StrictModel):
     user_name: str = Field(default="", max_length=TEXT_LIMITS["user_name"])
     partner_data_effect: str = Field(default="nao_utilizado", max_length=40)
     analysis_minutes: int | None = Field(default=None, ge=0, le=MAX_ANALYSIS_MINUTES)
+    challenge_action: str | None = Field(default=None, max_length=40)
 
     @field_validator("sku", "note", "user_name")
     @classmethod
@@ -717,19 +755,7 @@ class Feedback(StrictModel):
 
 @app.get("/api/feedback")
 def feedback():
-    return [
-        {
-            "sku": sku,
-            "action": action,
-            "note": note,
-            "user_name": user_name,
-            "partner_data_effect": partner_data_effect,
-            "analysis_minutes": analysis_minutes,
-            "created_at": created_at,
-        }
-        for sku, action, note, user_name, partner_data_effect, analysis_minutes, created_at
-        in _persistence().list_feedback()
-    ]
+    return _persistence().list_feedback_records()
 
 
 @app.post("/api/feedback", dependencies=[require_write_access])
@@ -743,6 +769,7 @@ def feedback_post(item: Feedback):
             item.user_name,
             item.partner_data_effect,
             item.analysis_minutes,
+            item.challenge_action,
         )
     except ValueError as error:
         raise HTTPException(422, str(error)) from error
@@ -756,7 +783,7 @@ def _describe_error(message: str, error: Exception) -> str:
     return public_message(settings(), message, error)
 
 
-app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json", _describe_error))
+app.include_router(create_partner_router(lambda: pipeline()[0], ROOT / "config/commercial_thresholds.json", _describe_error, _enrich_challenge))
 from backend.direct_channels import create_direct_channel_router  # noqa: E402
 
 app.include_router(create_direct_channel_router(lambda: pipeline()[0], ROOT / "config/direct_channel_thresholds.json", _describe_error))
@@ -778,6 +805,7 @@ app.include_router(create_validation_router(
     config_file=ROOT / "config/validation_center.json",
     thresholds_file=THRESHOLDS_FILE,
     commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
+    challenge_actions_file=CHALLENGE_ACTIONS_FILE,
     describe_error=_describe_error,
 ))
 

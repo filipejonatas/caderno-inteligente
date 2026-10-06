@@ -10,6 +10,7 @@ from typing import Any, Iterable
 
 import pandas as pd
 
+from caderno_inteligente.action_labels import DEFAULT_SETTINGS as CHALLENGE_DEFAULTS, label_channel_row, label_commercial_row, label_operational, label_partner
 from caderno_inteligente.forecasting import MODEL_LABELS, _MODELS, _monthly_series, _wape, build_demand_forecasts
 from caderno_inteligente.recommendations import build_operational_recommendation
 from caderno_inteligente.rules import evaluate_rules
@@ -249,6 +250,26 @@ def _operational_output(indicator: dict[str, Any], forecast: dict[str, Any], cod
     }
 
 
+def _challenge_output(case_input: dict[str, Any], settings: dict[str, Any]) -> dict[str, Any]:
+    """Executa o mesmo rotulador do produto sobre uma entrada congelada; nada é recalculado à parte."""
+    level = case_input["level"]
+    if level == "operational":
+        reference = case_input.get("reference_date")
+        label = label_operational(case_input["action"], case_input.get("priority"), case_input.get("forecast_status", "ok"), case_input.get("event_alerts"),
+                                  case_input.get("capacity_status"), None if reference is None else date.fromisoformat(reference), settings)
+    elif level == "commercial":
+        label = label_commercial_row(case_input["row"], settings)
+    elif level == "partner":
+        rows = [{**row, "challenge_action": label_commercial_row(row, settings)} for row in case_input["rows"]]
+        label = label_partner(case_input["summary"], rows, case_input.get("priority_by_sku", {}), settings)
+    else:
+        label = label_channel_row(case_input["row"])
+    if label is None:
+        return {"code": None, "label": None, "source": level, "signals_used": [], "evidence_count": 0, "requires_human_review": None}
+    return {"code": label["code"], "label": label["label"], "source": label["source"], "signals_used": sorted(label["signals_used"]),
+            "evidence_count": len(label["evidence"]), "requires_human_review": label["requires_human_review"]}
+
+
 _OPERATIONAL_INPUT = (
     "current_stock", "coverage_days_calculated", "lead_time_days", "safety_stock_days", "backlog_order_quantity",
     "production_order_quantity", "first_promised_date", "first_production_completion", "capacity_occupation_average", "has_sell_out",
@@ -259,7 +280,7 @@ _COMMERCIAL_INPUT = (
 
 
 def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
-                   forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict) -> dict[str, Any]:
+                   forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, challenge_settings: dict[str, Any]) -> dict[str, Any]:
     result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "limitation")}
     obtained: dict[str, Any] | None = None
     case_input: dict[str, Any] = {}
@@ -276,6 +297,9 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
                 "coverage_days": item["coverage_days"],
                 "requires_human_review": item["requires_human_review"],
             }
+    elif case["kind"] == "challenge_action":
+        case_input = case["input"]
+        obtained = _challenge_output(case_input, challenge_settings)
     elif case["origin"] == "synthetic":
         indicator = case["input"]["indicator"]
         codes = list(evaluate_rules(_indicator_frame(indicator), thresholds)["code"])
@@ -315,8 +339,10 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
 
 
 def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
-                          forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, source_sha256: str) -> dict[str, Any]:
-    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds) for case in config["cases"]]
+                          forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, source_sha256: str,
+                          challenge_settings: dict[str, Any] | None = None) -> dict[str, Any]:
+    settings = challenge_settings or CHALLENGE_DEFAULTS
+    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings) for case in config["cases"]]
     counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado")}
     matches = source_sha256 == config["frozen_source_sha256"]
     return {

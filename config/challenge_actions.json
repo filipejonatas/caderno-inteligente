@@ -1,0 +1,7 @@
+{
+  "priority_top_n": 10,
+  "event_decision_window_days": 30,
+  "partner_min_opportunities": 2,
+  "recompra_min_sell_in_months": 3,
+  "recompra_min_months_without_sell_in": 2
+}

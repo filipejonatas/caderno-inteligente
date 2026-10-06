@@ -104,6 +104,16 @@ Visão observada dos canais diretos, definidos pelo cadastro (`Parceiros_Canais.
 - 404 para canal inexistente (inclusive parceiro B2B); 422 para `signal` ou `suggestion` inválidos;
 - `GET /api/data-quality/channels` devolve `findings[]` (cobertura declarada dos canais diretos sem linhas em Sell_Out; Sell_In dos parceiros que difere do faturado), com evidência numérica e tratamento. Nada é reconciliado.
 
+## Rótulos de ação do desafio (`challenge_action`)
+
+Campo opcional e aditivo, derivado das ações e dos sinais já calculados; não substitui `action`, não altera score, ranking, previsão nem quantidades. Aparece em `GET /api/forecasts` (por SKU), `GET /api/priorities/{sku}`, `GET /api/commercial-recommendations`, `GET /api/partners/{codigo}/skus` (por par parceiro–SKU), `GET /api/partners` (só `priorizar_parceiro`; `null` caso contrário) e em cada SKU de `GET /api/direct-channels/{canal}`.
+
+- Estrutura: `code`, `label`, `source` (`operational`, `commercial`, `partner` ou `channel`), `origin_action`, `reason`, `signals_used`, `evidence[]` (`label`, `value`, `origin`), `limitations[]` e `requires_human_review`.
+- Códigos: `produzir`, `repor`, `priorizar_producao`, `priorizar_parceiro`, `ampliar_mix`, `recomendar_recompra`, `reativar`, `monitorar`, `investigar` e `sem_acao_necessaria`.
+- Filtro `challenge_action` em `/api/partners`, `/api/partners/{codigo}/skus`, `/api/commercial-recommendations` e `/api/direct-channels/{canal}` (422 para código inválido). As respostas de parceiros e canais trazem `challenge_labels`.
+- Limiares em `config/challenge_actions.json`. Regras e precedência em [Etapa 13](etapa-13-rotulos-de-acao.md).
+- `POST /api/feedback` aceita `challenge_action` opcional (validado); `GET /api/feedback` o devolve (`null` em decisões anteriores). Exige a migração `003_challenge_action.sql` no Supabase para ser gravado; sem ela, a decisão é registrada sem o rótulo.
+
 ## `GET /api/b2b2c/visibility`
 
 Cada parceiro recebe uma classificação demonstrativa derivada da cobertura de SKUs com sell-out observado:

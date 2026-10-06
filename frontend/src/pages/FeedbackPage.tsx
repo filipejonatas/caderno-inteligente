@@ -5,11 +5,12 @@ import { api } from '../api';
 import { Badge, EmptyState, PageIntro, SectionCard } from '../components';
 import { DEFAULT_TEXT_LIMITS, useSystemInfo } from '../hooks/useSystemInfo';
 import type { PageProps } from './shared';
-import { decisionActionNames, formatDateTime, partnerDataEffectNames } from './shared';
+import { CHALLENGE_NAMES, decisionActionNames, formatDateTime, partnerDataEffectNames } from './shared';
 
 export default function FeedbackPage({ data, onRefresh }: PageProps<'feedback' | 'priorities' | 'config'>) {
   const [params] = useSearchParams();
   const requestedSku = params.get('sku') ?? '';
+  const requestedLabel = params.get('rotulo') ?? '';
   const skus = data.priorities.map((item) => item.sku);
   // Um SKU que veio do detalhe pode estar fora do ranking: ele continua sendo uma opção.
   const options = requestedSku && !skus.includes(requestedSku) ? [requestedSku, ...skus] : skus;
@@ -19,6 +20,8 @@ export default function FeedbackPage({ data, onRefresh }: PageProps<'feedback' |
   const [note, setNote] = useState('');
   const [partnerDataEffect, setPartnerDataEffect] = useState('nao_utilizado');
   const [analysisMinutes, setAnalysisMinutes] = useState('');
+  // O rótulo mostrado no SKU só vale para o SKU de origem; se o usuário trocar de SKU, ele não é registrado.
+  const label = requestedLabel in CHALLENGE_NAMES && sku === requestedSku ? requestedLabel : '';
   const [message, setMessage] = useState('');
   const [saving, setSaving] = useState(false);
   const system = useSystemInfo();
@@ -26,7 +29,7 @@ export default function FeedbackPage({ data, onRefresh }: PageProps<'feedback' |
   const writeDisabled = system?.write_enabled === false;
   async function submit(event: FormEvent) {
     event.preventDefault(); setSaving(true); setMessage('');
-    try { await api.createFeedback({ sku, action, user_name: user, note, partner_data_effect: partnerDataEffect, analysis_minutes: analysisMinutes === '' ? null : Number(analysisMinutes) }); setNote(''); setPartnerDataEffect('nao_utilizado'); setAnalysisMinutes(''); await onRefresh(); setMessage('Decisão registrada com sucesso.'); }
+    try { await api.createFeedback({ sku, action, user_name: user, note, partner_data_effect: partnerDataEffect, analysis_minutes: analysisMinutes === '' ? null : Number(analysisMinutes), ...(label ? { challenge_action: label } : {}) }); setNote(''); setPartnerDataEffect('nao_utilizado'); setAnalysisMinutes(''); await onRefresh(); setMessage('Decisão registrada com sucesso.'); }
     catch (error) { setMessage(error instanceof Error ? error.message : 'Falha ao registrar decisão.'); }
     finally { setSaving(false); }
   }
@@ -35,6 +38,7 @@ export default function FeedbackPage({ data, onRefresh }: PageProps<'feedback' |
     <div className="feedback-layout">
       <SectionCard title="Nova decisão" className="form-card"><form className="stack-form" onSubmit={submit}>
         <label>SKU<select value={sku} onChange={(event) => setSku(event.target.value)}>{options.map((item) => <option key={item}>{item}</option>)}</select></label>
+        {label && <p className="fact-line">Rótulo registrado com a decisão: <strong>{CHALLENGE_NAMES[label]}</strong></p>}
         <label>O que você decidiu?<select value={action} onChange={(event) => setAction(event.target.value)}>{data.config.actions.map((item) => <option key={item} value={item}>{decisionActionNames[item] ?? item}</option>)}</select></label>
         <label>O dado do parceiro ajudou?<select value={partnerDataEffect} onChange={(event) => setPartnerDataEffect(event.target.value)}>{data.config.partner_data_effects.map((item) => <option key={item} value={item}>{partnerDataEffectNames[item] ?? item}</option>)}</select></label>
         <label>Tempo de análise em minutos <span className="optional-label">Opcional</span><input type="number" min="0" max={limits.analysis_minutes} step="1" value={analysisMinutes} onChange={(event) => setAnalysisMinutes(event.target.value)} placeholder="Ex.: 15" /></label>

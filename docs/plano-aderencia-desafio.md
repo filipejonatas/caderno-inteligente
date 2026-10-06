@@ -165,6 +165,8 @@ Conteúdo por canal:
 
 ## 8. Etapa 13 — Rótulos de ação que faltam (camada aditiva)
 
+> **Status: implementada** (ver [etapa-13-rotulos-de-acao.md](etapa-13-rotulos-de-acao.md)). Ajustes em relação ao desenho abaixo: os limiares ficaram em `config/challenge_actions.json` (o carregador comercial rejeita campos desconhecidos de propósito); "Ampliar mix" só sai dos canais diretos, porque a ausência de registro de um parceiro não prova que ele não vende o SKU; "Recomendar recompra", "Reativar" e "Ampliar mix" não disparam na base atual (sell-in mensal sem lacunas e canais com os 50 SKUs); na Previsão o rótulo é um selo e um filtro, sem coluna nova (orçamento de volume); o limite de palavras do Guia subiu de 400 para 500 por trazer as definições.
+
 **Resposta ao PDF:** ações "Priorizar produção, Repor, Priorizar parceiro, Ampliar mix, Recomendar recompra, Monitorar, Investigar, Sem ação necessária".
 
 ### Estado atual × meta

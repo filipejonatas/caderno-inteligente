@@ -208,6 +208,116 @@
         "requires_human_review": true
       },
       "limitation": "Capacidade é agregada por família; não comprova viabilidade por SKU e semana."
+    },
+    {
+      "id": "VC-09",
+      "title": "Produzir sem urgência",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre o rótulo Produzir com prioridade fora do topo e sem evento próximo.",
+      "input": {"level": "operational", "action": "produzir", "priority": 25, "forecast_status": "ok", "event_alerts": [], "capacity_status": "family_context_available", "reference_date": "2026-08-31"},
+      "expected": {"code": "produzir", "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-10",
+      "title": "Priorizar produção por posição na fila",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Priorizar produção pelo critério de fila: ação de produzir e posição 3 entre as 10 primeiras.",
+      "input": {"level": "operational", "action": "produzir", "priority": 3, "forecast_status": "ok", "event_alerts": [], "capacity_status": "family_context_available", "reference_date": "2026-08-31"},
+      "expected": {"code": "priorizar_producao", "signals_used": {"includes": ["priority_top_10"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-11",
+      "title": "Priorizar produção por decisão de evento próxima",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Priorizar produção pelo critério de evento: fora do topo da fila, mas com decisão de evento dentro de 30 dias.",
+      "input": {"level": "operational", "action": "produzir_validar_capacidade", "priority": 30, "forecast_status": "ok", "event_alerts": [{"event_id": "black-friday", "event": "Black Friday", "decision_date": "2026-09-20", "in_horizon": true}], "capacity_status": "requires_review", "reference_date": "2026-08-31"},
+      "expected": {"code": "priorizar_producao", "signals_used": {"includes": ["event_decision:black-friday"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-12",
+      "title": "Repor por cobertura baixa no parceiro",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Repor com entrada controlada de cobertura baixa e giro positivo.",
+      "input": {"level": "commercial", "row": {"partner": "KA-T", "sku": "SINT-12", "action": "avaliar_reposicao", "data_quality": "sufficient", "coverage_days": 20, "average_monthly_sell_out": 150, "estimated_stock": 100, "reference_month": "2026-08", "signals": [{"code": "REPOSITION_OPPORTUNITY"}], "periods": []}},
+      "expected": {"code": "repor", "signals_used": {"includes": ["REPOSITION_OPPORTUNITY"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-13",
+      "title": "Priorizar parceiro com várias reposições e SKU de topo",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "A base atual tem um único parceiro nessa condição; o caso controlado fixa a regra de duas reposições com SKU entre os 10 primeiros.",
+      "input": {"level": "partner", "summary": {"code": "KA-T", "name": "Parceiro sintético"}, "priority_by_sku": {"SINT-A": 4, "SINT-B": 30}, "rows": [{"partner": "KA-T", "sku": "SINT-A", "action": "avaliar_reposicao", "data_quality": "sufficient", "coverage_days": 15, "signals": [{"code": "REPOSITION_OPPORTUNITY"}], "periods": []}, {"partner": "KA-T", "sku": "SINT-B", "action": "avaliar_reposicao", "data_quality": "sufficient", "coverage_days": 20, "signals": [{"code": "REPOSITION_OPPORTUNITY"}], "periods": []}]},
+      "expected": {"code": "priorizar_parceiro", "signals_used": {"includes": ["REPOSITION_OPPORTUNITY"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-14",
+      "title": "Ampliar mix em canal com faturamento completo",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "A base atual não tem SKU ativo sem faturamento nos canais diretos; o caso controlado cobre o sinal NOT_SOLD.",
+      "input": {"level": "channel", "row": {"signals": ["NOT_SOLD"], "revenue_24m": null, "trend": "indeterminada", "last_month": null, "suggestion": {"code": "avaliar_ampliacao_mix", "reason": "Produto ativo sem nenhum faturamento neste canal nos 24 meses."}}},
+      "expected": {"code": "ampliar_mix", "signals_used": {"includes": ["NOT_SOLD"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-15",
+      "title": "Recomendar recompra quando o parceiro vende mas parou de receber",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "A base atual tem sell-in todos os meses em todos os pares; o caso controlado cobre a lacuna de 3 meses sem sell-in.",
+      "input": {"level": "commercial", "row": {"partner": "KA-T", "sku": "SINT-15", "action": "monitorar_estoque", "data_quality": "sufficient", "coverage_days": 60, "average_monthly_sell_out": 50, "estimated_stock": 100, "reference_month": "2026-08", "signals": [], "periods": [{"month": "2026-01", "sell_in_quantity": 10}, {"month": "2026-02", "sell_in_quantity": 10}, {"month": "2026-03", "sell_in_quantity": 10}, {"month": "2026-04", "sell_in_quantity": 10}, {"month": "2026-05", "sell_in_quantity": 10}]}},
+      "expected": {"code": "recomendar_recompra", "signals_used": {"includes": ["RECOMPRA_GAP"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-16",
+      "title": "Reativar SKU que parou de vender no canal",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "A base atual não tem SKU parado nos canais diretos; o caso controlado cobre o sinal STOPPED.",
+      "input": {"level": "channel", "row": {"signals": ["STOPPED"], "revenue_24m": 1000, "trend": "estável", "last_month": "2026-04-01", "suggestion": {"code": "avaliar_reativacao", "reason": "Sem faturamento desde 2026-04-01, depois de vender em 20 meses."}}},
+      "expected": {"code": "reativar", "signals_used": {"includes": ["STOPPED"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-17",
+      "title": "Monitorar excesso sem produzir",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Monitorar a partir da ação operacional de excesso.",
+      "input": {"level": "operational", "action": "monitorar_excesso", "priority": 12, "forecast_status": "ok", "event_alerts": [], "capacity_status": "family_context_available", "reference_date": "2026-08-31"},
+      "expected": {"code": "monitorar", "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-18",
+      "title": "Investigar quando faltam dados do parceiro",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Investigar: dado insuficiente vence qualquer oportunidade, mesmo com cobertura baixa informada.",
+      "input": {"level": "commercial", "row": {"partner": "KA-T", "sku": "SINT-18", "action": "dados_insuficientes", "data_quality": "insufficient", "coverage_days": 10, "average_monthly_sell_out": null, "estimated_stock": null, "reference_month": "2026-08", "signals": [{"code": "INSUFFICIENT_PARTNER_DATA"}], "periods": []}},
+      "expected": {"code": "investigar", "signals_used": {"includes": ["INSUFFICIENT_PARTNER_DATA"]}, "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-19",
+      "title": "Sem ação necessária",
+      "kind": "challenge_action",
+      "origin": "synthetic",
+      "origin_reason": "Cobre Sem ação necessária a partir da ação operacional correspondente.",
+      "input": {"level": "operational", "action": "sem_acao_necessaria", "priority": 40, "forecast_status": "ok", "event_alerts": [], "capacity_status": "family_context_available", "reference_date": "2026-08-31"},
+      "expected": {"code": "sem_acao_necessaria", "requires_human_review": true},
+      "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
     }
   ],
   "adjustments": [
@@ -244,6 +354,13 @@
       "change": "A cobertura comercial passou a ser medida pelos registros de sell-out, não pela declaração cadastral de cobertura completa.",
       "reason": "Canais declarados como completos apareciam sem sell-out observado.",
       "evidence": "docs/etapa-4-parceiros-comercial.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-06",
+      "change": "Foram adicionados 11 casos congelados (VC-09 a VC-19) para os rótulos de ação do desafio, todos sintéticos e executados pelo mesmo rotulador do produto.",
+      "reason": "Cada rótulo precisa de ao menos um caso congelado; vários não ocorrem na base atual (Priorizar parceiro, Ampliar mix, Recomendar recompra, Reativar).",
+      "evidence": "docs/etapa-13-rotulos-de-acao.md",
       "changed_weights_or_models": false
     }
   ]

@@ -1,3 +1,4 @@
+import type { ChallengeAction } from './types-actions';
 import type { EventAlert, SkuEventScenario } from './types-events';
 import type { RevenueItem } from './types-revenue';
 
@@ -142,6 +143,7 @@ export interface FeedbackItem {
   partner_data_effect: 'nao_utilizado' | 'confirmou' | 'aumentou_confianca' | 'alterou_decisao';
   analysis_minutes: number | null;
   created_at: string;
+  challenge_action?: string | null;
 }
 
 export interface SheetQuality {
@@ -258,6 +260,8 @@ export interface ForecastRecommendationSummary {
   confidence: Confidence;
   confidence_reason: string;
   forecast: DemandForecast;
+  /** Camada aditiva: rótulo de ação do desafio; ausente em respostas antigas. */
+  challenge_action?: ChallengeAction;
   operational_recommendation: Pick<
     OperationalRecommendation,
     | 'action'
@@ -279,6 +283,7 @@ export interface SkuDetail {
   forecast: DemandForecast;
   /** Camada aditiva: ausente em respostas antigas e nula quando a estimativa falha. */
   revenue_forecast?: RevenueItem | null;
+  challenge_action?: ChallengeAction;
   /** Camadas aditivas de eventos: ausentes em respostas antigas, nulas quando a análise falha. */
   event_alerts?: EventAlert[] | null;
   event_scenario?: SkuEventScenario | null;

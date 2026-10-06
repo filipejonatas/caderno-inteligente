@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from caderno_inteligente.cases import STATUSES
+from caderno_inteligente.action_labels import LABELS as CHALLENGE_LABELS
 from caderno_inteligente.feedback import ACTIONS, PARTNER_DATA_EFFECTS
 
 
@@ -85,19 +86,42 @@ class PostgresPersistence:
                 cursor.execute("select status, owner, due_date, action, note, changed_at from case_history where case_id=%s order by id desc", (case_id,))
                 return [{key: _iso(value) for key, value in row.items()} for row in cursor.fetchall()]
 
-    def save_feedback(self, sku: str, action: str, note: str, user_name: str, partner_data_effect: str = "nao_utilizado", analysis_minutes: int | None = None) -> None:
+    @staticmethod
+    def _has_challenge_column(cursor) -> bool:
+        """Detect migration 003 so the API keeps working before it is applied."""
+        cursor.execute(
+            "select 1 from information_schema.columns where table_schema = 'public' and table_name = 'feedback' and column_name = 'challenge_action'"
+        )
+        return cursor.fetchone() is not None
+
+    def save_feedback(self, sku: str, action: str, note: str, user_name: str, partner_data_effect: str = "nao_utilizado", analysis_minutes: int | None = None, challenge_action: str | None = None) -> None:
         if action not in ACTIONS:
             raise ValueError("Ação de feedback inválida")
         if partner_data_effect not in PARTNER_DATA_EFFECTS:
             raise ValueError("Efeito do dado do parceiro inválido")
         if analysis_minutes is not None and (isinstance(analysis_minutes, bool) or not isinstance(analysis_minutes, int) or analysis_minutes < 0):
             raise ValueError("Tempo de análise deve ser um número inteiro não negativo")
+        if challenge_action is not None and challenge_action not in CHALLENGE_LABELS:
+            raise ValueError("Rótulo de ação do desafio inválido")
         with self._connect() as connection:
             with connection.cursor() as cursor:
+                if challenge_action is not None and self._has_challenge_column(cursor):
+                    cursor.execute(
+                        "insert into feedback(sku, action, note, user_name, partner_data_effect, analysis_minutes, challenge_action) values (%s, %s, %s, %s, %s, %s, %s)",
+                        (sku, action, note, user_name, partner_data_effect, analysis_minutes, challenge_action),
+                    )
+                    return
                 cursor.execute(
                     "insert into feedback(sku, action, note, user_name, partner_data_effect, analysis_minutes) values (%s, %s, %s, %s, %s, %s)",
                     (sku, action, note, user_name, partner_data_effect, analysis_minutes),
                 )
+
+    def list_feedback_records(self) -> list[dict]:
+        with self._connect() as connection:
+            with connection.cursor() as cursor:
+                label = "challenge_action" if self._has_challenge_column(cursor) else "null::text as challenge_action"
+                cursor.execute(f"select sku, action, note, user_name, partner_data_effect, analysis_minutes, created_at, {label} from feedback order by id desc")
+                return [{**{key: row[key] for key in ("sku", "action", "note", "user_name", "partner_data_effect", "analysis_minutes", "challenge_action")}, "created_at": _iso(row["created_at"])} for row in cursor.fetchall()]
 
     def list_feedback(self) -> list[tuple]:
         with self._connect() as connection:

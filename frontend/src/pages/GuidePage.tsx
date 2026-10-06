@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Icon, PageIntro, SectionCard } from '../components';
+import { CHALLENGE_DEFINITIONS, CHALLENGE_NAMES } from './shared';
 
 const trails = [
   { id: 'pcp', role: 'PCP', question: 'O que devo olhar primeiro e preciso produzir?', steps: [{ label: 'Início', to: '/', text: 'Veja o primeiro SKU da fila e o porquê.' }, { label: 'Fila de atenção', to: '/prioridades', text: 'Confira a ordem completa e os sinais de cada SKU.' }, { label: 'Previsão e ação', to: '/previsoes', text: 'Veja a ação e a quantidade; abra o SKU para o cálculo.' }, { label: 'Registrar decisão', to: '/decisoes', text: 'Guarde o que você decidiu e quanto tempo levou.' }] },
@@ -19,6 +20,7 @@ const guideGlossary = [
   { term: 'Cobertura', description: 'Dias que o estoque dura no ritmo atual de venda.' },
   { term: 'Dado ausente', description: 'Não existe na planilha; nunca vale zero.' },
   { term: 'Ordem de produção (OP)', description: 'Este sistema nunca cria nem libera uma OP.' },
+  ...Object.entries(CHALLENGE_NAMES).map(([code, name]) => ({ term: `Rótulo: ${name}`, description: CHALLENGE_DEFINITIONS[code] })),
 ];
 
 const guideFaq = [

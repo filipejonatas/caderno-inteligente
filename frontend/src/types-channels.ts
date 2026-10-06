@@ -1,3 +1,5 @@
+import type { ChallengeAction } from './types-actions';
+
 export type ChannelTrend = 'crescente' | 'estável' | 'decrescente' | 'indeterminada';
 export type ChannelSignal = 'NOT_SOLD' | 'STOPPED' | 'DECLINING' | 'GROWING' | 'DISCONTINUING_PRODUCT' | 'OPEN_BACKLOG';
 export type ChannelSuggestionCode = 'avaliar_ampliacao_mix' | 'avaliar_reativacao' | 'investigar_queda' | 'monitorar_saida_de_linha' | 'acompanhar_crescimento' | 'sem_acao_necessaria';
@@ -17,6 +19,7 @@ export interface ChannelSkuRow {
   units_24m: number | null; revenue_24m: number | null; share_in_channel: number | null; rank: number | null; cumulative_share: number | null;
   units_recent: number | null; units_previous: number | null; trend: ChannelTrend; change_ratio: number | null; yoy_ratio: number | null;
   partners_units_recent: number | null; direct_share_of_sku_recent: number | null; backlog_open_quantity: number | null; backlog_open_orders: number;
+  challenge_action?: ChallengeAction;
   signals: ChannelSignal[]; suggestion: { code: ChannelSuggestionCode; label: string; reason: string; requires_human_review: boolean };
 }
 
@@ -35,4 +38,4 @@ export interface DirectChannelsOverview extends ChannelMeta {
   channels: ChannelSummary[]; findings: ChannelFinding[];
 }
 
-export interface DirectChannelDetail extends ChannelMeta { channel: ChannelSummary; total: number; items: ChannelSkuRow[] }
+export interface DirectChannelDetail extends ChannelMeta { channel: ChannelSummary; total: number; items: ChannelSkuRow[]; challenge_labels?: Record<string, string> }

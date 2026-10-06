@@ -5,7 +5,7 @@ Este guia pressupõe que todas as mudanças locais foram testadas. Ele não cont
 ## 1. Supabase
 
 1. Crie um projeto.
-2. Abra o SQL Editor e execute, nesta ordem, `supabase/migrations/001_initial.sql` e `supabase/migrations/002_run_comparison.sql`. A 002 é aditiva: adiciona a coluna opcional `runs.comparison` e pode ser executada mais de uma vez.
+2. Abra o SQL Editor e execute, nesta ordem, `supabase/migrations/001_initial.sql`, `supabase/migrations/002_run_comparison.sql` e `supabase/migrations/003_challenge_action.sql`. A 002 e a 003 são aditivas e podem ser executadas mais de uma vez: a 002 adiciona a coluna opcional `runs.comparison`; a 003, a coluna opcional `feedback.challenge_action` (sem ela, a decisão é gravada sem o rótulo do desafio).
 3. Em **Connect**, escolha **Transaction pooler**.
 4. Copie a connection string da porta `6543` e acrescente `sslmode=require` se ainda não estiver presente.
 5. Confirme no Table Editor que RLS está habilitado e que não existem políticas públicas nas quatro tabelas.

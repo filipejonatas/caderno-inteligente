@@ -1,6 +1,7 @@
 // Synthetic fixtures typed against the frontend contracts. Never application data: codes start with TEST/KA-T.
 import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
+import type { ChallengeAction } from '../types-actions';
 import type { ChannelFinding, ChannelSkuRow, ChannelSummary, DirectChannelDetail, DirectChannelsOverview } from '../types-channels';
 import type { EventAlert, EventAnalysis, EventItem, EventScenario } from '../types-events';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
@@ -58,6 +59,13 @@ export const runs: Run[] = [
 ];
 
 export const cases: CaseItem[] = [{ id: 1, sku: SKU_OK, run_id: null, status: 'em_investigacao', owner: 'PCP', due_date: '2026-10-10', action: '', note: '', created_at: '2026-10-05T12:00:00+00:00', updated_at: '2026-10-05T12:00:00+00:00' }];
+export const challenge = (code: ChallengeAction['code'], label: string, source: ChallengeAction['source'], reason: string, origin_action: string | null = null): ChallengeAction => ({
+  code, label, source, origin_action, reason, signals_used: [], evidence: [{ label: 'Posição na fila de atenção', value: 3, origin: 'ranking oficial' }, { label: 'Sem valor', value: null, origin: 'teste' }],
+  limitations: ['Não cria nem libera ordem de produção; a quantidade oficial não muda.'], requires_human_review: true,
+});
+export const challengeUrgent = challenge('priorizar_producao', 'Priorizar produção', 'operational', 'Produzir com urgência: posição 3 na fila de atenção (limite 10).', 'produzir');
+export const challengeInvestigate = challenge('investigar', 'Investigar', 'operational', 'Histórico insuficiente para prever; investigar e completar os dados antes de sugerir produção.', 'investigar_dados');
+
 export const feedback: FeedbackItem[] = [];
 
 export const b2b: B2BVisibility = {
@@ -77,9 +85,9 @@ const forecastShort = {
 };
 
 export const forecasts: ForecastRecommendationSummary[] = [
-  { sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', priority: 1, attention_score: 29, confidence: 'média', confidence_reason: 'Motivo.', forecast: forecastOk,
+  { sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', priority: 1, attention_score: 29, confidence: 'média', confidence_reason: 'Motivo.', forecast: forecastOk, challenge_action: challengeUrgent,
     operational_recommendation: { action: 'produzir', action_label: 'Produzir', suggested_quantity: 200, minimum_lot: 100, capacity_status: 'family_context_available', confidence: 'alta', confidence_reason: 'Motivo.', requires_human_review: true } },
-  { sku: SKU_SHORT, product: `Produto ${SKU_SHORT}`, family: 'Família B', priority: 2, attention_score: 28, confidence: 'baixa', confidence_reason: 'Motivo.', forecast: forecastShort,
+  { sku: SKU_SHORT, product: `Produto ${SKU_SHORT}`, family: 'Família B', priority: 2, attention_score: 28, confidence: 'baixa', confidence_reason: 'Motivo.', forecast: forecastShort, challenge_action: challengeInvestigate,
     operational_recommendation: { action: 'investigar_dados', action_label: 'Investigar dados', suggested_quantity: null, minimum_lot: 100, capacity_status: 'not_evaluated', confidence: 'baixa', confidence_reason: 'Histórico insuficiente.', requires_human_review: true } },
 ];
 
@@ -179,9 +187,9 @@ const channelRow = (sku: string, over: Partial<ChannelSkuRow>): ChannelSkuRow =>
   suggestion: { code: 'sem_acao_necessaria', label: 'Sem ação necessária', reason: 'Sem sinal de queda, parada, crescimento relevante ou lacuna de mix.', requires_human_review: true }, ...over,
 });
 export const channelRows: ChannelSkuRow[] = [
-  channelRow('CH-001', {}),
-  channelRow('CH-002', { rank: 2, trend: 'crescente', change_ratio: 0.15, signals: ['GROWING', 'OPEN_BACKLOG'], backlog_open_quantity: 300, backlog_open_orders: 1, suggestion: { code: 'acompanhar_crescimento', label: 'Acompanhar crescimento', reason: 'Média mensal recente acima da faixa neutra.', requires_human_review: true } }),
-  channelRow('CH-003', { months_sold: 0, first_month: null, last_month: null, units_24m: null, revenue_24m: null, share_in_channel: null, rank: null, cumulative_share: null, units_recent: null, units_previous: null, trend: 'indeterminada', change_ratio: null, yoy_ratio: null, partners_units_recent: null, direct_share_of_sku_recent: null, signals: ['NOT_SOLD'], suggestion: { code: 'avaliar_ampliacao_mix', label: 'Avaliar ampliação de mix', reason: 'Produto ativo sem nenhum faturamento neste canal nos 24 meses.', requires_human_review: true } }),
+  channelRow('CH-001', { challenge_action: challenge('sem_acao_necessaria', 'Sem ação necessária', 'channel', 'Sem sinal de queda, parada, crescimento relevante ou lacuna de mix.', 'sem_acao_necessaria') }),
+  channelRow('CH-002', { challenge_action: challenge('monitorar', 'Monitorar', 'channel', 'Média mensal recente acima da faixa neutra.', 'acompanhar_crescimento'), rank: 2, trend: 'crescente', change_ratio: 0.15, signals: ['GROWING', 'OPEN_BACKLOG'], backlog_open_quantity: 300, backlog_open_orders: 1, suggestion: { code: 'acompanhar_crescimento', label: 'Acompanhar crescimento', reason: 'Média mensal recente acima da faixa neutra.', requires_human_review: true } }),
+  channelRow('CH-003', { challenge_action: challenge('ampliar_mix', 'Ampliar mix', 'channel', 'Produto ativo sem nenhum faturamento neste canal nos 24 meses.', 'avaliar_ampliacao_mix'), months_sold: 0, first_month: null, last_month: null, units_24m: null, revenue_24m: null, share_in_channel: null, rank: null, cumulative_share: null, units_recent: null, units_previous: null, trend: 'indeterminada', change_ratio: null, yoy_ratio: null, partners_units_recent: null, direct_share_of_sku_recent: null, signals: ['NOT_SOLD'], suggestion: { code: 'avaliar_ampliacao_mix', label: 'Avaliar ampliação de mix', reason: 'Produto ativo sem nenhum faturamento neste canal nos 24 meses.', requires_human_review: true } }),
 ];
 export const channelFindings: ChannelFinding[] = [
   { code: 'DIRECT_COVERAGE_NOT_IN_SELL_OUT', severity: 'atenção', affects: ['E-commerce', CHANNEL], title: 'Cobertura dos canais diretos sem Sell_Out', summary: 'O cadastro declara cobertura completa.', treatment_label: 'Usa Vendas_24m',
@@ -194,7 +202,7 @@ export const directChannels: DirectChannelsOverview = {
   ...channelMeta, totals: { direct_revenue_24m: 28164228, total_revenue_24m: 41288943, direct_share_of_revenue: 0.6821, direct_share_of_units: 0.6822 },
   channels: [channelSummary('E-commerce', 'E-commerce próprio', 11606120, 0.2811), channelSummary(CHANNEL, 'Loja própria', 7447799, 0.1804)], findings: channelFindings,
 };
-export const directChannelDetail: DirectChannelDetail = { ...channelMeta, channel: channelSummary(CHANNEL, 'Loja própria', 7447799, 0.1804), total: channelRows.length, items: channelRows };
+export const directChannelDetail: DirectChannelDetail = { ...channelMeta, challenge_labels: { ampliar_mix: 'Ampliar mix', monitorar: 'Monitorar' }, channel: channelSummary(CHANNEL, 'Loja própria', 7447799, 0.1804), total: channelRows.length, items: channelRows };
 
 export const skuDetailOk: SkuDetail = {
   indicator: indicator(SKU_OK),
@@ -203,6 +211,7 @@ export const skuDetailOk: SkuDetail = {
   score_contributions: [{ code: 'RUP_LEAD_TIME', weight: 8, description: 'Cobertura abaixo do lead time.' }],
   forecast: forecastOk,
   revenue_forecast: revenueOk,
+  challenge_action: challengeUrgent,
   event_alerts: eventAlerts,
   event_scenario: { applicable: true, note: null, scenario: eventScenario },
   operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Demanda a cobrir sintética.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 } },
@@ -215,18 +224,20 @@ export const skuDetailShort: SkuDetail = {
   priority: [priorities[1]],
   forecast: forecastShort,
   revenue_forecast: revenueShort,
+  challenge_action: challengeInvestigate,
   event_alerts: [],
   event_scenario: { applicable: false, note: eventItemShort.scenario_note, scenario: null },
   operational_recommendation: { ...recommendationBase, action: 'investigar_dados', action_label: 'Investigar dados', suggested_quantity: null, raw_quantity: null, forecast_next_month: null, safety_stock_quantity: null, capacity_status: 'not_evaluated', confidence: 'baixa', confidence_reason: 'Histórico insuficiente para produzir uma previsão quantitativa.', rationale: ['Investigar e completar o histórico antes de sugerir produção.'], calculation: {} },
 };
 
-const metadata = { reference_month: '2026-08', limitation: 'Recomendação comercial demonstrativa.', thresholds: { recent_months: 3 }, field_nature: { estimated_stock: { nature: 'estimado na fonte', origin: 'Sell_Out' } } };
+const metadata = { challenge_labels: { repor: 'Repor', priorizar_parceiro: 'Priorizar parceiro' }, reference_month: '2026-08', limitation: 'Recomendação comercial demonstrativa.', thresholds: { recent_months: 3 }, field_nature: { estimated_stock: { nature: 'estimado na fonte', origin: 'Sell_Out' } } };
 
 export const partnerSummary: PartnerSummary = {
   code: PARTNER, name: 'Parceiro sintético', type: 'Key account', region: 'Sudeste', channel: 'Varejo', state: 'SP', city: 'Cidade', observed_skus: 1,
   linked_skus: 2, total_catalog_skus: 4, coverage: 0.25, latest_sell_out_month: '2026-08', backlog_quantity: 120,
   action_counts: { avaliar_reposicao: 1, monitorar_estoque: 0, investigar_divergencia: 0, solicitar_atualizacao: 0, dados_insuficientes: 1 },
   quality_counts: { sufficient: 1, stale: 0, insufficient: 1 },
+  challenge_action: challenge('priorizar_parceiro', 'Priorizar parceiro', 'partner', '2 pares com oportunidade de reposição, incluindo SKU entre os 10 primeiros.', 'avaliar_reposicao'),
 };
 
 export const commercialRow: CommercialRow = {
@@ -239,6 +250,7 @@ export const commercialRow: CommercialRow = {
   signals: [{ code: 'INSUFFICIENT_PARTNER_DATA', label: 'Dados insuficientes para recomendar' }], action: 'dados_insuficientes',
   action_label: 'Sem recomendação por dados insuficientes', requires_human_review: true, recommendation_reason: 'Sem estoque estimado.',
   periods: [{ month: '2026-08', sell_in_quantity: 30, sell_out_quantity: 0, estimated_stock: null, data_nature: 'Real' }],
+  challenge_action: challenge('repor', 'Repor', 'commercial', 'Cobertura estimada baixa para o giro observado; avaliar reposição.', 'avaliar_reposicao'),
 };
 
 export const partnersPage: CommercialPage<PartnerSummary> = { ...metadata, items: [partnerSummary], total: 1, offset: 0, limit: 200 };

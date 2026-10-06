@@ -1,8 +1,11 @@
+import type { ChallengeAction } from './types-actions';
+
 export type CommercialAction = 'avaliar_reposicao' | 'monitorar_estoque' | 'investigar_divergencia' | 'solicitar_atualizacao' | 'dados_insuficientes';
 export type CommercialQuality = 'sufficient' | 'stale' | 'insufficient';
 export interface PartnerSummary {
   code: string; name: string; type: string; region: string | null; channel: string | null;
   state: string | null; city: string | null; observed_skus: number; linked_skus: number;
+  challenge_action?: ChallengeAction | null;
   total_catalog_skus: number; coverage: number; latest_sell_out_month: string | null;
   backlog_quantity: number; action_counts: Record<CommercialAction, number>; quality_counts: Record<CommercialQuality, number>;
 }
@@ -17,11 +20,13 @@ export interface CommercialRow {
   orders: Array<{ order: string; quantity: number; promised_date: string | null; status: string }>;
   signals: Array<{ code: string; label: string }>;
   action: CommercialAction; action_label: string; requires_human_review: boolean; recommendation_reason: string;
+  challenge_action?: ChallengeAction;
   periods: Array<{ month: string; sell_in_quantity: number | null; sell_out_quantity: number | null; estimated_stock: number | null; data_nature: string | null }>;
 }
 export interface CommercialMetadata {
   reference_month: string | null; limitation: string; thresholds: Record<string, number>;
   field_nature: Record<string, { nature: string; origin: string }>;
+  challenge_labels?: Record<string, string>;
 }
 export interface CommercialPage<T> extends CommercialMetadata { items: T[]; total: number; offset: number; limit: number }
 export interface PartnerDetail extends CommercialMetadata {

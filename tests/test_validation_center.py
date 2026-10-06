@@ -104,7 +104,8 @@ def test_synthetic_cases_run_through_existing_rules_and_recommendation():
     config = load_validation_config(CONFIG)
     synthetic = {**config, "cases": [case for case in config["cases"] if case["origin"] == "synthetic"]}
     result = evaluate_frozen_cases(synthetic, **_empty_context(), source_sha256=config["frozen_source_sha256"])
-    assert result["total"] == 2 and result["passed"] == 2
+    # 2 casos operacionais sintéticos + 11 casos dos rótulos de ação do desafio (VC-09 a VC-19)
+    assert result["total"] == 13 and result["passed"] == 13
     first = result["items"][0]
     assert {"RUP_LEAD_TIME", "RUP_SAFETY_STOCK", "ORDER_WITHOUT_PRODUCTION"} <= set(first["obtained"]["signals"])
     assert first["obtained"]["suggested_quantity"] == 500.0
