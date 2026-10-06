@@ -52,6 +52,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
   { id: 'overview', path: '/', label: 'Início', description: 'O que olhar primeiro' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
+  { id: 'revenue', path: '/faturamento', label: 'Faturamento previsto', description: 'Estimativa em reais para três meses' },
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
   { id: 'b2b', path: '/parceiros', label: 'Parceiros', description: 'Oportunidades e cobertura' },
@@ -65,7 +66,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
 /** Menu principal: 6 entradas. As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
 export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
   { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
-  { id: 'production', label: 'Produção', description: 'Fila, previsão e ação', to: '/fila', icon: 'priorities', paths: ['/fila', '/prioridades', '/previsoes', '/skus'] },
+  { id: 'production', label: 'Planejamento', description: 'Fila operacional e faturamento previsto', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/prioridades', '/previsoes', '/skus'] },
   { id: 'partners', label: 'Parceiros', description: 'Oportunidades e cobertura', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
   { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria'] },
   { id: 'decisions', label: 'Decisões', description: 'Registro e casos', to: '/decisoes', icon: 'feedback', paths: ['/decisoes', '/casos'] },
@@ -73,6 +74,7 @@ export const menuGroups: Array<{ id: string; label: string; description: string;
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
+  production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Faturamento previsto', to: '/faturamento' }],
   trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Auditoria', to: '/auditoria' }],
   decisions: [{ label: 'Registrar decisão', to: '/decisoes' }, { label: 'Casos', to: '/casos' }],
   advanced: [{ label: 'Cenários', to: '/cenarios' }, { label: 'Execuções', to: '/execucoes' }],

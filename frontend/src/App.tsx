@@ -15,6 +15,7 @@ import './usability.css';
 const GuidePage = lazy(() => import('./pages/GuidePage'));
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
 const OperationalQueuePage = lazy(() => import('./pages/OperationalQueuePage'));
+const RevenueForecastPage = lazy(() => import('./pages/RevenueForecastPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const QualityPage = lazy(() => import('./pages/QualityPage'));
 const B2BPage = lazy(() => import('./pages/B2BPage'));
@@ -97,6 +98,7 @@ function App() {
             <Route path="/guia" element={<GuidePage />} />
             <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/fila" element={<OperationalQueuePage onSelect={selectSku} refreshToken={refreshToken} />} />
+            <Route path="/faturamento" element={<RevenueForecastPage refreshToken={refreshToken} />} />
             {/* Rotas antigas: mesmos parâmetros (busca, familia, acao, rotulo, confianca, ordem, todos), nova página. */}
             <Route path="/prioridades" element={<Navigate to={{ pathname: '/fila', search: location.search }} replace />} />
             <Route path="/previsoes" element={<Navigate to={{ pathname: '/fila', search: location.search }} replace />} />

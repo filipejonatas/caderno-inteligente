@@ -1,4 +1,5 @@
-import { Alert, Badge, Hint, SectionCard, Tooltip, confidenceTone } from '../components';
+import { Link, useLocation } from 'react-router-dom';
+import { Alert, Badge, EmptyState, Hint, SectionCard, Tooltip, confidenceTone } from '../components';
 import { displayCurrency, displayPercent, displayPrice, displayUnits, formatMonth } from '../pages/shared';
 import type { ObservedRevenue, RevenueForecast, RevenueItem } from '../types-revenue';
 
@@ -30,12 +31,12 @@ export function RevenueTrend({ observed, months, values, label }: { observed: Ob
 
 const SIGNED = (ratio: number | null) => ratio === null ? 'Não disponível' : `${ratio >= 0 ? '+' : '−'}${displayPercent(Math.abs(ratio))}`;
 
-/** Cartão da página Previsão. Camada aditiva: se falhar, a página operacional segue intacta. */
-export function RevenueSummaryCard({ data, error, loading, refresh }: { data: RevenueForecast | undefined; error: string; loading: boolean; refresh: () => Promise<void> }) {
+/** Cartão da página Faturamento previsto. Camada aditiva: se falhar, mostra o motivo e permite nova tentativa. `family` restringe as linhas de família; o total da empresa permanece como contexto. */
+export function RevenueSummaryCard({ data, error, loading, refresh, family = '' }: { data: RevenueForecast | undefined; error: string; loading: boolean; refresh: () => Promise<void>; family?: string }) {
   if (!data && loading) return <SectionCard title="Faturamento estimado" subtitle="Calculando…"><div className="drawer-loading"><span /><span /></div></SectionCard>;
-  if (!data) return <Alert tone="warning" title="Faturamento estimado indisponível" action={<button className="secondary-button" onClick={() => void refresh()}>Tentar novamente</button>}>{error || 'Não foi possível carregar a estimativa.'} A previsão em unidades e as ações seguem válidas.</Alert>;
+  if (!data) return <Alert tone="warning" title="Faturamento estimado indisponível" action={<button className="secondary-button" onClick={() => void refresh()}>Tentar novamente</button>}>{error || 'Não foi possível carregar a estimativa.'} A fila operacional, a previsão em unidades e as ações seguem válidas.</Alert>;
   const { total, families } = data;
-  const rows = [total, ...families];
+  const rows = [total, ...families.filter((group) => !family || group.label === family)];
   return <SectionCard className="revenue-card" title="Faturamento estimado" subtitle="Unidades previstas × preço vigente, próximos três meses." action={<span className="revenue-card-tag"><Badge tone="info">Estimativa</Badge><Hint term="faturamento_estimado" /></span>}>
     <RevenueTrend observed={total.observed_revenue} months={total.by_month.map((row) => row.month)} values={total.by_month.map((row) => row.revenue)} label={`Faturamento mensal observado e estimado da empresa. Estimativa de ${displayCurrency(total.revenue_total_3m)} em três meses.`} />
     <div className="table-shell" tabIndex={0} role="region" aria-label="Faturamento estimado por família"><table className="data-table responsive-table"><caption className="sr-only">Faturamento estimado por família, em reais; estimativa, não faturamento realizado</caption><thead><tr><th>Escopo</th><th>Estimativa (três meses)</th><th>Variação sobre os três meses anteriores</th><th>Erro do teste</th></tr></thead><tbody>{rows.map((group, index) => {
@@ -48,6 +49,18 @@ export function RevenueSummaryCard({ data, error, loading, refresh }: { data: Re
       </tr>;
     })}</tbody></table></div>
   </SectionCard>;
+}
+
+/** SKUs da estimativa. Sem preço ou sem previsão aparece como motivo, nunca como R$ 0; o detalhe financeiro fica em /skus/:sku?tab=impacto. */
+export function RevenueSkuTable({ items }: { items: RevenueItem[] }) {
+  const location = useLocation();
+  if (!items.length) return <EmptyState title="Nenhum SKU encontrado" description="Ajuste a busca ou a família." />;
+  return <div className="table-shell" tabIndex={0} role="region" aria-label="Faturamento estimado por SKU; role horizontalmente para ver todas as colunas"><table className="data-table responsive-table"><caption className="sr-only">Faturamento estimado por SKU, em reais; estimativa, não faturamento realizado</caption><thead><tr><th>SKU / Produto</th><th>Família</th><th>Estimativa (três meses)</th><th>Confiança da previsão</th></tr></thead><tbody>{items.map((item) => <tr key={item.sku}>
+    <td data-label="SKU"><Link className="link-button" to={`/skus/${encodeURIComponent(item.sku)}?tab=impacto`} state={{ from: `${location.pathname}${location.search}` }} aria-label={`Ver impacto financeiro de ${item.sku}`}><strong>{item.sku}</strong></Link><small>{item.product}</small></td>
+    <td data-label="Família">{item.family}</td>
+    <td data-label="Estimativa">{item.status === 'ok' ? <strong>{displayCurrency(item.revenue_total_3m)}</strong> : <><Badge tone="medium">{item.status === 'sem_preco' ? 'Sem preço' : 'Sem previsão'}</Badge> <span className="queue-none">Não disponível</span></>}</td>
+    <td data-label="Confiança">{item.status === 'ok' ? <Badge tone={confidenceTone(item.forecast_confidence)}>{item.forecast_confidence}</Badge> : <span className="queue-none">Não disponível</span>}</td>
+  </tr>)}</tbody></table></div>;
 }
 
 /** Bloco do detalhe do SKU. `undefined` = resposta antiga sem o campo; `null` = estimativa indisponível. */

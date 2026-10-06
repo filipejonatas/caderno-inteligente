@@ -9,6 +9,7 @@ const ROUTES: Array<[string, string, string]> = [
   ['/', 'Início', 'O que olhar primeiro'],
   ['/guia', 'Guia de uso', 'Entenda o Caderno Inteligente em poucos minutos'],
   ['/fila', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/faturamento', 'Faturamento previsto', 'Quanto se estima faturar nos próximos três meses'],
   ['/prioridades', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/previsoes', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/casos', 'Casos', 'Casos em acompanhamento'],
@@ -101,7 +102,7 @@ describe('menu', () => {
     renderApp('/prioridades');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
     expect(within(nav).getAllByRole('link')).toHaveLength(6);
-    expect(within(nav).getByRole('link', { name: /Produção/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /Planejamento/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Início/ })).not.toHaveAttribute('aria-current');
     await user.click(within(nav).getByRole('link', { name: /Confiança/ }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Confiança nas recomendações' })).toHaveFocus();

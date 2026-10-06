@@ -7,7 +7,6 @@ import { MOBILE_LIST_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
 import { Alert, ErrorState, Icon, LoadingState, PageIntro, SectionCard } from '../components';
 import { OperationalQueueTable, joinQueue, rowNeedsAttention, sortQueue } from '../components/OperationalQueue';
 import type { QueueRow, QueueSort } from '../components/OperationalQueue';
-import { RevenueSummaryCard } from '../components/RevenueForecast';
 import type { SelectedSku } from '../types';
 
 const toSelected = (row: QueueRow): SelectedSku => ({
@@ -27,9 +26,8 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
   const priorities = useApiResource(dashboardReaders.priorities, refreshToken);
   const forecasts = useApiResource(api.forecasts, refreshToken);
   const config = useApiResource(dashboardReaders.config, refreshToken);
-  // Camadas aditivas: eventos e faturamento carregam à parte e nunca bloqueiam a fila.
+  // Camada aditiva: eventos carregam à parte e nunca bloqueiam a fila. O faturamento tem página própria.
   const { data: events } = useApiResource(api.events, refreshToken);
-  const revenue = useApiResource(api.revenueForecast, refreshToken);
   const eventsBySku = useMemo(() => new Map((events?.items ?? []).map((item) => [item.sku, item])), [events]);
 
   const loading = priorities.loading || forecasts.loading;
@@ -110,7 +108,5 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
       <OperationalQueueTable rows={visible} onSelect={(row) => onSelect(toSelected(row))} weights={config.data?.weights} eventsBySku={eventsBySku} forecastsLoaded={!!forecasts.data} prioritiesLoaded={!!priorities.data} />
       {filtered.length > visible.length && <div className="show-more"><button className="secondary-button" onClick={() => setExtra((value) => value + 25)}>Ver mais ({filtered.length - visible.length} restantes)</button></div>}
     </SectionCard>
-    {/* Provisório: o faturamento sai desta página na Etapa 3. Fica depois da lista para não antecedê-la. */}
-    <RevenueSummaryCard data={revenue.data} error={revenue.error} loading={revenue.loading} refresh={revenue.refresh} />
   </div>;
 }

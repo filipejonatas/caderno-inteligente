@@ -6,6 +6,7 @@ export type PageId =
   | 'guide'
   | 'overview'
   | 'queue'
+  | 'revenue'
   | 'cases'
   | 'quality'
   | 'b2b'

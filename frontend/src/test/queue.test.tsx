@@ -78,13 +78,6 @@ describe('fila operacional: página', () => {
     expect(bodyRows()).toHaveLength(3);
   });
 
-  it('falha só do faturamento não esconde a fila', async () => {
-    mockApi({ revenueForecast: fail(500, 'Erro') });
-    renderApp('/fila');
-    await screen.findByRole('button', { name: `Ver detalhes de ${SKU_OK}` });
-    expect(await screen.findByText('Faturamento estimado indisponível')).toBeInTheDocument();
-  });
-
   it('ordem escolhida fica na URL; ordem inválida cai na posição', async () => {
     const user = userEvent.setup();
     mockApi();

@@ -12,6 +12,7 @@ const PAGES: Array<[string, string]> = [
   ['/', 'O que olhar primeiro'],
   ['/guia', 'Entenda o Caderno Inteligente em poucos minutos'],
   ['/fila', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/faturamento', 'Quanto se estima faturar nos próximos três meses'],
   ['/prioridades', 'Qual SKU analisar, o que fazer e quanto'],
   ['/previsoes', 'Qual SKU analisar, o que fazer e quanto'],
   [`/skus/${encodeURIComponent(SKU_SHORT)}`, SKU_SHORT],
