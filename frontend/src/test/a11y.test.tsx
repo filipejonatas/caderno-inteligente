@@ -22,6 +22,7 @@ const PAGES: Array<[string, string]> = [
   ['/execucoes?base=1&alvo=2', 'O que mudou entre duas execuções'],
   ['/decisoes', 'Registrar a decisão'],
   ['/validacao', 'Quanto confiar nas recomendações'],
+  ['/auditoria', 'Auditoria: como os resultados foram testados'],
   ['/rota-inexistente', 'Página não encontrada'],
 ];
 

@@ -28,10 +28,10 @@ export default function RunsPage({ data, onRefresh }: PageProps<'runs'>) {
   function compare(event: FormEvent) { event.preventDefault(); setParams({ base: draftBase, alvo: draftTarget }); }
 
   return <>
-    <PageIntro title="O que mudou entre duas execuções" description="Cada execução guarda a fonte, a configuração, o ranking, a previsão, a recomendação e a cobertura dos parceiros, para comparar depois." action={<button className="primary-button" onClick={snapshot} disabled={saving || writeDisabled} title={writeDisabled ? 'Registro desabilitado nesta publicação (somente leitura)' : undefined}>{saving ? 'Registrando…' : 'Registrar execução atual'}</button>} />
+    <PageIntro title="O que mudou entre duas execuções" action={<button className="primary-button" onClick={snapshot} disabled={saving || writeDisabled} title={writeDisabled ? 'Registro desabilitado nesta publicação (somente leitura)' : undefined}>{saving ? 'Registrando…' : 'Registrar execução atual'}</button>} />
     {message && <div className="toast-inline">{message}</div>}
     {data.runs.length < 2 ? <p className="details-note"><strong>São necessárias duas execuções</strong> para comparar mudanças no ranking. Registre outra execução quando quiser guardar um novo ponto de comparação.</p> :
-      <SectionCard title="Comparar execuções" subtitle="Escolha a execução base e a execução alvo. O link resultante pode ser compartilhado.">
+      <SectionCard title="Comparar execuções">
         <form className="run-compare-form" onSubmit={compare}>
           <label>Base<select value={draftBase} onChange={(event) => setDraftBase(event.target.value)}>{data.runs.map((run) => <option key={run.id} value={run.id}>#{run.id} · {formatDateTime(run.created_at)}</option>)}</select></label>
           <label>Alvo<select value={draftTarget} onChange={(event) => setDraftTarget(event.target.value)}>{data.runs.map((run) => <option key={run.id} value={run.id}>#{run.id} · {formatDateTime(run.created_at)}</option>)}</select></label>

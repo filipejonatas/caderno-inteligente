@@ -17,6 +17,7 @@ const ROUTES: Array<[string, string, string]> = [
   ['/execucoes', 'Execuções', 'O que mudou entre duas execuções'],
   ['/decisoes', 'Registrar decisão', 'Registrar a decisão'],
   ['/validacao', 'Confiança nas recomendações', 'Quanto confiar nas recomendações'],
+  ['/auditoria', 'Auditoria', 'Auditoria: como os resultados foram testados'],
 ];
 
 describe.each(['desktop', 'mobile'] as const)('rotas em %s', (viewport) => {

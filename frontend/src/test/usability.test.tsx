@@ -48,24 +48,28 @@ describe('navegação agrupada', () => {
     expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Confiança/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('diz uma vez, no topo, que a sugestão exige revisão humana e não é ordem de produção', async () => {
+  it('diz a regra uma vez, só onde há sugestão, e não a repete nas demais telas', async () => {
     mockApi();
-    renderApp('/prioridades');
-    await screen.findByRole('heading', { level: 2, name: 'Em que ordem analisar os SKUs' });
+    const { unmount } = renderApp('/previsoes');
+    await screen.findByRole('heading', { level: 2, name: 'Preciso produzir? Quanto?' });
     expect(screen.getAllByText(/não é ordem de produção/)).toHaveLength(1);
+    unmount();
+    renderApp('/casos');
+    await screen.findByRole('heading', { level: 2, name: 'Casos em acompanhamento' });
+    expect(screen.queryByText(/não é ordem de produção/)).not.toBeInTheDocument();
   });
 });
 
-describe('motivo principal na fila', () => {
-  it('abre a linha para ver todos os sinais, a data crítica e a lacuna', async () => {
+describe('fila de atenção enxuta', () => {
+  it('mostra uma linha curta por SKU (sem detalhe repetido) e abre o SKU com um clique', async () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/prioridades');
     await screen.findByText(SKU_OK);
-    const row = screen.getByText(SKU_OK).closest('tr')!;
-    await user.click(within(row).getByText('Ver sinais, data e lacuna'));
-    expect(within(row).getByText('Data crítica')).toBeInTheDocument();
-    expect(within(row).getByText('Lacuna operacional')).toBeInTheDocument();
+    expect(screen.queryByText('Ver sinais, data e lacuna')).not.toBeInTheDocument();
+    expect(screen.getAllByRole('columnheader').filter((header) => !header.querySelector('.sr-only'))).toHaveLength(5);
+    await user.click(screen.getByRole('button', { name: `Abrir evidências de ${SKU_OK}` }));
+    expect(currentLocation()).toBe(`/skus/${SKU_OK}`);
   });
 });
 
@@ -129,8 +133,20 @@ describe('validação: veredito e falhas visíveis, detalhes em abas', () => {
     expect(screen.getByRole('heading', { name: 'Falhas conhecidas' })).toBeInTheDocument();
     const tablist = screen.getByRole('tablist', { name: 'Detalhes da validação' });
     expect(within(tablist).getByRole('tab', { name: 'Processo atual' })).toHaveAttribute('aria-selected', 'true');
-    await user.click(within(tablist).getByRole('tab', { name: 'Casos de teste' }));
-    expect(within(tablist).getByRole('tab', { name: 'Casos de teste' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('tabpanel', { name: 'Casos de teste' })).toBeVisible();
+    await user.click(within(tablist).getByRole('tab', { name: 'Modelos de previsão' }));
+    expect(within(tablist).getByRole('tab', { name: 'Modelos de previsão' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tabpanel', { name: 'Modelos de previsão' })).toBeVisible();
+    // Material de auditoria saiu da tela de decisão e vive em /auditoria.
+    expect(screen.queryByText('Casos representativos congelados')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Auditoria completa' })).toHaveAttribute('href', '/auditoria');
+  });
+
+  it('a página de Auditoria reúne casos congelados, verificações e histórico', async () => {
+    mockApi();
+    renderApp('/auditoria');
+    expect(await screen.findByRole('heading', { level: 2, name: 'Auditoria: como os resultados foram testados' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Casos de teste congelados' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Histórico de ajustes' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Método comercial/ })).toBeInTheDocument();
   });
 });

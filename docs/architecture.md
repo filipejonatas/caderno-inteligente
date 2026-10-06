@@ -73,7 +73,7 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
-O menu agrupa as rotas em 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Avançado); dentro de cada grupo as rotas viram abas (`SubNav`), e `/parceiros` tem as abas `?aba=oportunidades|parceiros`. Nenhuma URL mudou. `/prioridades` e `/` também leem `/api/config` (pesos) para ordenar os sinais por peso.
+O menu agrupa as rotas em 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Avançado); Confiança reúne `/validacao`, `/qualidade` e `/auditoria`; dentro de cada grupo as rotas viram abas (`SubNav`), e `/parceiros` tem as abas `?aba=oportunidades|parceiros`. Nenhuma URL mudou. `/prioridades` e `/` também leem `/api/config` (pesos) para ordenar os sinais por peso.
 
 | URL | Página | Dados consultados |
 |---|---|---|
@@ -83,13 +83,14 @@ O menu agrupa as rotas em 6 entradas (Início, Produção, Parceiros, Confiança
 | `/previsoes` | Previsão e recomendações — filtros `busca`, `familia`, `acao`, `confianca`, `tendencia`, `atencao`, `ordem` | `forecasts` |
 | `/skus/:sku` | Detalhe do SKU (compartilhável) | `priorities/{sku}`, `commercial-recommendations?sku=` |
 | `/casos` | Casos | `cases`, `priorities`, `config` |
-| `/qualidade` | Qualidade dos dados | `data-quality` |
+| `/qualidade` | Dados da planilha | `data-quality` |
 | `/parceiros` | Parceiros (oportunidades e lista) — filtros `regiao`, `canal`, `ordem`, `aba` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
 | `/parceiros/:codigo` | Detalhe do parceiro — filtros `sku`, `acao`, `qualidade`, `offset` | `partners/{codigo}`, `partners/{codigo}/skus` |
 | `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
 | `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |
 | `/decisoes` | Decisões (feedback do PCP) | `feedback`, `priorities`, `config` |
-| `/validacao` | Central de validação | `validation/summary` |
+| `/validacao` | Central de validação (resumo, falhas e 2 abas) | `validation/summary` |
+| `/auditoria` | Auditoria: casos de teste, verificações, limitações, ajustes e método comercial | `validation/summary`, `partners?limit=1` |
 | `*` | Página não encontrada | Nenhum |
 
 Códigos de SKU e de parceiro são codificados na URL com `encodeURIComponent`, por exemplo `/parceiros/Loja%20pr%C3%B3pria`.

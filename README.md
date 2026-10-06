@@ -70,9 +70,9 @@ O menu tem 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Av
 | URL | Menu · página |
 |---|---|
 | `/guia` | Ajuda: trilhas por papel (PCP, Comercial, Gestão), glossário e perguntas frequentes. Funciona com a API fora do ar |
-| `/` | Início: primeiro da fila e o porquê, 4 números, fila de atenção e, recolhido, qualidade da evidência |
-| `/prioridades` | Produção › Fila de atenção: ranking oficial com filtros na URL (`busca`, `familia`, `confianca`); o motivo principal é o sinal de maior peso |
-| `/previsoes` | Produção › Previsão e ação: ação e quantidade sugeridas por SKU, com previsão e erro recolhidos |
+| `/` | Início: primeiro da fila e o porquê, 3 números e fila de atenção |
+| `/prioridades` | Produção › Fila de atenção: ranking oficial com filtros na URL (`busca`, `familia`, `confianca`); o motivo principal é o sinal de maior peso; uma linha curta por SKU |
+| `/previsoes` | Produção › Previsão e ação: ação e quantidade sugeridas por SKU; por padrão, só os que pedem atenção |
 | `/skus/:sku` | Detalhe compartilhável: ação sugerida no topo, cálculo, dados do SKU, riscos e evidências, contexto dos parceiros; botões "Registrar decisão" e "Criar caso" |
 | `/parceiros` | Parceiros › Oportunidades (padrão) e `?aba=parceiros`; filtros `regiao`, `canal`, `ordem` |
 | `/parceiros/:codigo` | Matriz parceiro–SKU com evidências mensais na própria linha |
@@ -81,7 +81,8 @@ O menu tem 6 entradas (Início, Produção, Parceiros, Confiança, Decisões, Av
 | `/cenarios` | Avançado › Cenários: simulação de 2 pesos sem alterar o ranking oficial |
 | `/execucoes` | Avançado › Execuções: `?base=&alvo=` compara duas execuções |
 | `/decisoes` | Decisões › Registrar decisão; aceita `?sku=` |
-| `/validacao` | Confiança › Validação: resumo, falhas conhecidas e abas, com exportação CSV e impressão |
+| `/validacao` | Confiança › Validação: resumo, 3 números, falhas conhecidas e 2 abas, com exportação CSV e impressão |
+| `/auditoria` | Confiança › Auditoria: casos de teste congelados, verificações de segurança, limitações, histórico de ajustes e método comercial |
 
 Rotas inexistentes mostram uma página 404. O `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar qualquer URL interna.
 

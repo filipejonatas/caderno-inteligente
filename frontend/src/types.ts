@@ -9,7 +9,8 @@ export type PageId =
   | 'scenarios'
   | 'runs'
   | 'feedback'
-  | 'validation';
+  | 'validation'
+  | 'audit';
 
 export type Severity = 'crítica' | 'alta' | 'média' | 'baixa' | string;
 export type Confidence = 'baixa' | 'média' | 'alta' | string;

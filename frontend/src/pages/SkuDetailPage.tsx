@@ -5,7 +5,7 @@ import { PartnerSkuContext } from '../components/PartnerSkuContext';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
-import { displayDays, displayNumber, displayPercent, displayQuantity, displayUnits, formatDate, localizeText, missingDataNames, positiveDelayDays, reasonNames } from './shared';
+import { displayDays, displayNumber, displayPercent, displayQuantity, displayUnits, formatDate, missingDataNames, positiveDelayDays, reasonNames } from './shared';
 
 /** Only same-app paths: blocks '//host', backslash tricks and schemes (open-redirect hardening). */
 export function isInternalPath(value: string) {
@@ -16,7 +16,7 @@ type EvidenceKind = 'share' | 'days' | 'units' | 'date' | 'text' | 'count';
 const evidenceFields: Record<string, [string, EvidenceKind]> = {
   family: ['Família', 'text'],
   average_occupation: ['Ocupação média da família', 'share'],
-  available_capacity_average: ['Capacidade disponível média (unidades por semana)', 'units'],
+  available_capacity_average: ['Capacidade livre média (un. por semana)', 'units'],
   first_promised_date: ['Primeira data prometida', 'date'],
   first_production_completion: ['Primeira conclusão prevista', 'date'],
   delay_days: ['Atraso entre promessa e conclusão', 'days'],
@@ -46,10 +46,9 @@ function evidenceValue(code: string, key: string, value: unknown) {
 const evidenceLabel = (code: string, key: string) => code === 'CAPACITY_CONFLICT' && key === 'threshold' ? 'Limite configurado de ocupação'
   : evidenceFields[key]?.[0] ?? key.split('_').join(' ').replace(/^./, (letter) => letter.toUpperCase());
 
-function originLabel(origin: string) {
-  if (origin.startsWith('config.')) return `Configuração: ${origin.slice(7).split('.').join(' › ').split('_').join(' ')}`;
-  const [sheet, ...column] = origin.split('.');
-  return column.length ? `Planilha · aba ${sheet.split('_').join(' ')} · ${column.join('.')}` : origin;
+function shortOrigin(origin: string) {
+  if (origin.startsWith('config.')) return 'Configuração';
+  return `Planilha, aba ${origin.split('.')[0].split('_').join(' ')}`;
 }
 
 export default function SkuDetailPage({ refreshToken }: { refreshToken: number }) {
@@ -67,16 +66,17 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
   const indicator = detail.indicator;
   const forecast = detail.forecast;
   const recommendation = detail.operational_recommendation;
+  const calc = recommendation.calculation;
   const rankedPriority = detail.priority[0];
   const priorityNumber = rankedPriority?.priority ?? null;
   const attentionScore = rankedPriority?.attention_score ?? null;
   const rankingConfidence = rankedPriority?.confidence ?? recommendation.confidence;
-  const rankingConfidenceReason = rankedPriority?.confidence_reason ?? recommendation.confidence_reason;
   const delayDays = positiveDelayDays(indicator.first_promised_date, indicator.first_production_completion);
   const insufficient = forecast.status === 'insufficient_data';
   const quantity = recommendation.suggested_quantity;
   const answer = insufficient ? `${recommendation.action_label}: sem histórico suficiente para sugerir quantidade.`
     : `${recommendation.action_label}${quantity && quantity > 0 ? ` · ${displayQuantity(quantity)} un.` : ''}`;
+  const why = `Necessidade: ${displayQuantity(calc.demand_to_cover)} a cobrir + ${displayQuantity(calc.safety_stock_quantity)} de segurança − ${displayQuantity(calc.current_stock)} em estoque − ${displayQuantity(calc.open_production_quantity)} em produção${recommendation.raw_quantity === null ? '' : ` = ${displayQuantity(recommendation.raw_quantity)} un.`}${quantity && quantity > 0 ? `; arredondada ao lote mínimo de ${displayQuantity(recommendation.minimum_lot)}.` : '.'}`;
   const contributions = [...detail.score_contributions].sort((a, b) => b.weight - a.weight);
 
   return <div className="sku-detail-page">
@@ -86,8 +86,8 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <div className="answer-main">
         <span className="eyebrow" id="answer-title">Ação operacional sugerida</span>
         <p className="answer-sentence">{answer}</p>
-        {!insufficient && <p className="answer-why">{localizeText(recommendation.rationale.join(' '))}</p>}
-        {insufficient && <p className="answer-why">{forecast.limitation}</p>}
+        {insufficient ? <p className="answer-why">{forecast.limitation}</p> : <p className="answer-why">{why}</p>}
+        {recommendation.action === 'sem_acao_necessaria' && <p className="answer-why">Sem produção neste horizonte; os riscos abaixo continuam.</p>}
         <div className="answer-badges">{recommendation.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{insufficient ? <><Badge tone="medium">Dados insuficientes</Badge><Badge tone="medium">{recommendation.action_label}</Badge></> : <Badge tone="info">previsto</Badge>}</div>
         <div className="answer-actions">
           <Link className="primary-button" to={`/decisoes?sku=${encodeURIComponent(sku)}`}>Registrar decisão</Link>
@@ -96,48 +96,39 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       </div>
       <div className="answer-figures">
         {!insufficient && <>
-        <div className={quantity && quantity > 0 ? 'metric-recommendation' : ''}><span>Quantidade sugerida</span><strong>{displayQuantity(quantity)}</strong><small>unidades · lote mínimo {displayQuantity(recommendation.minimum_lot)}</small></div>
-        <div><span>Previsão do próximo mês</span><strong>{displayQuantity(forecast.forecast_next_month)}</strong><small>unidades previstas pelo modelo</small></div>
+          <div className={quantity && quantity > 0 ? 'metric-recommendation' : ''}><span>Quantidade sugerida</span><strong>{displayQuantity(quantity)}</strong><small>unidades</small></div>
+          <div><span>Previsão do próximo mês</span><strong>{displayQuantity(forecast.forecast_next_month)}</strong><small>unidades previstas</small></div>
         </>}
-        <div><span>Confiança na previsão <Hint term="confianca_previsao" /></span><strong><Badge tone={confidenceTone(recommendation.confidence)}>{recommendation.confidence}</Badge></strong><small>{insufficient ? 'sem previsão' : `erro médio de ${displayPercent(forecast.backtest_wape)} nos 3 últimos meses`}</small></div>
-        <div><span>Confiança nos dados do SKU <Hint term="confianca_dados" /></span><strong><Badge tone={confidenceTone(rankingConfidence)}>{rankingConfidence}</Badge></strong><small>{rankingConfidenceReason}</small></div>
+        <div><span>Confiança <Hint term="confianca_previsao" /></span><strong className="answer-confidence"><Badge tone={confidenceTone(recommendation.confidence)}>previsão {recommendation.confidence}</Badge><Badge tone={confidenceTone(rankingConfidence)}>dados {rankingConfidence}</Badge></strong><small>{rankedPriority?.confidence_reason ?? recommendation.confidence_reason}</small></div>
       </div>
-      <div className="human-review"><strong>Revisão humana obrigatória</strong><p>{recommendation.confidence_reason} {insufficient ? 'Nenhuma quantidade é sugerida sem histórico suficiente; ausência de previsão não equivale a demanda zero.' : 'A sugestão não cria nem libera ordem de produção.'}</p></div>
+      <p className="human-review-line"><strong>Revisão humana obrigatória</strong>{insufficient ? '. Sem histórico suficiente não há quantidade sugerida; ausência de previsão não equivale a demanda zero.' : '. A sugestão não cria nem libera ordem de produção.'}</p>
     </section>
-    {recommendation.action === 'sem_acao_necessaria' && <Alert title="Sem ação necessária de produção não significa sem risco">A recomendação operacional deste SKU não indica produção adicional neste horizonte. Os sinais da fila de atenção continuam exigindo análise.</Alert>}
 
     {!insufficient && <details className="detail-block" open>
-      <summary>Por que esta quantidade: cálculo e previsão</summary>
-      <div className="recommendation-card">
-        <div className="calculation-line"><span>Demanda a cobrir</span><strong>{displayUnits(recommendation.calculation.demand_to_cover)}</strong><span>+ Segurança</span><strong>{displayUnits(recommendation.calculation.safety_stock_quantity)}</strong><span>− Estoque</span><strong>{displayUnits(recommendation.calculation.current_stock)}</strong><span>− Produção aberta</span><strong>{displayUnits(recommendation.calculation.open_production_quantity)}</strong></div>
-        {recommendation.assumptions.length > 0 && <ul className="plain-list">{recommendation.assumptions.map((item) => <li key={item}>{localizeText(item)}</li>)}</ul>}
-      </div>
-      <div className="detail-metrics-grid forecast-metrics">
-        <div><span>Tendência</span><strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong><small>{forecast.trend_change_ratio === null ? 'Sem comparação percentual' : displayPercent(forecast.trend_change_ratio)}</small></div>
-        <div><span>Modelo selecionado</span><strong>{forecast.model_label}</strong><small>{forecast.history_months} meses analisados</small></div>
-        <div><span>Erro médio da previsão (WAPE) <Hint term="wape" /></span><strong>{displayPercent(forecast.backtest_wape)}</strong><small>teste nos 3 últimos meses <Hint term="holdout" /></small></div>
-        <div><span>Previsão do modelo, próximos 3 meses</span><strong>{displayUnits(forecast.forecast_total_3m)}</strong><small>previsto</small></div>
-      </div>
-      <div className="forecast-months">{forecast.forecast_months.map((month, index) => <div key={month}><span>{formatDate(month)}</span><strong>{displayQuantity(forecast.forecast_values[index])}</strong><small>unidades previstas</small></div>)}</div>
-      <p className="forecast-limitation">{forecast.limitation}</p>
+      <summary>Sobre a previsão</summary>
+      <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
     </details>}
 
     <details className="detail-block">
-      <summary>Demanda e atendimento: estoque, carteira e datas</summary>
-      <div className="drawer-section-heading"><div><h3>Demanda e atendimento</h3></div><Badge tone="neutral">{indicator.analysis_scope}</Badge></div>
-      <div className="detail-metrics-grid"><div><span>Estoque atual</span><strong>{displayUnits(indicator.current_stock)}</strong></div><div><span>Carteira</span><strong>{displayUnits(indicator.backlog_order_quantity)}</strong></div><div><span>Produção aberta</span><strong>{displayUnits(indicator.production_order_quantity)}</strong></div><div><span>Estoque projetado</span><strong>{displayUnits(indicator.projected_stock_quantity)}</strong></div><div className={indicator.operational_gap_quantity > 0 ? 'metric-alert' : ''}><span>Lacuna operacional</span><strong>{displayUnits(indicator.operational_gap_quantity)}</strong><small>quantidade para análise</small></div><div><span>Cobertura <Hint term="cobertura" /></span><strong>{displayDays(indicator.coverage_days_calculated)}</strong><small>Prazo de produção: {displayDays(indicator.lead_time_days)}</small></div></div>
-      <div className="date-comparison"><div><span>Primeira data prometida</span><strong>{formatDate(indicator.first_promised_date)}</strong></div><div><span>Primeira conclusão prevista</span><strong>{formatDate(indicator.first_production_completion)}</strong></div>{delayDays !== null && <div className="delay-callout"><span>Conclusão depois da promessa</span><strong>{delayDays} {delayDays === 1 ? 'dia' : 'dias'}</strong></div>}</div>
-      <h3 className="details-heading">Canal e dados ausentes</h3>
-      <div className="detail-metrics-grid channel-grid"><div><span>Vendido ao parceiro (sell-in) acumulado</span><strong>{displayUnits(indicator.sell_in_quantity)}</strong></div><div><span>Vendido pelo parceiro (sell-out) acumulado</span><strong>{displayUnits(indicator.sell_out_quantity)}</strong></div><div><span>Diferença observada</span><strong>{displayUnits(indicator.sell_in_minus_sell_out_quantity)}</strong></div><div><span>Parceiros com sell-out</span><strong>{displayNumber(indicator.sell_out_partner_count)}</strong></div><div><span>Previsão comercial (planilha)</span><strong>{displayUnits(indicator.forecast_quantity)}</strong><small>previsto pela área comercial</small></div></div>
-      <div className="confidence-explanation"><strong>Por que esta confiança nos dados?</strong><p>{rankingConfidenceReason}</p></div>
-      {indicator.missing_data.length > 0 ? <div className="missing-data"><strong>Dados ausentes</strong><ul>{indicator.missing_data.map((field) => <li key={field}>{missingDataNames[field] ?? field.split('_').join(' ')}</li>)}</ul><p>Ausência de dado não é interpretada como valor zero.</p></div> : <div className="data-complete"><span>✓</span><p><strong>Dados principais disponíveis</strong>Não foram identificadas ausências nos campos desta análise.</p></div>}
+      <summary>Dados do SKU</summary>
+      <dl className="fact-list">
+        <div><dt>Estoque atual</dt><dd>{displayUnits(indicator.current_stock)}</dd></div>
+        <div><dt>Carteira de pedidos</dt><dd>{displayUnits(indicator.backlog_order_quantity)}</dd></div>
+        <div><dt>Produção aberta</dt><dd>{displayUnits(indicator.production_order_quantity)}</dd></div>
+        <div><dt>Cobertura do estoque <Hint term="cobertura" /></dt><dd>{displayDays(indicator.coverage_days_calculated)}</dd></div>
+        <div><dt>Prazo de produção <Hint term="leadtime" /></dt><dd>{displayDays(indicator.lead_time_days)}</dd></div>
+        <div><dt>Vendido pelos parceiros (sell-out)</dt><dd>{displayUnits(indicator.sell_out_quantity)}</dd></div>
+        <div><dt>Parceiros com sell-out</dt><dd>{displayNumber(indicator.sell_out_partner_count)}</dd></div>
+        <div><dt>Previsão comercial (planilha)</dt><dd>{displayUnits(indicator.forecast_quantity)} <Badge tone="info">previsto</Badge></dd></div>
+      </dl>
+      <p className="fact-line">{indicator.first_promised_date ? `Prometido para ${formatDate(indicator.first_promised_date)}` : 'Sem data prometida'} · {indicator.first_production_completion ? `produção prevista para ${formatDate(indicator.first_production_completion)}${delayDays !== null ? ` (${delayDays} ${delayDays === 1 ? 'dia' : 'dias'} depois)` : ''}` : 'sem conclusão de produção prevista'}</p>
+      <p className="fact-line">{indicator.missing_data.length > 0 ? <><strong>Dados ausentes:</strong> {indicator.missing_data.map((field) => missingDataNames[field] ?? field.split('_').join(' ')).join(', ')} (ausência não é zero).</> : <><strong>Dados ausentes:</strong> nenhum nos campos desta análise.</>}</p>
     </details>
 
     <details className="detail-block" open>
-      <summary>Riscos e evidências: de onde vêm os {attentionScore === null ? '' : `${attentionScore} `}pontos de atenção</summary>
+      <summary>Riscos e evidências</summary>
       <p className="score-sum">{attentionScore === null ? 'SKU fora do ranking oficial.' : <>Pontos de atenção <Hint term="score" />: <strong>{attentionScore}</strong>{contributions.length > 0 && <> = {contributions.map((item, index) => <span key={item.code}>{index > 0 && ' + '}<strong>{item.weight}</strong> ({reasonNames[item.code] ?? item.code})</span>)}</>}</>}</p>
-      {detail.issues.map((issue) => <article className="issue-card" key={issue.code}><div><Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge><strong>{reasonNames[issue.code] ?? issue.code}</strong></div><p>{issue.description}</p><dl>{Object.entries(issue.values_used).map(([key, value]) => <div key={key}><dt>{evidenceLabel(issue.code, key)}</dt><dd>{evidenceValue(issue.code, key, value)}</dd></div>)}</dl><small>Origem: {issue.data_origin.map(originLabel).join(' · ')}</small></article>)}
-      <div className="drawer-note"><strong>Limitação conhecida</strong><p>{detail.limitation}</p></div>
+      {detail.issues.map((issue) => <article className="issue-card" key={issue.code}><div><Badge tone={severityTone(issue.severity)}>{issue.severity}</Badge><strong>{reasonNames[issue.code] ?? issue.code}</strong></div><dl>{Object.entries(issue.values_used).map(([key, value]) => <div key={key}><dt>{evidenceLabel(issue.code, key)}</dt><dd>{evidenceValue(issue.code, key, value)}</dd></div>)}</dl><small>Origem: {[...new Set(issue.data_origin.map(shortOrigin))].join(' · ')}</small></article>)}
     </details>
     <PartnerSkuContext sku={sku} refreshToken={refreshToken} />
   </div>;

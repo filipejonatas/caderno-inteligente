@@ -29,7 +29,7 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
 
 ## 0:00–1:00 — Problema e linha de base
 
-**Tela:** `/validacao`, aba "Processo atual" (já aberta), bloco "Comparação com o processo atual". O resumo e as falhas conhecidas ficam acima das abas.
+**Tela:** `/validacao`, aba "Processo atual" (já aberta), bloco "Comparação com o processo atual". O resumo, os 3 números e as falhas conhecidas ficam acima das abas.
 
 - O PCP decide o que, quanto e quando produzir com dados fragmentados. A empresa informa:
   - 22 horas semanais de análise manual;
@@ -59,7 +59,7 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
 - **CI-0041:** apesar da prioridade #1, a recomendação é **"Sem ação necessária"**. Estoque e produção aberta já cobrem a demanda do próximo mês. O risco continua exigindo análise, e a tela diz isso explicitamente.
 - **CI-0014:** a recomendação é **"Produzir após validar capacidade"**, com **400 unidades**.
   - Demanda a cobrir: 1.327 (o maior valor entre previsão de 1.246 e carteira de 1.327; os dois não são somados).
-  - Mais segurança de 434, menos estoque de 1.490 e produção aberta de 0, resulta em necessidade de 271, arredondada ao lote mínimo.
+  - Mais segurança de 434, menos estoque de 1.490 e produção aberta de 0, resulta em necessidade de 271, arredondada ao lote mínimo de 400. A frase "Necessidade: … = 271 un.; arredondada ao lote mínimo" está no cartão de resposta.
   - A família está com capacidade pressionada, então a confiança cai para média e a revisão humana é obrigatória.
 - **Mensagem:** cada número mostra fórmula, origem e limitação. Nenhuma sugestão libera uma OP.
 
@@ -72,18 +72,18 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
   - Estoque estimado no parceiro: 132 unidades.
   - Sell-out médio: 151 por mês nos últimos 3 meses contínuos.
   - Cobertura de cerca de 26 dias, abaixo dos 30 configurados.
-  - Abrir as evidências mensais.
+  - Abrir as evidências (a tabela mensal tem 3 colunas: mês, enviado e vendido).
 - Nenhum estoque do CD, produção ou forecast global é distribuído entre parceiros. Canais sem sell-out (por exemplo, E-commerce próprio) aparecem como **"dados insuficientes"**, não como venda zero.
 
-## 4:00–5:00 — Validação e comportamento seguro
+## 4:00–5:00 — Validação e auditoria
 
-**Tela:** `/validacao`: resumo e falhas conhecidas no topo; depois as abas "Modelos de previsão", "Casos de teste" e "Segurança e limitações".
+**Telas:** `/validacao`: resumo e falhas conhecidas no topo e a aba "Modelos de previsão"; depois, o botão "Auditoria completa" (`/auditoria`) para os casos de teste e as verificações de segurança.
 
 - **Previsão:**
   - WAPE ponderado de 6,9% contra 8,0% da baseline ingênua;
   - o modelo **não superou a baseline em 16 de 50 SKUs**, e a tela mostra isso em vez de esconder.
-- **Casos:** 8 de 8 casos congelados passaram (2 sintéticos, porque a base não tem esses exemplos). Os casos não ajustam pesos nem modelos.
-- **Comportamento seguro:** 7 de 7 verificações aprovadas. Sem sell-out, a confiança cai; sem histórico, não há quantidade; capacidade exige revisão; dado ausente não vira zero.
+- **Casos:** "8 de 8" no cartão (2 sintéticos, porque a base não tem esses exemplos); o detalhe de cada caso está na Auditoria. Os casos não ajustam pesos nem modelos.
+- **Comportamento seguro:** a linha "Verificações de segurança: 7 de 7 passaram" fica em Falhas conhecidas; a lista completa está na Auditoria. As 7 verificações: Sem sell-out, a confiança cai; sem histórico, não há quantidade; capacidade exige revisão; dado ausente não vira zero.
 - **Fechamento:** toda decisão é humana e fica registrada em **Decisões**, com o efeito do dado do parceiro e o tempo de análise. É essa medição que vai permitir comparar com as 22 horas semanais.
 
 ## Perguntas prováveis

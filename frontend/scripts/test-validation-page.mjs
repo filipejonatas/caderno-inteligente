@@ -21,7 +21,7 @@ const sharedUrl = await compile('../src/pages/shared.ts');
 const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl });
 const exportUrl = await compile('../src/validation-export.ts');
 const stub = dataUrl('export const api = {}; export function useApiResource() { return {}; } export function usePageLoadStatus() {}');
-const { ValidationContent } = await import(await compile('../src/pages/ValidationPage.tsx', {
+const { ValidationContent, AuditoriaContent } = await import(await compile('../src/pages/ValidationPage.tsx', {
   '../api': stub, '../hooks/useApiResource': stub, '../hooks/usePageLoadStatus': stub,
   '../components': componentsUrl, './shared': sharedUrl, '../validation-export': exportUrl,
 }));
@@ -67,6 +67,7 @@ const fixture = {
   requires_human_review: true,
 };
 const render = () => renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(ValidationContent, { data: fixture, onRetry() {} })));
+const renderAudit = () => renderToStaticMarkup(React.createElement(MemoryRouter, null, React.createElement(AuditoriaContent, { data: fixture })));
 
 test('validation page separates informed, recalculated and target values', () => {
   const html = render();
@@ -76,8 +77,14 @@ test('validation page separates informed, recalculated and target values', () =>
 
 test('validation page shows failures, synthetic origin, source change and baseline gaps instead of hiding them', () => {
   const html = render();
-  for (const text of ['Falhou', 'Passou', 'entrada sintética', 'Base alterada desde o congelamento', 'Não superou a baseline em 1 de 2.', 'Coberto por teste', 'Exportar CSV', 'Imprimir resumo']) assert.ok(html.includes(text), text);
+  for (const text of ['Base alterada desde o congelamento', 'Não superou a baseline em 1 de 2.', 'Falhas conhecidas', 'Auditoria completa', 'Exportar CSV', 'Imprimir resumo']) assert.ok(html.includes(text), text);
   assert.ok(html.includes('href="/skus/TEST%20%2F%201"'));
+  assert.ok(html.includes('href="/auditoria"'));
+});
+
+test('audit page keeps the frozen cases, synthetic origin and safety checks that left the decision screen', () => {
+  const html = renderAudit();
+  for (const text of ['Falhou', 'Passou', 'entrada sintética', 'Coberto por teste', 'Casos de teste congelados', 'Histórico de ajustes', 'Limitações', 'SHA-256']) assert.ok(html.includes(text), text);
   assert.ok(html.includes('obtido: 0'));
 });
 

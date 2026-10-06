@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { PARTNER, SKU_OK, SKU_SHORT, priorities } from './fixtures';
+import { PARTNER, SKU_OK, SKU_SHORT, partnerRows, priorities } from './fixtures';
 import { currentLocation, fail, mockApi, pending, renderApp } from './utils';
 
 const rows = () => screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[1].querySelector('strong')?.textContent);
@@ -35,17 +35,33 @@ describe('filtros sincronizados com a URL', () => {
     const table = screen.getByRole('region', { name: /Previsões/ });
     expect(within(table).getByText(SKU_SHORT)).toBeInTheDocument();
     expect(within(table).queryByText(SKU_OK)).not.toBeInTheDocument();
-    await user.click(screen.getByLabelText('Somente itens com atenção'));
-    expect(currentLocation()).toContain('atencao=1');
+    await user.click(screen.getByRole('button', { name: 'Limpar filtros' }));
+    expect(currentLocation()).toBe('/previsoes');
   });
 
-  it('parceiro: filtro de qualidade vai para a URL e para a consulta da API', async () => {
+  it('previsões: por padrão mostra só o que pede atenção e o botão mostra todos', async () => {
     const user = userEvent.setup();
-    const api = mockApi();
+    mockApi();
+    renderApp('/previsoes');
+    // As duas linhas do fixture pedem atenção; a contagem "N de M" fica sempre visível.
+    expect(await screen.findByRole('heading', { name: 'SKUs que pedem atenção (2 de 2)' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Ver os 2 SKUs' }));
+    expect(currentLocation()).toBe('/previsoes?todos=1');
+    expect(screen.getByRole('button', { name: 'Só os que pedem atenção' })).toBeInTheDocument();
+  });
+
+  it('parceiro: com poucos vínculos não há filtro; com muitos, a ação vai para a URL e para a consulta da API', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    const { unmount } = renderApp(`/parceiros/${encodeURIComponent(PARTNER)}`);
+    await screen.findByRole('region', { name: /Matriz comercial/ });
+    expect(screen.queryByLabelText('Ação comercial')).not.toBeInTheDocument();
+    unmount();
+    const api = mockApi({ partnerSkus: { ...partnerRows, total: 30 } });
     renderApp(`/parceiros/${encodeURIComponent(PARTNER)}`);
-    await user.selectOptions(await screen.findByLabelText('Qualidade'), 'insufficient');
-    expect(currentLocation()).toBe(`/parceiros/${encodeURIComponent(PARTNER)}?qualidade=insufficient`);
-    await waitFor(() => expect(api.gets().some((path) => path.includes('/skus?') && path.includes('data_quality=insufficient'))).toBe(true));
+    await user.selectOptions(await screen.findByLabelText('Ação comercial'), 'avaliar_reposicao');
+    expect(currentLocation()).toBe(`/parceiros/${encodeURIComponent(PARTNER)}?acao=avaliar_reposicao`);
+    await waitFor(() => expect(api.gets().some((path) => path.includes('/skus?') && path.includes('action=avaliar_reposicao'))).toBe(true));
   });
 });
 
@@ -102,7 +118,7 @@ describe('estados de carregamento, erro, vazio e sucesso', () => {
     renderApp(`/skus/${SKU_OK}`);
     expect(await screen.findByRole('heading', { level: 2, name: SKU_OK })).toBeInTheDocument();
     expect(await screen.findByText('Análise comercial indisponível')).toBeInTheDocument();
-    expect(screen.getByText('Demanda e atendimento')).toBeInTheDocument();
+    expect(screen.getByText('Dados do SKU')).toBeInTheDocument();
   });
 
   it('SKU inexistente mostra erro com retorno', async () => {

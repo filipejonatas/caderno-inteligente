@@ -35,11 +35,11 @@ const fixture = {
 };
 test('overview renders the three blocks, preserves returned priority and links safely', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: fixture, onSelect() {} })));
-  for (const title of ['O que olhar primeiro', 'Fila de atenção', 'Detalhes: qualidade da evidência']) assert.ok(html.includes(title));
+  for (const title of ['O que olhar primeiro', 'Fila de atenção (1 de 1)']) assert.ok(html.includes(title));
   assert.ok(html.includes('posição 7'));
-  assert.ok(html.includes('href="/previsoes?busca=TEST%20%2F%20SKU"'));
+  assert.ok(!html.includes('href="/previsoes?busca='), 'o cartão tem uma única ação: abrir as evidências do SKU');
   assert.ok(html.includes('href="/prioridades"'));
-  assert.ok(html.includes('Ausência de sell-out nunca é tratada como venda zero'));
+  assert.ok(!html.includes('Detalhes: qualidade da evidência'), 'a seção de detalhes foi removida da tela de decisão');
 });
 test('empty overview does not invent a priority or action quantity', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: { ...fixture, priorities: [] }, onSelect() {} })));
@@ -58,7 +58,7 @@ test('header shows successful load time and never invents a timestamp', () => {
   const empty = render(React.createElement(Topbar, props));
   assert.ok(empty.includes('Ainda sem carga concluída'));
   const loaded = render(React.createElement(Topbar, { ...props, loadedAt: Date.UTC(2026, 9, 5, 20, 48) }));
-  assert.ok(loaded.includes('Carregado às 17:48'));
+  assert.ok(loaded.includes('Atualizado às 17:48'));
   assert.ok(loaded.includes('não indica atualização da planilha'));
   const loading = render(React.createElement(Topbar, { ...props, refreshing: true }));
   assert.ok(loading.includes('disabled=""'));
@@ -84,7 +84,8 @@ test('commercial view keeps null separate from observed zero and names its real 
   };
   const response = { items: [row], total: 1, reference_month: '2026-08', limitation: 'Estoque do parceiro não é estoque do CD.', field_nature: {}, thresholds: {} };
   const html = render(React.createElement(MemoryRouter, null, React.createElement(CommercialMatrix, { response })));
-  assert.ok(html.includes('Recomendação comercial, não operacional'));
+  assert.ok(html.includes('Estoque estimado'), 'o estoque do parceiro continua rotulado como estimado');
+  assert.ok(!html.includes('Recomendação comercial, não operacional'), 'o alerta repetido saiu da matriz');
   assert.ok(html.includes('Sem recomendação por dados insuficientes'));
   assert.ok(html.includes('0 un.<small>08/2026'));
   assert.ok(html.includes('Não observado'));

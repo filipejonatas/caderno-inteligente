@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { matchPath, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
-import { LoadingState, RuleLine, Sidebar, SubNav, SystemBanner, Topbar, navigation } from './components';
+import { LoadingState, RuleLine, Sidebar, SubNav, SystemBanner, Topbar, navigation, showsRule } from './components';
 import type { SelectedSku } from './types';
 import { PageLoadContext } from './hooks/usePageLoadStatus';
 import { SystemInfoContext } from './hooks/useSystemInfo';
@@ -25,10 +25,11 @@ const RunsPage = lazy(() => import('./pages/RunsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const ValidationPage = lazy(() => import('./pages/ValidationPage'));
 const SkuDetailPage = lazy(() => import('./pages/SkuDetailPage'));
+const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PAGE_FIELDS = {
-  OverviewPage: ['overview', 'priorities', 'quality', 'config'],
+  OverviewPage: ['overview', 'priorities', 'config'],
   PrioritiesPage: ['priorities', 'config'],
   CasesPage: ['cases', 'priorities', 'config'],
   QualityPage: ['quality'],
@@ -89,7 +90,7 @@ function App() {
       <Topbar title={current.label} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
       <div className="page-content">
         {!staticPage && <SystemBanner info={systemInfo} />}
-        {!staticPage && <RuleLine />}
+        {!staticPage && showsRule(location.pathname) && <RuleLine />}
         <SubNav />
         <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
@@ -105,6 +106,7 @@ function App() {
             <Route path="/execucoes" element={<PageResource key="RunsPage" fields={PAGE_FIELDS.RunsPage} refreshToken={refreshToken}>{(dashboard, reload) => <RunsPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/decisoes" element={<PageResource key="FeedbackPage" fields={PAGE_FIELDS.FeedbackPage} refreshToken={refreshToken}>{(dashboard, reload) => <FeedbackPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/validacao" element={<ValidationPage refreshToken={refreshToken} />} />
+            <Route path="/auditoria" element={<AuditoriaPage refreshToken={refreshToken} />} />
             <Route path="/skus/:sku" element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
