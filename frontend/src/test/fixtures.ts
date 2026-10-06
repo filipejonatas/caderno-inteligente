@@ -1,6 +1,7 @@
 // Synthetic fixtures typed against the frontend contracts. Never application data: codes start with TEST/KA-T.
 import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
+import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
 import type { SystemInfo } from '../hooks/useSystemInfo';
@@ -95,12 +96,44 @@ const recommendationBase = {
   assumptions: ['Premissa sintética.'], limitations: ['A recomendação não cria nem libera ordem de produção.'], requires_human_review: true,
 };
 
+const observedMonths = ['2025-09-01', '2025-10-01', '2025-11-01', '2025-12-01', '2026-01-01', '2026-02-01', '2026-03-01', '2026-04-01', '2026-05-01', '2026-06-01', '2026-07-01', '2026-08-01'];
+export const revenueOk: RevenueItem = {
+  sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', status: 'ok', reason: null, unit_price: 12.5, price_source: 'Precos_Produtos', price_conflict: false,
+  model_label: 'Média móvel de 3 meses', forecast_confidence: 'alta', forecast_months: ['2026-09-01', '2026-10-01', '2026-11-01'], forecast_units: [100, 110, 120],
+  revenue_values: [1250, 1375, 1500], revenue_next_month: 1250, revenue_total_3m: 4125,
+  commercial_reference: { months: ['2026-10-01', '2026-11-01'], commercial_units: [100, 100], model_revenue: 2875, commercial_revenue: 2500, difference_ratio: 0.15, origins: ['Consenso S&OP'], note: 'Comparação, não erro: o consenso comercial não substitui a previsão estatística.' },
+  calculation: { formula: 'Faturamento estimado = previsão em unidades × preço unitário vigente', terms: [
+    { month: '2026-09-01', units: 100, unit_price: 12.5, revenue: 1250 }, { month: '2026-10-01', units: 110, unit_price: 12.5, revenue: 1375 }, { month: '2026-11-01', units: 120, unit_price: 12.5, revenue: 1500 },
+  ] },
+  nature: 'estimado', observed_revenue: { months: observedMonths, values: observedMonths.map(() => 1000) },
+};
+export const revenueShort: RevenueItem = {
+  sku: SKU_SHORT, product: `Produto ${SKU_SHORT}`, family: 'Família B', status: 'sem_previsao', reason: 'Sem previsão de unidades; não há como estimar faturamento.',
+  unit_price: 20, price_source: 'Precos_Produtos', price_conflict: false, model_label: 'Não selecionado', forecast_confidence: 'baixa', forecast_months: [], forecast_units: [],
+  revenue_values: [], revenue_next_month: null, revenue_total_3m: null, commercial_reference: null, calculation: null, nature: 'estimado',
+  observed_revenue: { months: observedMonths, values: observedMonths.map(() => null) },
+};
+const revenueGroup = (label: string, total: number | null, withEstimate: number, size: number) => ({
+  label, skus_total: size, skus_with_estimate: withEstimate,
+  skus_excluded: withEstimate < size ? [{ sku: SKU_SHORT, status: 'sem_previsao' as const, reason: revenueShort.reason }] : [],
+  by_month: total === null ? [] : [{ month: '2026-09-01', revenue: 1250 }, { month: '2026-10-01', revenue: 1375 }, { month: '2026-11-01', revenue: 1500 }], revenue_total_3m: total,
+  confidence_distribution: { alta: withEstimate, média: 0, baixa: 0 }, backtest_wape: total === null ? null : 0.08,
+  observed_revenue: { months: observedMonths, values: observedMonths.map(() => 1000) }, observed_last_3m_same_skus: total === null ? null : 3000, change_vs_last_3m: total === null ? null : 0.375,
+  commercial_reference: total === null ? null : { months: ['2026-10-01', '2026-11-01'], skus_compared: 1, model_revenue: 2875, commercial_revenue: 2500, difference_ratio: 0.15 },
+});
+export const revenueForecast: RevenueForecast = {
+  reference_month: '2026-08-01', nature: 'estimado', formula: 'Faturamento estimado = previsão em unidades × preço unitário vigente',
+  items: [revenueOk, revenueShort], families: [revenueGroup('Família A', 4125, 1, 1), revenueGroup('Família B', null, 0, 1)], total: revenueGroup('Total da empresa', 4125, 1, 2),
+  field_nature: { revenue_values: { nature: 'estimado', origin: 'calculado' } }, limitations: ['Estimativa, não faturamento realizado.', 'O preço é mantido constante.'],
+};
+
 export const skuDetailOk: SkuDetail = {
   indicator: indicator(SKU_OK),
   issues: [{ sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', code: 'RUP_LEAD_TIME', description: 'Cobertura de estoque abaixo do lead time.', severity: 'alta', values_used: { coverage_days: 5 }, data_origin: ['Estoque_Atual.Estoque atual'] }],
   priority: [priorities[0]],
   score_contributions: [{ code: 'RUP_LEAD_TIME', weight: 8, description: 'Cobertura abaixo do lead time.' }],
   forecast: forecastOk,
+  revenue_forecast: revenueOk,
   operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Demanda a cobrir sintética.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 } },
   limitation: 'A base não vincula pedidos a OPs por semana.',
 };
@@ -110,6 +143,7 @@ export const skuDetailShort: SkuDetail = {
   indicator: indicator(SKU_SHORT),
   priority: [priorities[1]],
   forecast: forecastShort,
+  revenue_forecast: revenueShort,
   operational_recommendation: { ...recommendationBase, action: 'investigar_dados', action_label: 'Investigar dados', suggested_quantity: null, raw_quantity: null, forecast_next_month: null, safety_stock_quantity: null, capacity_status: 'not_evaluated', confidence: 'baixa', confidence_reason: 'Histórico insuficiente para produzir uma previsão quantitativa.', rationale: ['Investigar e completar o histórico antes de sugerir produção.'], calculation: {} },
 };
 

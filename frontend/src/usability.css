@@ -148,3 +148,15 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--slate-1
 .evidence-body .data-table { min-width: 0; }
 
 .issue-card dt { text-transform: none; }
+
+/* Faturamento estimado (etapa 10): estimativa tracejada, observado cheio */
+.revenue-card-tag { display: inline-flex; align-items: center; gap: 6px; }
+.revenue-total-row td { background: var(--blue-50); }
+.revenue-trend { margin: 4px 0 14px; }
+.revenue-trend svg { display: block; width: 100%; max-width: 560px; height: auto; }
+.revenue-bar { fill: var(--blue-700); }
+.revenue-bar-estimated { fill: var(--blue-100); stroke: var(--blue-700); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.revenue-axis { fill: var(--slate-500); font-size: 10px; }
+.revenue-trend figcaption { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; color: var(--slate-700); font-size: 12px; }
+.revenue-key { display: inline-block; width: 12px; height: 12px; margin-right: 4px; vertical-align: -1px; border-radius: 2px; background: var(--blue-700); }
+.revenue-key-estimated { background: var(--blue-100); border: 1.5px dashed var(--blue-700); }

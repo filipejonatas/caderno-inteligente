@@ -4,6 +4,7 @@ import pandas as pd
 from .schemas import SCHEMAS
 
 HEADER_ROW_OFFSET = 2  # As duas primeiras linhas são título e espaçamento.
+OPTIONAL_SHEETS = ("Precos_Produtos",)  # Lidas se existirem; sua ausência não bloqueia o pipeline.
 
 class IngestionError(RuntimeError):
     pass
@@ -19,5 +20,6 @@ def load_workbook(path: str | Path) -> dict[str, pd.DataFrame]:
         missing = sorted(set(SCHEMAS) - set(workbook.sheet_names))
         if missing:
             raise IngestionError(f"Abas obrigatórias ausentes: {', '.join(missing)}")
+        wanted = [*SCHEMAS, *(sheet for sheet in OPTIONAL_SHEETS if sheet in workbook.sheet_names)]
         return {sheet: pd.read_excel(workbook, sheet_name=sheet, skiprows=HEADER_ROW_OFFSET)
-                for sheet in SCHEMAS}
+                for sheet in wanted}

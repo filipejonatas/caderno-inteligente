@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api';
 import { PartnerSkuContext } from '../components/PartnerSkuContext';
+import { SkuRevenueBlock } from '../components/RevenueForecast';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
@@ -108,6 +109,8 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <summary>Sobre a previsão</summary>
       <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
     </details>}
+
+    <SkuRevenueBlock item={detail.revenue_forecast} />
 
     <details className="detail-block">
       <summary>Dados do SKU</summary>

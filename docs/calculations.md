@@ -45,6 +45,19 @@ Sete regras geram sinais com valores usados e origem. O score é a soma dos peso
   - Com média anterior zero: crescente se a recente for positiva, estável se também for zero.
 - **Horizonte:** 3 meses (`forecast_values`); `forecast_next_month` é o primeiro deles.
 
+### 3.1 Faturamento estimado (`revenue.py`)
+
+```text
+faturamento estimado do mês = previsão em unidades do mês × preço unitário vigente do SKU
+```
+
+- **Preço vigente:** `Precos_Produtos` (aba opcional). Sem preço válido (> 0) nela, usa o último preço faturado do SKU em `Vendas_24m`. Sem nenhum, o SKU fica sem estimativa (`null`, nunca zero). Divergência entre as duas fontes é sinalizada em `price_conflict`; vale o preço da tabela.
+- **Agregação:** soma apenas SKUs com estimativa; os demais são listados em `skus_excluded`.
+- **Erro em reais (`backtest_wape`):** com o modelo escolhido para cada SKU, soma `|real − previsto| × preço` no teste dos últimos 3 meses e divide pelo faturamento real × preço, por SKU e mês.
+- **Variação:** estimativa de 3 meses contra o faturamento observado nos 3 meses anteriores dos mesmos SKUs.
+- **Forecast comercial:** `Forecast_Comercial` × mesmo preço, somente nos meses em comum com a previsão; é comparação, não erro.
+- **Limites:** preço constante, receita bruta, global por SKU. Estimativa, não faturamento realizado.
+
 ## 4. Recomendação operacional (`recommendations.py`)
 
 ```text

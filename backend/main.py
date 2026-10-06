@@ -23,6 +23,7 @@ from caderno_inteligente.feedback import (  # noqa: E402
     PARTNER_DATA_EFFECTS,
 )
 from caderno_inteligente.forecasting import build_demand_forecasts  # noqa: E402
+from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
@@ -137,6 +138,33 @@ def pipeline():
         result = _build_pipeline()
         _pipeline_cache = (signature, result)
         return result
+
+
+_revenue_cache: tuple[tuple, dict] | None = None
+
+
+def revenue_forecast() -> dict:
+    """Estimativa de faturamento derivada da previsão em unidades; reaproveita o cache do pipeline."""
+    global _revenue_cache
+    built = pipeline()
+    cached = _revenue_cache
+    if cached is not None and cached[0] is built:
+        return cached[1]
+    dataset, forecasts = built[0], built[5]
+    result = build_revenue_forecasts(
+        forecasts, dataset["Produtos"], dataset["Vendas_24m"], dataset.get("Precos_Produtos"), dataset.get("Forecast_Comercial"),
+    )
+    _revenue_cache = (built, result)
+    return result
+
+
+def _revenue_item(sku: str) -> dict | None:
+    """Camada aditiva: uma falha na estimativa não pode derrubar o detalhe operacional do SKU."""
+    try:
+        return next((item for item in revenue_forecast()["items"] if item["sku"] == sku), None)
+    except Exception:  # noqa: BLE001
+        logger.exception("revenue_forecast_failed sku=%s", sku)
+        return None
 
 
 def data():
@@ -270,6 +298,12 @@ def priorities(
     return _records(result)
 
 
+@app.get("/api/revenue-forecast")
+def revenue_forecast_summary():
+    """Faturamento estimado (previsão em unidades × preço vigente), rotulado como estimativa; não altera previsão nem ranking."""
+    return revenue_forecast()
+
+
 @app.get("/api/forecasts")
 def forecast_summaries():
     """Consolidate cached forecasts and recommendations without changing the official ranking."""
@@ -353,6 +387,7 @@ def detail(sku: str):
         "priority": _records(ranking[ranking.sku == sku]),
         "score_contributions": contributions,
         "forecast": forecast,
+        "revenue_forecast": _revenue_item(sku),
         "operational_recommendation": recommendation,
         "limitation": "A base não vincula pedidos a OPs por semana; capacidade é contexto familiar, não promessa de viabilidade individual.",
     }

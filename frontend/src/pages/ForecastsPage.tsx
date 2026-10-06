@@ -5,6 +5,7 @@ import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { Alert, Badge, EmptyState, ErrorState, Icon, LoadingState, PageIntro, SectionCard, confidenceTone } from '../components';
 import type { ForecastRecommendationSummary, SelectedSku } from '../types';
+import { RevenueSummaryCard } from '../components/RevenueForecast';
 import { displayQuantity } from './shared';
 
 type ForecastSort = 'priority' | 'suggested_quantity' | 'forecast_next_month' | 'backtest_wape';
@@ -24,6 +25,8 @@ const isMobile = () => window.matchMedia('(max-width: 620px)').matches;
 
 export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (item: SelectedSku) => void; refreshToken: number }) {
   const { data: items, error, loading, loadedAt, refresh: load } = useApiResource(api.forecasts, refreshToken);
+  // Camada aditiva: a estimativa de faturamento carrega à parte e nunca bloqueia a tela operacional.
+  const { data: revenue, error: revenueError, loading: revenueLoading, refresh: loadRevenue } = useApiResource(api.revenueForecast, refreshToken);
   usePageLoadStatus(loading, error, loadedAt);
   const [params, setParams] = useSearchParams();
   const [extra, setExtra] = useState(0);
@@ -75,6 +78,7 @@ export default function ForecastsPage({ onSelect, refreshToken }: { onSelect: (i
   return <div className="forecast-page">
     <PageIntro title="Preciso produzir? Quanto?" description={`${production} SKUs para produzir · ${capacity} com capacidade a validar${investigate > 0 ? ` · ${investigate} para investigar dados` : ''}`} />
     {error && <Alert tone="warning" title="Falha ao atualizar previsões" action={<button className="secondary-button" onClick={() => void load()}>Tentar novamente</button>}>{error} A última carga permanece exibida.</Alert>}
+    <RevenueSummaryCard data={revenue} error={revenueError} loading={revenueLoading} refresh={loadRevenue} />
     <div className="forecast-page-filters" role="search" aria-label="Filtrar previsões">
       <label className="search-field"><span>Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="SKU ou produto" /></label>
       <label><span>Ação</span><select value={action} onChange={(event) => update('acao', event.target.value)}><option value="">Todas</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>

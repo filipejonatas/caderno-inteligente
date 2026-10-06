@@ -44,6 +44,9 @@ export const decisionActionNames: Record<string, string> = {
 
 export const toUtcDate = (value: string) => new Date(`${value.slice(0, 10)}T00:00:00Z`);
 export const formatDate = (value?: string | null) => value ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeZone: 'UTC' }).format(toUtcDate(value)) : 'Não disponível';
+const MONTHS_PT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+/** 'YYYY-MM-DD' → 'set/26'. */
+export const formatMonth = (value?: string | null) => value ? `${MONTHS_PT[Number(value.slice(5, 7)) - 1] ?? value.slice(5, 7)}/${value.slice(2, 4)}` : 'Não disponível';
 export const formatDateTime = (value: string) => new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(value));
 export const displayNumber = (value: unknown) => displayQuantity(value);
 export const displayPercent = (value: number | null | undefined) => typeof value === 'number' && Number.isFinite(value) ? new Intl.NumberFormat('pt-BR', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(value) : 'Não disponível';
@@ -78,7 +81,7 @@ export function sortReasons<T extends { code: string; severity: string }>(reason
     || (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0) || a.code.localeCompare(b.code));
 }
 
-export type GlossaryTerm = 'score' | 'wape' | 'baseline' | 'holdout' | 'sellin' | 'sellout' | 'leadtime' | 'cobertura' | 'ausente' | 'confianca_dados' | 'confianca_previsao' | 'op';
+export type GlossaryTerm = 'score' | 'wape' | 'baseline' | 'holdout' | 'sellin' | 'sellout' | 'leadtime' | 'cobertura' | 'ausente' | 'confianca_dados' | 'confianca_previsao' | 'op' | 'faturamento_estimado';
 export const glossary: Record<GlossaryTerm, { name: string; text: string }> = {
   score: { name: 'Pontos de atenção', text: 'Soma dos pesos dos problemas encontrados no SKU. Ordena o que analisar primeiro; não é a quantidade a produzir.' },
   wape: { name: 'Erro médio da previsão (WAPE)', text: 'Quanto, em %, a previsão errou nos últimos 3 meses, somando todos os SKUs. Menor é melhor; não garante a precisão futura.' },
@@ -91,6 +94,7 @@ export const glossary: Record<GlossaryTerm, { name: string; text: string }> = {
   ausente: { name: 'Dado ausente', text: 'Informação que não existe na planilha. Nunca é tratada como zero.' },
   confianca_dados: { name: 'Confiança nos dados do SKU', text: 'Qualidade da evidência usada no ranking (por exemplo, se há sell-out observado). Baixa pede validação humana.' },
   confianca_previsao: { name: 'Confiança na previsão', text: 'Calculada pelo erro do modelo no teste dos últimos 3 meses. Não é garantia de atendimento.' },
+  faturamento_estimado: { name: 'Faturamento estimado', text: 'Previsão em unidades × preço vigente da tabela de preços, mantido constante: sem reajuste, desconto ou campanha. É receita bruta e global por SKU, não por parceiro ou canal. Estimativa, não faturamento realizado; SKU sem preço ou sem previsão fica de fora, nunca vira R$ 0.' },
   op: { name: 'Ordem de produção (OP)', text: 'Registro que manda produzir. Este sistema nunca cria nem libera uma OP.' },
 };
 
@@ -98,6 +102,11 @@ const ptNumber = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 });
 const ptInteger = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
 /** Quantidades: inteiro a partir de 100; uma casa abaixo disso. Ausente é "Não disponível", nunca zero. */
 export const displayQuantity = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? (Math.abs(value) >= 100 ? ptInteger : ptNumber).format(value) : 'Não disponível';
+const ptCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const ptCurrencyCents = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
+/** Valor ausente nunca vira R$ 0. */
+export const displayCurrency = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? ptCurrency.format(value) : 'Não disponível';
+export const displayPrice = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? ptCurrencyCents.format(value) : 'Não disponível';
 export const displayUnits = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `${displayQuantity(value)} un.` : 'Não disponível';
 export const displayDays = (value: unknown) => typeof value === 'number' && Number.isFinite(value) ? `${ptInteger.format(value)} ${Math.round(value) === 1 ? 'dia' : 'dias'}` : 'Não disponível';
 /** Cobertura/participação: 0 casas. */

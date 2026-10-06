@@ -10,8 +10,9 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/system` | Ambiente, modo demonstração, escrita habilitada e limites de texto | — |
 | GET | `/api/overview` | Indicadores da visão geral | — |
 | GET | `/api/priorities` | Ranking oficial (`family`, `confidence`, `search`) | — |
-| GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão e recomendação | — |
+| GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão, faturamento estimado (`revenue_forecast`) e recomendação | — |
 | GET | `/api/forecasts` | Previsão e recomendação resumida de todos os SKUs | — |
+| GET | `/api/revenue-forecast` | Faturamento estimado (previsão em unidades × preço vigente), por SKU, família e total | — |
 | GET | `/api/capacity/{family}` | Capacidade semanal da família | — |
 | GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
@@ -66,6 +67,17 @@ Retorna uma visão consolidada, somente leitura, com um item por SKU. A resposta
 - capacidade familiar é somente um contexto de validação, não garantia individual.
 
 O cálculo detalhado, as premissas e as evidências permanecem em `GET /api/priorities/{sku}`.
+
+## `GET /api/revenue-forecast`
+
+Estimativa de faturamento dos 3 meses previstos: `previsão em unidades × preço unitário vigente`. Camada derivada e somente leitura; não altera previsão, score, ranking nem recomendação, e `GET /api/forecasts` não ganhou campos.
+
+- `items[]` (um por SKU): `status` (`ok`, `sem_preco` ou `sem_previsao`), `unit_price`, `price_source` (`Precos_Produtos` ou último preço de `Vendas_24m`), `price_conflict`, `forecast_units`, `revenue_values`, `revenue_next_month`, `revenue_total_3m`, `forecast_confidence`, `calculation.terms[]`, `observed_revenue` (12 meses, observado) e `commercial_reference` (Forecast_Comercial × mesmo preço, só nos meses em comum);
+- `families[]` e `total`: `by_month`, `revenue_total_3m`, `skus_with_estimate`, `skus_excluded[]`, `confidence_distribution`, `backtest_wape` (erro em R$ do teste dos últimos 3 meses), `observed_last_3m_same_skus`, `change_vs_last_3m` e `commercial_reference`;
+- `formula`, `field_nature` (observado, previsto ou estimado, com origem) e `limitations`;
+- SKU sem preço ou sem previsão retorna valores `null` e entra em `skus_excluded`; nunca R$ 0.
+
+`GET /api/priorities/{sku}` inclui o mesmo item em `revenue_forecast` (`null` se a estimativa falhar, sem afetar o restante).
 
 ## `GET /api/b2b2c/visibility`
 

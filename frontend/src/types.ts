@@ -1,3 +1,5 @@
+import type { RevenueItem } from './types-revenue';
+
 export type PageId =
   | 'guide'
   | 'overview'
@@ -274,6 +276,8 @@ export interface SkuDetail {
   priority: Priority[];
   score_contributions: Array<{ code: string; weight: number; description: string }>;
   forecast: DemandForecast;
+  /** Camada aditiva: ausente em respostas antigas e nula quando a estimativa falha. */
+  revenue_forecast?: RevenueItem | null;
   operational_recommendation: OperationalRecommendation;
   limitation: string;
 }

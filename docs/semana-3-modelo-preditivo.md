@@ -104,7 +104,7 @@ Essa separação evita aprendizado silencioso a partir de poucas decisões. Em u
 - previsão global por SKU, sem parceiro ou região;
 - apenas 24 meses de histórico;
 - campanhas futuras e eventos não entram como variáveis causais;
-- o modelo não prevê faturamento;
+- o modelo estatístico prevê unidades; o faturamento é uma estimativa derivada (unidades × preço vigente, [Etapa 10](etapa-10-faturamento-estimado.md)), com as mesmas limitações da previsão e preço constante;
 - carteira e forecast podem representar horizontes comerciais diferentes;
 - capacidade é agregada por família e não comprova viabilidade individual;
 - o histórico disponível é demonstrativo e não substitui validação com especialistas.

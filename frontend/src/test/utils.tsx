@@ -22,6 +22,7 @@ const ROUTES: Array<[string, RegExp]> = [
   ['priorities', /^\/api\/priorities$/],
   ['overview', /^\/api\/overview$/],
   ['forecasts', /^\/api\/forecasts$/],
+  ['revenueForecast', /^\/api\/revenue-forecast$/],
   ['runs', /^\/api\/runs$/],
   ['cases', /^\/api\/cases$/],
   ['feedback', /^\/api\/feedback$/],
@@ -34,7 +35,7 @@ const ROUTES: Array<[string, RegExp]> = [
 
 const DEFAULTS: Record<string, Value> = {
   validation: fx.validationSummary, runComparison: fx.runComparison, partnerSkus: fx.partnerRows, partnerDetail: fx.partnerDetail,
-  partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts,
+  partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts, revenueForecast: fx.revenueForecast,
   runs: fx.runs, system: fx.system, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
   skuDetail: (url: URL) => decodeURIComponent(url.pathname.split('/').pop() ?? '') === fx.SKU_SHORT ? fx.skuDetailShort : fx.skuDetailOk,
   'POST runs': { id: 3 }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },

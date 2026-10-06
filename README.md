@@ -16,6 +16,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 | O que exige atenção agora e por quê? | Visão geral e Prioridades: ranking por soma transparente de pesos de sete regras |
 | Preciso produzir? Quanto? | Detalhe do SKU e Previsão: previsão de 3 meses, ação e quantidade sugerida, com o cálculo |
 | Algum parceiro tem risco ou oportunidade? | Parceiros: matriz parceiro–SKU com sell-in, sell-out, estoque estimado e sugestão comercial |
+| Quanto vamos faturar nos próximos meses? | Previsão e ação: faturamento estimado (previsão em unidades × preço vigente), sempre rotulado como estimativa, com erro do teste e, no SKU, o cálculo |
 | Quanto confiar na análise? | Qualidade e Validação: cobertura de sell-out, baseline de previsão, casos congelados e falhas conhecidas |
 | Por que a prioridade mudou? | Execuções: comparação entre snapshots, com decomposição do score |
 | O que foi decidido? | Casos e Decisões: responsável, prazo, ação, efeito do dado do parceiro e tempo de análise |
@@ -163,6 +164,7 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Semana 4 — Validação da V2](docs/semana-4-validacao-v2.md)
 - [Semana 3 — Modelo preditivo](docs/semana-3-modelo-preditivo.md)
 - [Plano da V2](docs/plano-v2-prototipo-top.md)
+- [Plano de aderência ao desafio](docs/plano-aderencia-desafio.md)
 
 **Referência técnica**
 
@@ -182,3 +184,4 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Etapa 7 — Testes do frontend, acessibilidade e robustez](docs/etapa-7-testes-acessibilidade.md)
 - [Etapa 8 — Segurança e modo de demonstração](docs/etapa-8-seguranca-modo-demo.md)
 - [Etapa 9 — Documentação, deploy e demonstração](docs/etapa-9-documentacao-demo.md)
+- [Etapa 10 — Previsão de faturamento (plano de aderência ao desafio)](docs/etapa-10-faturamento-estimado.md)
