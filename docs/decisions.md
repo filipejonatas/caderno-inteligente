@@ -31,7 +31,7 @@
 
 ## 2026-09-30 — Consolidação da interface
 
-- React/Vite passa a ser a interface principal; Streamlit permanece como ferramenta interna de diagnóstico durante a transição.
+- React/Vite passa a ser a interface principal; o app Streamlit da V1 foi usado só na transição e removido em 2026-10-07.
 - O frontend deve comunicar carregamento, erro, vazio e sucesso explicitamente.
 - A navegação móvel usa drawer e não mantém largura fixa de sidebar.
 - O detalhe do SKU apresenta evidências, origem e limitações sem transformar o ranking em recomendação autônoma.
@@ -139,7 +139,7 @@
 
 ## 2026-10-07 — Etapa 15: correção do motor de decisão (G1–G5)
 
-Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomendações erradas nos casos centrais da base. Plano em [plano-etapa-15-correcao-motor-decisao.md](plano-etapa-15-correcao-motor-decisao.md); comparação em [etapa-15/antes-depois.md](etapa-15/antes-depois.md).
+Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomendações erradas nos casos centrais da base. Protocolo em [historico.md](historico.md), Etapa 15.0; comparação em [etapa-15/antes-depois.md](etapa-15/antes-depois.md).
 
 - **D1:** o princípio "não alterar previsão, ranking, regras nem quantidade oficial" das etapas 10–14 foi revogado para G1–G5. As mudanças foram versionadas e comparadas antes × depois, e toda alteração de caso congelado foi registrada no histórico de ajustes da validação.
 - **D2 — previsão oficial v2:** `seasonal_level` (mês do ano anterior ajustado pelo nível, teto 3,0), sem seleção por SKU, horizonte de 6 meses. Promovida porque atendeu aos quatro critérios fixados antes do teste.

@@ -1,5 +1,5 @@
 {
-  "description": "Orçamento de volume por tela (docs/analise-enxugamento.md, seção 4). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
+  "description": "Orçamento de volume por tela (docs/historico.md, enxugamento). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
   "routes": {
     "/": {
       "fixed": 200,
