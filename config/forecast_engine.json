@@ -1,0 +1,15 @@
+{
+  "engine": "v1",
+  "candidates": ["moving_average_3", "seasonal_naive_12", "ses", "combo_ma_sn", "seasonal_level", "holt_damped"],
+  "rolling": {
+    "windows": 3,
+    "step_months": 3,
+    "horizon_months": 3,
+    "minimum_train_months": 6
+  },
+  "parsimony_margin": 0.05,
+  "promotion": {
+    "min_relative_wape_gain": 0.05,
+    "max_bias_worsening_pp": 2.0
+  }
+}

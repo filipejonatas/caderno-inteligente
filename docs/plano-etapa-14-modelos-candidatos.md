@@ -27,7 +27,7 @@ Hoje ([forecasting.py](../src/caderno_inteligente/forecasting.py)) cada SKU esco
 
 - Cada SKU tem no máximo **24 meses** de série. Isso são só 2 ciclos sazonais: **Holt-Winters/ETS sazonal completo não é validável** (as janelas de treino têm 15 a 21 meses). Fica fora; a sazonalidade entra por candidatos mais simples (14.1).
 - A base declara a previsão **global por SKU** (sem canal/parceiro): a etapa não muda esse escopo.
-- Medido na 14.0 ([etapa-14-0-linha-de-base.md](etapa-14-0-linha-de-base.md)): os 50 SKUs têm 24 meses e **nenhum tem mês zerado**. Croston/SBA, portanto, **não entra** nesta base (fica só como salvaguarda configurável), e os candidatos novos são 4. O WAPE atual já é baixo (mediana 6,4% no holdout), então o ganho esperado é modesto.
+- Medido na 14.0 ([etapa-14-0-linha-de-base.md](etapa-14-0-linha-de-base.md)): os 50 SKUs têm 24 meses e **nenhum tem mês zerado**. Croston/SBA, portanto, **não entra** nesta base (nem há limiar de intermitência em config; entra numa etapa futura se uma base nova tiver séries intermitentes), e os candidatos novos são 4. O WAPE atual já é baixo (mediana 6,4% no holdout), então o ganho esperado é modesto.
 - `events.py` evita dupla contagem de evento só para `seasonal_naive_12` (linha ~220) e usa `moving_average_3` como modelo de cenário. Promover outro modelo exige revisar essa regra.
 
 ## 4. Etapa 14.0 — Linha de base e perfil da série (0,5 dia)
@@ -41,6 +41,8 @@ Hoje ([forecasting.py](../src/caderno_inteligente/forecasting.py)) cada SKU esco
 
 ## 5. Etapa 14.1 — Modelos candidatos (1 dia)
 
+> **Status: implementada** (ver [etapa-14-1-modelos-candidatos.md](etapa-14-1-modelos-candidatos.md)). Ajustes em relação ao desenho abaixo: Croston saiu (14.0); o histórico mínimo de `ses` é 6 e o de `holt_damped` é 9; a configuração ficou em `forecast_engine_config.py`, que só aceita `engine = "v1"` até a 14.5; `SEASONAL_CODES` marca os candidatos que já embutem sazonalidade.
+
 Novo módulo `src/caderno_inteligente/forecast_candidates.py`, mesma assinatura de `_MODELS` (`history, targets -> list[float] | None`). Os dois modelos atuais são reaproveitados, não reimplementados.
 
 | Código | Descrição em uma frase | Parâmetros | Quando se aplica |
@@ -50,7 +52,7 @@ Novo módulo `src/caderno_inteligente/forecast_candidates.py`, mesma assinatura 
 | `ses` | suavização exponencial simples: nível que dá mais peso ao recente | α ∈ {0,1 … 0,9}, escolhido por erro de 1 passo **só no treino** | sempre |
 | `holt_damped` | nível + tendência que se amortece com o tempo (evita extrapolar crescimento infinito) | α, β, φ em grade pequena, mesma regra | ≥ 9 meses |
 | `seasonal_level` | nível recente × razão sazonal do mesmo mês no ano anterior | razão limitada a [0,5; 2,0] | ≥ 15 meses |
-| `croston_sba` | para demanda intermitente: intervalo médio entre vendas × tamanho médio, com correção SBA | α fixo 0,1 | só se ≥ 30% dos meses têm zero (limiar em config) |
+| ~~`croston_sba`~~ | ~~demanda intermitente~~ — **descartado pela 14.0** (nenhum SKU tem mês zerado) | — | — |
 | `combo_ma_sn` | média simples de `moving_average_3` e `seasonal_naive_12` | — | ≥ 12 meses |
 
 Regras comuns: previsão nunca negativa; resultado `None` quando faltam dados (nunca zero inventado); toda grade de parâmetros é determinística (sem aleatoriedade) para o teste ser reproduzível.
@@ -129,7 +131,7 @@ A promoção é uma etapa à parte, só com aprovação explícita, porque muda 
 
 ### Testes
 
-- **Modelos:** um teste por candidato com série de resposta conhecida calculada à mão (SES com α fixo, Holt amortecido, Croston/SBA, razão sazonal e seu limite).
+- **Modelos:** um teste por candidato com série de resposta conhecida calculada à mão (SES com α fixo, Holt amortecido, razão sazonal e seu limite).
 - **Sem vazamento:** alterar valores futuros à origem não muda a previsão da janela.
 - **Origens rolantes:** índices corretos para n = 24, série curta, série no limite do mínimo.
 - **Regras:** parcimônia (empate técnico fica no mais simples), baseline fora da seleção, `None` quando faltam dados, intermitência abaixo/acima do limiar.
