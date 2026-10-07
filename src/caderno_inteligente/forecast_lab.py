@@ -18,14 +18,17 @@ from .rolling_backtest import (
     BASELINE_LABEL,
     BASELINE_MODEL,
     build_rolling_forecasts,
+    interval_calibration,
     nested_evaluation_table,
     sensitivity_grid,
+    series_by_sku,
     summarize_sensitivity,
 )
 
 FIELD_NATURE = {
     "nested": {"nature": "calculado", "origin": "Vendas_24m: cada procedimento escolhe o modelo só com dados anteriores à origem e é medido nos 3 meses seguintes"},
     "sensitivity": {"nature": "calculado", "origin": "a mesma avaliação aninhada refeita para cada combinação de origens externas e mínimo de janelas"},
+    "intervals": {"nature": "estimado", "origin": "quantis dos erros relativos do motor rolante nas janelas de teste de Vendas_24m; a cobertura é medida fora da amostra"},
     "selection": {"nature": "estimado", "origin": "backtest rolante em Vendas_24m; o WAPE de seleção é otimista porque mede no mesmo teste em que escolheu"},
 }
 
@@ -34,6 +37,7 @@ LIMITATIONS = [
     "A avaliação mede o passado recente; as origens de teste são os mesmos trimestres para todos os SKUs, que compartilham sazonalidade. Não são 50 observações independentes.",
     "O erro de seleção por SKU é otimista. Para comparar motores vale a avaliação aninhada.",
     "A grade mostra quanto o veredito muda com duas escolhas de desenho. Uma das combinações (3 origens e 2 janelas mínimas) reverte o resultado, por exigir que o motor rolante abra mão dos modelos sazonais com pouco histórico.",
+    "Faixa de previsão: estimativa empírica com poucos erros por SKU (9 com 3 janelas); a faixa sempre contém a previsão pontual e não entra no score nem no ranking.",
     "A previsão continua global por SKU: sem canal, parceiro ou região.",
 ]
 
@@ -91,12 +95,40 @@ def _selection(records: list[dict[str, Any]], official: dict[str, str], enabled:
     }
 
 
+def _intervals(records: list[dict[str, Any]], calibration: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    settings = config["intervals"]
+    ready = [record for record in records if record.get("forecast_interval")]
+    return {
+        "lower_quantile": settings["lower_quantile"],
+        "upper_quantile": settings["upper_quantile"],
+        "level": round(settings["upper_quantile"] - settings["lower_quantile"], 4),
+        "minimum_residuals": settings["minimum_residuals"],
+        "skus_with_band": len(ready),
+        "skus_without_band": sum(1 for record in records if record.get("model") and not record.get("forecast_interval")),
+        "calibration": calibration,
+        "items": [
+            {
+                "sku": record["sku"],
+                "model": record["model"],
+                "model_label": record["model_label"],
+                "month": record["forecast_months"][0],
+                "point": record["forecast_values"][0],
+                "lower": record["forecast_interval"]["lower"][0],
+                "upper": record["forecast_interval"]["upper"][0],
+                "residuals": record["forecast_interval"]["residuals"],
+            }
+            for record in ready
+        ],
+    }
+
+
 def build_forecast_lab(sales: pd.DataFrame, official_forecasts: pd.DataFrame, config: dict[str, Any] | None = None) -> dict[str, Any]:
     config = load_engine_config() if config is None else config
     official = {str(row["sku"]): str(row["model"]) for row in official_forecasts.to_dict("records") if row.get("model")}
-    records = build_rolling_forecasts(sales, config)
-    nested = nested_evaluation_table(sales, config)
-    cells = sensitivity_grid(sales, config)
+    series_map = series_by_sku(sales)  # montadas uma vez: refazer a série de cada SKU em cada cálculo é o maior custo
+    records = build_rolling_forecasts(sales, config, series_map=series_map)
+    nested = nested_evaluation_table(sales, config, series_map)
+    cells = sensitivity_grid(sales, config, series_map)
     default = next((cell for cell in cells if cell["is_default"]), None)
     result = {
         "engine": config["engine"],
@@ -121,6 +153,7 @@ def build_forecast_lab(sales: pd.DataFrame, official_forecasts: pd.DataFrame, co
             "criteria": nested["criteria"],
         },
         "sensitivity": {"cells": cells, "summary": summarize_sensitivity(cells)},
+        "intervals": _intervals(records, interval_calibration(sales, config, series_map), config),
         "limitations": LIMITATIONS,
         "field_nature": FIELD_NATURE,
         "requires_human_review": True,

@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it } from 'vitest';
-import { ForecastLabContent } from '../components/ForecastLab';
+import { ForecastLabContent, coverageText } from '../components/ForecastLab';
 import { SKU_OK, forecastLab } from './fixtures';
 import { fail, mockApi, pending, renderApp } from './utils';
 
@@ -68,6 +68,22 @@ describe('laboratório de previsão na Validação', () => {
     expect(within(changed).getByRole('link', { name: SKU_OK, hidden: true })).toHaveAttribute('href', `/skus/${encodeURIComponent(SKU_OK)}`);
   });
 
+  it('diz quanto a faixa de previsão acertou fora da amostra, sem esconder que ficou abaixo do esperado', async () => {
+    mockApi();
+    await openModelsTab();
+    await region('Modelos candidatos');
+
+    const note = screen.getByText(/Fora da amostra, a faixa de/);
+    expect(note.textContent).toMatch(/80% cobriu 48% dos 150 meses testados/);
+    expect(note.textContent).toMatch(/abaixo do esperado: use-a como indicação, não como garantia/);
+    expect(note.textContent).toMatch(/1 SKUs ficaram sem faixa/);
+    const table = screen.getByRole('region', { hidden: true, name: 'Faixa de previsão do próximo mês' });
+    const row = within(table).getByText(SKU_OK, { selector: 'a' }).closest('tr') as HTMLElement;
+    expect(row).toHaveTextContent('set/26');
+    expect(row).toHaveTextContent('212'); // quantidades a partir de 100 são exibidas como inteiros
+    expect(row).toHaveTextContent('198 a 216');
+  });
+
   it('falha do laboratório não derruba a validação e permite nova tentativa', async () => {
     let calls = 0;
     mockApi({ forecastLab: () => (++calls === 1 ? fail(500, 'Erro interno.') : forecastLab) });
@@ -104,6 +120,21 @@ describe('ForecastLabContent', () => {
     expect(screen.queryByText(/SKUs que mudariam de modelo/)).not.toBeInTheDocument();
     expect(screen.getAllByText('Não disponível').length).toBeGreaterThanOrEqual(2);
     expect(screen.queryByText('0,0%')).not.toBeInTheDocument();
+  });
+
+  it('faixa: sem meses testados não inventa cobertura; com cobertura próxima do nominal não alarma; sem itens não lista', () => {
+    const none = structuredClone(forecastLab);
+    none.intervals.calibration = { ...none.intervals.calibration, tested_months: 0, hits: 0, coverage: null, median_relative_width: null };
+    none.intervals.items = [];
+    none.intervals.skus_with_band = 0;
+    none.intervals.skus_without_band = 0;
+    expect(coverageText(none.intervals)).toBe('Não houve meses suficientes para medir se a faixa acerta.');
+    renderContent(none);
+    expect(screen.queryByText(/Ver a faixa do próximo mês/)).not.toBeInTheDocument();
+
+    const good = structuredClone(forecastLab);
+    good.intervals.calibration = { ...good.intervals.calibration, hits: 120, coverage: 0.8 };
+    expect(coverageText(good.intervals)).toBe('Fora da amostra, a faixa de 80% cobriu 80% dos 150 meses testados.');
   });
 
   it('quando todas as combinações atendem, o resumo diz isso sem alarme', () => {

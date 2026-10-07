@@ -15,6 +15,11 @@
     "outer_windows": [1, 2, 3],
     "minimum_windows": [1, 2]
   },
+  "intervals": {
+    "lower_quantile": 0.1,
+    "upper_quantile": 0.9,
+    "minimum_residuals": 6
+  },
   "parsimony_margin": 0.05,
   "promotion": {
     "min_relative_wape_gain": 0.05,

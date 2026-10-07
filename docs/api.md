@@ -164,6 +164,7 @@ Leitura aditiva e somente leitura para o bloco "Modelos candidatos (laboratório
 - `selection`: `skus`, `changed_skus`, `models[]` (descrição, histórico mínimo, SKUs escolhidos em cada motor, erro mediano) e `changed[]` (SKUs cujo modelo mudaria).
 - `nested`: avaliação aninhada do padrão (`aggregate` de `baseline`, `v1` e `rolling` com WAPE e viés ponderados e SKUs que superam a baseline, `rolling_vs_v1` e `criteria`).
 - `sensitivity`: `cells[]` (uma por combinação de períodos de teste × janelas mínimas, com a marca `is_default`) e `summary`.
+- `intervals` (Etapa 14.4): faixa de previsão P10–P90 do motor rolante: `level`, `skus_with_band`, `skus_without_band`, `calibration` (cobertura medida fora da amostra) e `items[]` (faixa do próximo mês por SKU). Estimativa; a cobertura observada na base atual (48%) fica abaixo dos 80% nominais.
 - `field_nature` e `limitations`, no padrão dos demais endpoints.
 - O cálculo leva alguns segundos na primeira chamada; o resultado fica em cache até a planilha ou `config/forecast_engine.json` mudarem. Configuração inválida devolve 422.
 

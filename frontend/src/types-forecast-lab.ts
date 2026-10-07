@@ -71,6 +71,38 @@ export interface SensitivitySummary {
   max_relative_wape_gain: number | null;
 }
 
+export interface IntervalItem {
+  sku: string;
+  model: string;
+  model_label: string;
+  month: string;
+  point: number;
+  lower: number;
+  upper: number;
+  residuals: number;
+}
+
+export interface IntervalCalibration {
+  nominal_level: number;
+  tested_months: number;
+  hits: number;
+  coverage: number | null;
+  skus_tested: number;
+  origin_train_lengths: number[];
+  median_relative_width: number | null;
+}
+
+export interface LabIntervals {
+  lower_quantile: number;
+  upper_quantile: number;
+  level: number;
+  minimum_residuals: number;
+  skus_with_band: number;
+  skus_without_band: number;
+  calibration: IntervalCalibration;
+  items: IntervalItem[];
+}
+
 export interface ForecastLab {
   generated_at: string;
   source: { sha256: string };
@@ -89,6 +121,7 @@ export interface ForecastLab {
     criteria: LabCriteria;
   };
   sensitivity: { cells: SensitivityCell[]; summary: SensitivitySummary };
+  intervals: LabIntervals;
   limitations: string[];
   field_nature: Record<string, { nature: string; origin: string }>;
   requires_human_review: boolean;

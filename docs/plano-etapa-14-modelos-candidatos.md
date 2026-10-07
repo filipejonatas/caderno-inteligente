@@ -100,6 +100,8 @@ Medir o WAPE do vencedor no mesmo teste em que foi escolhido é otimista. Para c
 
 ## 8. Etapa 14.4 — Intervalos de previsão (opcional, 0,5 dia; é o primeiro corte se o prazo apertar)
 
+> **Status: implementada** (ver [etapa-14-4-faixas-de-previsao.md](etapa-14-4-faixas-de-previsao.md)). Ajustes em relação ao desenho abaixo: além da faixa, mede-se a **cobertura fora da amostra**, e ela ficou em 48% contra 80% nominais (a faixa subestima a incerteza); a faixa não foi alargada para "acertar"; ela só existe no motor rolante e aparece no laboratório da Validação; o cálculo ganhou reaproveitamento das séries mensais (de cerca de 6 s para cerca de 3 s).
+
 - Faixa empírica P10–P90 dos 3 meses, derivada dos **resíduos relativos** das janelas rolantes. Só calculada com pelo menos 6 resíduos válidos; senão `null` ("sem faixa"), nunca faixa inventada.
 - Mostrar como "faixa estimada" ao lado da previsão pontual, com a limitação escrita: tamanho de amostra pequeno, faixa indicativa.
 - Uso no PCP: ver o risco de produzir a menos ou a mais. Não entra no score nem no ranking.

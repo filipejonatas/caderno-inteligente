@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from copy import deepcopy
 from functools import lru_cache
+from math import floor
+from statistics import median
 from typing import Any, Callable
 
 import pandas as pd
@@ -28,6 +30,11 @@ BASELINE_LABEL = "Ingênuo do último mês (baseline)"
 FALLBACK_MODEL = "moving_average_3"  # o mesmo recuo do motor atual quando nada é avaliável
 MINIMUM_HISTORY = 6
 LIMITATION = "Previsão estatística baseada em faturamento mensal, escolhida por backtest rolante; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+
+
+def series_by_sku(sales: pd.DataFrame) -> dict[str, pd.Series]:
+    """Série mensal contínua de cada SKU. Montar uma vez e reaproveitar: é o que mais pesa em refazer a avaliação."""
+    return {sku: _monthly_series(sales, sku) for sku in sorted(sales["SKU"].dropna().astype(str).unique())}
 
 
 def naive_last(history: pd.Series, targets: pd.PeriodIndex) -> list[float] | None:
@@ -98,6 +105,32 @@ def _totals(windows: list[tuple[list[float], list[float]]]) -> tuple[float, floa
     )
 
 
+def _quantile(ordered: list[float], q: float) -> float:
+    """Quantil empírico por interpolação linear entre os vizinhos (lista já ordenada e não vazia)."""
+    position = q * (len(ordered) - 1)
+    low = floor(position)
+    high = min(low + 1, len(ordered) - 1)
+    return ordered[low] + (ordered[high] - ordered[low]) * (position - low)
+
+
+def error_quantiles(windows: list[tuple[list[float], list[float]]], intervals: dict[str, Any]) -> dict[str, Any] | None:
+    """Quantis dos erros relativos `(real − previsto) ÷ previsto` das janelas de teste; `None` com poucos erros válidos.
+
+    Previsão zero não tem erro relativo e fica de fora (nunca vira erro zero). Exige `minimum_residuals` erros.
+    """
+    residuals = sorted((actual - predicted) / predicted for real, forecast in windows for actual, predicted in zip(real, forecast) if predicted > 0)
+    if len(residuals) < intervals["minimum_residuals"]:
+        return None
+    return {"lower": _quantile(residuals, intervals["lower_quantile"]), "upper": _quantile(residuals, intervals["upper_quantile"]), "residuals": len(residuals)}
+
+
+def apply_interval(values: list[float], quantiles: dict[str, Any]) -> tuple[list[float], list[float]]:
+    """Faixa em torno da previsão: previsão × (1 + quantil do erro). Nunca negativa e sempre contém a previsão pontual."""
+    lower = [min(value, max(0.0, value * (1 + quantiles["lower"]))) for value in values]
+    upper = [max(value, value * (1 + quantiles["upper"])) for value in values]
+    return lower, upper
+
+
 def _select_windows(all_origins: list[int], pool: list[str], required: int) -> tuple[list[int], list[str], dict[str, str]]:
     """Maior conjunto de candidatos que ainda deixa `required` janelas; descarta primeiro o de maior histórico mínimo."""
     codes, dropped = list(pool), {}
@@ -117,7 +150,8 @@ def rolling_backtest(series: pd.Series, config: dict[str, Any] | None = None) ->
     horizon, minimum_windows = rolling["horizon_months"], rolling["minimum_windows"]
     n = len(series)
     all_origins = rolling_origins(n, horizon, rolling["step_months"], rolling["windows"], rolling["minimum_train_months"])
-    base = {"history_months": n, "horizon_months": horizon, "windows": 0, "window_train_lengths": [], "candidates": [], "baseline_wape": None}
+    base = {"history_months": n, "horizon_months": horizon, "windows": 0, "window_train_lengths": [], "candidates": [], "baseline_wape": None,
+            "error_quantiles": None, "residual_count": 0}
     if not all_origins:
         return {**base, "status": "insufficient_history", "selected_model": None, "selected_label": None, "backtest_wape": None, "backtest_bias": None,
                 "beats_baseline": None, "windows_beating_baseline": None, "windows_compared": 0}
@@ -192,8 +226,12 @@ def rolling_backtest(series: pd.Series, config: dict[str, Any] | None = None) ->
             }
         )
     chosen = rows[selected]
+    quantiles = error_quantiles(runs[selected], config["intervals"])
+    residual_count = sum(1 for real, forecast in runs[selected] for _, predicted in zip(real, forecast) if predicted > 0)
     return {
         **base,
+        "error_quantiles": quantiles,
+        "residual_count": residual_count,
         "status": status,
         "windows": len(origins),
         "window_train_lengths": origins,
@@ -210,12 +248,12 @@ def rolling_backtest(series: pd.Series, config: dict[str, Any] | None = None) ->
     }
 
 
-def build_rolling_forecasts(sales: pd.DataFrame, config: dict[str, Any] | None = None, horizon: int = 3) -> list[dict[str, Any]]:
+def build_rolling_forecasts(sales: pd.DataFrame, config: dict[str, Any] | None = None, horizon: int = 3,
+                            series_map: dict[str, pd.Series] | None = None) -> list[dict[str, Any]]:
     """Previsão do motor rolante por SKU (desafiante). Não substitui `build_demand_forecasts`."""
     config = load_engine_config() if config is None else config
     records: list[dict[str, Any]] = []
-    for sku in sorted(sales["SKU"].dropna().astype(str).unique()):
-        series = _monthly_series(sales, sku)
+    for sku, series in (series_by_sku(sales) if series_map is None else series_map).items():
         if len(series) < MINIMUM_HISTORY:
             records.append(_insufficient(sku, series))
             continue
@@ -234,6 +272,16 @@ def build_rolling_forecasts(sales: pd.DataFrame, config: dict[str, Any] | None =
             selected = FALLBACK_MODEL
             values = _run(selected, series, future)
         trend, change = _trend(series)
+        quantiles = backtest["error_quantiles"] if backtest["status"] == "ok" and selected == backtest["selected_model"] else None
+        interval = None
+        if quantiles is not None:
+            lower, upper = apply_interval([max(0.0, float(value)) for value in values], quantiles)
+            interval = {
+                "level": round(config["intervals"]["upper_quantile"] - config["intervals"]["lower_quantile"], 4),
+                "lower": [round(value, 1) for value in lower],
+                "upper": [round(value, 1) for value in upper],
+                "residuals": quantiles["residuals"],
+            }
         values = [round(max(0.0, float(value)), 1) for value in values]
         records.append(
             {
@@ -259,6 +307,7 @@ def build_rolling_forecasts(sales: pd.DataFrame, config: dict[str, Any] | None =
                 "windows_beating_baseline": backtest["windows_beating_baseline"],
                 "windows_compared": backtest["windows_compared"],
                 "candidates": backtest["candidates"],
+                "forecast_interval": interval,
             }
         )
     return records
@@ -322,13 +371,13 @@ def nested_evaluation(series: pd.Series, procedures: dict[str, Procedure] | None
     return {"status": "ok", "outer_train_lengths": origins, "procedures": results}
 
 
-def nested_evaluation_table(sales: pd.DataFrame, config: dict[str, Any] | None = None) -> dict[str, Any]:
+def nested_evaluation_table(sales: pd.DataFrame, config: dict[str, Any] | None = None,
+                            series_map: dict[str, pd.Series] | None = None) -> dict[str, Any]:
     """Avaliação aninhada de todos os SKUs, agregada, com a conferência dos critérios de promoção (informativa)."""
     config = load_engine_config() if config is None else config
     procedures = default_procedures(config)
     rows: list[dict[str, Any]] = []
-    for sku in sorted(sales["SKU"].dropna().astype(str).unique()):
-        series = _monthly_series(sales, sku)
+    for sku, series in (series_by_sku(sales) if series_map is None else series_map).items():
         if len(series) < MINIMUM_HISTORY:
             continue
         result = nested_evaluation(series, procedures, config)
@@ -393,20 +442,22 @@ def promotion_criteria(evaluation: dict[str, Any], config: dict[str, Any]) -> di
 
 # ------------------------------------------------------------------------------------------ grade de sensibilidade
 
-def sensitivity_grid(sales: pd.DataFrame, config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+def sensitivity_grid(sales: pd.DataFrame, config: dict[str, Any] | None = None,
+                     series_map: dict[str, pd.Series] | None = None) -> list[dict[str, Any]]:
     """Refaz a avaliação aninhada para cada combinação (origens externas × mínimo de janelas) e confere os critérios.
 
     O veredito da promoção não deve depender de uma única célula: esta grade mostra o quanto ele muda quando as duas
     escolhas de desenho mudam. Informativa; não altera nada oficial.
     """
     config = load_engine_config() if config is None else config
+    series_map = series_by_sku(sales) if series_map is None else series_map
     cells: list[dict[str, Any]] = []
     for outer in config["sensitivity"]["outer_windows"]:
         for minimum in config["sensitivity"]["minimum_windows"]:
             variant = deepcopy(config)
             variant["nested"]["outer_windows"] = outer
             variant["rolling"]["minimum_windows"] = minimum
-            table = nested_evaluation_table(sales, variant)
+            table = nested_evaluation_table(sales, variant, series_map)
             aggregate, criteria = table["aggregate"], table["criteria"]
             cells.append(
                 {
@@ -444,4 +495,51 @@ def summarize_sensitivity(cells: list[dict[str, Any]]) -> dict[str, Any]:
         "default_all_met": None if default is None else bool(default["all_met"]),
         "min_relative_wape_gain": min(gains) if gains else None,
         "max_relative_wape_gain": max(gains) if gains else None,
+    }
+
+
+# ------------------------------------------------------------------------------------------ faixas de previsão
+
+def interval_calibration(sales: pd.DataFrame, config: dict[str, Any] | None = None,
+                         series_map: dict[str, pd.Series] | None = None) -> dict[str, Any]:
+    """A faixa cobriu o que de fato aconteceu? Fora da amostra: a faixa de cada origem externa vem só do treino.
+
+    Em cada origem externa, o motor rolante escolhe o modelo e calcula os quantis de erro só com dados anteriores a ela;
+    depois se confere quantos dos meses seguintes caíram dentro da faixa. A cobertura esperada é `upper − lower`
+    (80% com P10–P90). Origens em que faltam erros para a faixa ficam de fora, e a contagem de meses testados diz o
+    tamanho da amostra.
+    """
+    config = load_engine_config() if config is None else config
+    rolling, nested = config["rolling"], config["nested"]
+    tested = hits = 0
+    widths: list[float] = []
+    skus: set[str] = set()
+    lengths: set[int] = set()
+    for sku, series in (series_by_sku(sales) if series_map is None else series_map).items():
+        if len(series) < MINIMUM_HISTORY:
+            continue
+        for origin in rolling_origins(len(series), rolling["horizon_months"], rolling["step_months"], nested["outer_windows"], rolling["minimum_train_months"]):
+            train, test = series.iloc[:origin], series.iloc[origin : origin + rolling["horizon_months"]]
+            backtest = rolling_backtest(train, config)
+            if backtest["status"] != "ok" or backtest["error_quantiles"] is None:
+                continue
+            predicted = _run(backtest["selected_model"], train, test.index)
+            if predicted is None:
+                continue
+            lower, upper = apply_interval(predicted, backtest["error_quantiles"])
+            for actual, low, high, point in zip(test.tolist(), lower, upper, predicted):
+                tested += 1
+                hits += low <= actual <= high
+                if point > 0:
+                    widths.append((high - low) / point)
+            skus.add(sku)
+            lengths.add(origin)
+    return {
+        "nominal_level": round(config["intervals"]["upper_quantile"] - config["intervals"]["lower_quantile"], 4),
+        "tested_months": tested,
+        "hits": hits,
+        "coverage": None if tested == 0 else hits / tested,
+        "skus_tested": len(skus),
+        "origin_train_lengths": sorted(lengths),
+        "median_relative_width": median(widths) if widths else None,
     }

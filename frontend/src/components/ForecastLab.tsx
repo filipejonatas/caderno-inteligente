@@ -3,13 +3,21 @@ import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { Badge, SectionCard, Tooltip } from '../components';
-import { displayPercent } from '../pages/shared';
-import type { ForecastLab, SensitivityCell } from '../types-forecast-lab';
+import { displayPercent, displayQuantity, displayShare, formatMonth } from '../pages/shared';
+import type { ForecastLab, LabIntervals, SensitivityCell } from '../types-forecast-lab';
 
 const NA = 'Não disponível';
 const signed = (value: number | null) => value === null ? NA : `${value > 0 ? '+' : ''}${displayPercent(value)}`;
 const months = (values: number[]) => values.length > 1 ? `${values.slice(0, -1).join(', ')} e ${values[values.length - 1]}` : values.join('');
 const trainText = (cell: SensitivityCell) => `Treino de ${months(cell.outer_train_lengths)} meses`;
+
+/** Cobertura fora da amostra, dita sem enfeite: abaixo do nível nominal a faixa é só uma indicação. */
+export function coverageText(intervals: LabIntervals) {
+  const { coverage, tested_months: tested } = intervals.calibration;
+  if (coverage === null) return 'Não houve meses suficientes para medir se a faixa acerta.';
+  const base = `Fora da amostra, a faixa de ${displayShare(intervals.level)} cobriu ${displayShare(coverage)} dos ${tested} meses testados.`;
+  return coverage < intervals.level - 0.05 ? `${base} Ficou abaixo do esperado: use-a como indicação, não como garantia.` : base;
+}
 
 function Table({ label, children }: { label: string; children: ReactNode }) {
   return <div className="table-shell" tabIndex={0} role="region" aria-label={label}><table className="data-table validation-table">{children}</table></div>;
@@ -77,6 +85,20 @@ export function ForecastLabContent({ data }: { data: ForecastLab }) {
         <td>{displayPercent(model.median_wape)}</td>
       </tr>)}</tbody>
     </Table>
+
+    <h4 className="lab-heading">Faixa de previsão <Tooltip label="Como a faixa é calculada">Faixa empírica entre o 10º e o 90º percentil dos erros relativos do motor rolante nos meses de teste, aplicada à previsão. Exige pelo menos {data.intervals.minimum_residuals} erros por SKU; sem isso o SKU fica sem faixa. Nunca é negativa, sempre contém a previsão pontual e não entra no ranking nem no score.</Tooltip></h4>
+    <p className="fact-line">{coverageText(data.intervals)}{data.intervals.skus_without_band > 0 && ` ${data.intervals.skus_without_band} SKUs ficaram sem faixa por falta de erros para estimá-la.`}</p>
+    {data.intervals.items.length > 0 && <details className="validation-details"><summary>Ver a faixa do próximo mês de {data.intervals.items.length} SKUs</summary>
+      <Table label="Faixa de previsão do próximo mês">
+        <thead><tr><th>SKU</th><th>Mês</th><th>Previsão</th><th>Faixa estimada</th></tr></thead>
+        <tbody>{data.intervals.items.map((item) => <tr key={item.sku}>
+          <td><Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link></td>
+          <td>{formatMonth(item.month)}</td>
+          <td>{displayQuantity(item.point)}</td>
+          <td>{displayQuantity(item.lower)} a {displayQuantity(item.upper)}</td>
+        </tr>)}</tbody>
+      </Table>
+    </details>}
 
     {selection.changed.length > 0 && <details className="validation-details"><summary>Ver os {selection.changed.length} SKUs que mudariam de modelo</summary>
       <Table label="SKUs que mudariam de modelo">

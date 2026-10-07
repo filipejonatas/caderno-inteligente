@@ -322,6 +322,11 @@ export const forecastLab: ForecastLab = {
     ],
     summary: { cells: 3, cells_all_met: 2, robust: false, default_all_met: true, min_relative_wape_gain: -0.2673, max_relative_wape_gain: 0.2264 },
   },
+  intervals: {
+    lower_quantile: 0.1, upper_quantile: 0.9, level: 0.8, minimum_residuals: 6, skus_with_band: 1, skus_without_band: 1,
+    calibration: { nominal_level: 0.8, tested_months: 150, hits: 72, coverage: 0.48, skus_tested: 50, origin_train_lengths: [21], median_relative_width: 0.131 },
+    items: [{ sku: SKU_OK, model: 'ses', model_label: 'Suavização exponencial simples', month: '2026-09-01', point: 211.7, lower: 197.8, upper: 215.9, residuals: 9 }],
+  },
   limitations: ['Laboratório sintético.'],
   field_nature: { nested: { nature: 'calculado', origin: 'Vendas_24m sintético' } },
   requires_human_review: true,

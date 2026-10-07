@@ -25,6 +25,7 @@ def test_versioned_config_loads_with_the_plan_defaults():
     assert config["rolling"] == {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1}
     assert config["nested"] == {"outer_windows": 2}
     assert config["sensitivity"] == {"outer_windows": [1, 2, 3], "minimum_windows": [1, 2]}
+    assert config["intervals"] == {"lower_quantile": 0.1, "upper_quantile": 0.9, "minimum_residuals": 6}
     assert config["parsimony_margin"] == 0.05
     assert config["promotion"] == {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0}
 
@@ -62,6 +63,14 @@ def test_partial_file_falls_back_to_defaults_per_section(tmp_path):
         ({"sensitivity": {"minimum_windows": [0]}}, "inteiro"),
         ({"sensitivity": {"minimum_windows": [4]}}, "rolling.windows"),
         ({"sensitivity": {"extra": [1]}}, "desconhecidos em sensitivity"),
+        ({"intervals": {"lower_quantile": 0.6}}, "lower_quantile"),
+        ({"intervals": {"upper_quantile": 0.4}}, "lower_quantile"),
+        ({"intervals": {"upper_quantile": 1.2}}, "lower_quantile"),
+        ({"intervals": {"lower_quantile": -0.1}}, "lower_quantile"),
+        ({"intervals": {"minimum_residuals": 2}}, "inteiro"),
+        ({"intervals": {"minimum_residuals": 6.5}}, "inteiro"),
+        ({"intervals": {"lower_quantile": True}}, "inválido"),
+        ({"intervals": {"extra": 1}}, "desconhecidos em intervals"),
         ({"parsimony_margin": 1}, "parsimony_margin"),
         ({"parsimony_margin": True}, "inválido"),
         ({"promotion": {"min_relative_wape_gain": -0.1}}, "promoção"),

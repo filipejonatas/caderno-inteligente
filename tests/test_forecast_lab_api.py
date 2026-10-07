@@ -32,7 +32,7 @@ def test_lab_is_a_laboratory_and_asks_for_human_review(lab):
     assert lab["requires_human_review"] is True
     assert "Nada foi promovido" in lab["promotion_note"]
     assert lab["source"]["sha256"] and lab["generated_at"]
-    assert set(lab["field_nature"]) == {"nested", "sensitivity", "selection"}
+    assert set(lab["field_nature"]) == {"nested", "sensitivity", "selection", "intervals"}
 
 
 def test_lab_never_changes_the_official_forecast(client):
@@ -76,6 +76,21 @@ def test_grid_summary_is_consistent_and_exposes_the_non_robust_cell(lab):
     # A combinação de 3 origens e 2 janelas mínimas reverte o resultado: a tela precisa mostrá-la, não escondê-la.
     worst = next(cell for cell in cells if cell["outer_windows"] == 3 and cell["minimum_windows"] == 2)
     assert worst["relative_wape_gain"] < 0 and worst["all_met"] is False
+
+
+def test_intervals_block_is_consistent_and_never_hides_how_often_the_band_missed(lab):
+    block = lab["intervals"]
+    calibration = block["calibration"]
+
+    assert block["level"] == 0.8 and block["minimum_residuals"] == 6
+    assert block["skus_with_band"] == len(block["items"]) and block["skus_with_band"] + block["skus_without_band"] == 50
+    for item in block["items"]:
+        assert 0 <= item["lower"] <= item["point"] <= item["upper"], item["sku"]
+        assert item["residuals"] >= block["minimum_residuals"] and item["month"].endswith("-01")
+    assert calibration["tested_months"] > 0 and calibration["hits"] <= calibration["tested_months"]
+    assert calibration["coverage"] == pytest.approx(calibration["hits"] / calibration["tested_months"], abs=1e-4)
+    assert calibration["nominal_level"] == block["level"]
+    assert calibration["origin_train_lengths"] and calibration["skus_tested"] <= 50
 
 
 def test_lab_response_has_no_nan_and_absent_values_stay_null(lab):

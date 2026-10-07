@@ -23,6 +23,7 @@ DEFAULTS: dict[str, Any] = {
     "rolling": {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1},
     "nested": {"outer_windows": 2},
     "sensitivity": {"outer_windows": [1, 2, 3], "minimum_windows": [1, 2]},
+    "intervals": {"lower_quantile": 0.1, "upper_quantile": 0.9, "minimum_residuals": 6},
     "parsimony_margin": 0.05,
     "promotion": {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0},
 }
@@ -100,6 +101,13 @@ def validate_engine_config(values: dict[str, Any]) -> dict[str, Any]:
     if max(sensitivity["minimum_windows"]) > rolling["windows"]:
         raise ValueError("sensitivity.minimum_windows não pode passar de rolling.windows")
     values["sensitivity"] = sensitivity
+
+    intervals = _section(values, "intervals")
+    lower = _number(intervals["lower_quantile"], "intervals.lower_quantile")
+    upper = _number(intervals["upper_quantile"], "intervals.upper_quantile")
+    if not 0 <= lower < 0.5 < upper <= 1:
+        raise ValueError("intervals: use 0 ≤ lower_quantile < 0,5 < upper_quantile ≤ 1")
+    values["intervals"] = {"lower_quantile": lower, "upper_quantile": upper, "minimum_residuals": _integer(intervals["minimum_residuals"], "intervals.minimum_residuals", 3)}
 
     margin = _number(values["parsimony_margin"], "parsimony_margin")
     if not 0 <= margin < 1:
