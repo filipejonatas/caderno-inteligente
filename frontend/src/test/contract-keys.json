@@ -1004,6 +1004,35 @@
         "reference_date",
         "requires_human_review"
       ]
+    },
+    "productionPlan": {
+      "path": "/api/production-plan",
+      "keys": [
+        "excluded_skus",
+        "excluded_skus[].reason",
+        "excluded_skus[].sku",
+        "families",
+        "families[].family",
+        "families[].horizon_total",
+        "families[].months",
+        "families[].months[].later",
+        "families[].months[].month",
+        "families[].months[].urgent",
+        "families[].urgent_total",
+        "horizon_end",
+        "limitations",
+        "omitted_months",
+        "reference_date",
+        "requires_human_review",
+        "total",
+        "total.horizon_total",
+        "total.months",
+        "total.months[].later",
+        "total.months[].month",
+        "total.months[].urgent",
+        "total.urgent_total",
+        "urgent_window_end"
+      ]
     }
   }
 }
