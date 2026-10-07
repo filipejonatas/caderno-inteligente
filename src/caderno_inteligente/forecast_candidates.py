@@ -89,6 +89,11 @@ def _seasonal_level(history: pd.Series, targets: pd.PeriodIndex) -> list[float] 
 
     A razão sazonal de cada mês fica limitada a [0,5; 2,0] para um mês atípico do ano passado não dominar a previsão.
     """
+    return seasonal_level(history, targets, SEASONAL_RATIO_BOUNDS)
+
+
+def seasonal_level(history: pd.Series, targets: pd.PeriodIndex, ratio_bounds: tuple[float, float]) -> list[float] | None:
+    """`seasonal_level` com o limite da razão sazonal informado (o motor oficial v2 lê o limite da configuração)."""
     values = _values(history)
     if len(values) < SEASONAL_LEVEL_MIN_HISTORY:
         return None
@@ -97,7 +102,7 @@ def _seasonal_level(history: pd.Series, targets: pd.PeriodIndex) -> list[float] 
     year_ago = sum(values[-LEVEL_MONTHS - 12 : -12]) / LEVEL_MONTHS
     if year_ago <= 0:
         return None
-    low, high = SEASONAL_RATIO_BOUNDS
+    low, high = ratio_bounds
     predictions: list[float] = []
     for target in targets:
         source = target - 12

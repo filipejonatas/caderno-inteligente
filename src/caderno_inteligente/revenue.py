@@ -10,12 +10,13 @@ from typing import Any
 
 import pandas as pd
 
-from .forecasting import _backtest, _monthly_series
+from .forecasting import _MODELS, _backtest, _monthly_series
 
 PRICE_COLUMN = "Preço unitário (R$)"
 VALUE_COLUMN = "Valor faturado (R$)"
 FORMULA = "Faturamento estimado = previsão em unidades × preço unitário vigente"
 OBSERVED_WINDOW = 12
+REVENUE_MONTHS = 3  # os campos e as telas "3 meses" continuam com 3 meses quando a previsão oficial tem horizonte maior
 CONFIDENCE_LEVELS = ("alta", "média", "baixa")
 PRICE_TOLERANCE = 0.005
 
@@ -29,12 +30,13 @@ LIMITATIONS = [
 
 FIELD_NATURE = {
     "unit_price": {"nature": "observado na fonte", "origin": "Precos_Produtos.Preço unitário (R$); na falta, último preço de Vendas_24m"},
-    "forecast_units": {"nature": "previsto", "origin": "previsão de demanda por SKU (média móvel de 3 meses ou sazonal ingênuo de 12 meses)"},
+    "forecast_units": {"nature": "previsto", "origin": "os 3 primeiros meses da previsão oficial de demanda por SKU (motor configurado em config/forecast_engine.json)"},
     "revenue_values": {"nature": "estimado", "origin": "calculado: previsão em unidades × preço unitário vigente"},
     "revenue_total_3m": {"nature": "estimado", "origin": "soma dos 3 meses estimados; SKUs sem preço ou sem previsão ficam fora e são listados"},
+    "revenue_total_6m": {"nature": "estimado", "origin": "soma dos 6 meses da previsão oficial × preço; nulo quando o horizonte oficial é menor que 6 meses"},
     "observed_revenue": {"nature": "observado", "origin": "Vendas_24m.Valor faturado (R$), todos os canais"},
-    "commercial_reference": {"nature": "previsto na fonte", "origin": "Forecast_Comercial (unidades) × mesmo preço vigente, só nos meses em comum"},
-    "backtest_wape": {"nature": "calculado", "origin": "erro absoluto em R$ do teste dos últimos 3 meses ÷ faturamento real do período, por SKU e mês"},
+    "commercial_reference": {"nature": "previsto na fonte", "origin": "Forecast_Comercial (unidades) × mesmo preço vigente, em todos os meses em comum com a previsão oficial"},
+    "backtest_wape": {"nature": "calculado", "origin": "erro absoluto em R$ ÷ faturamento real no teste da previsão oficial (motor v2: origens rolantes com meses de pico; v1: últimos 3 meses)"},
 }
 
 
@@ -125,7 +127,7 @@ def _observed_window(sales: pd.DataFrame) -> list[pd.Period]:
     return list(pd.period_range(last - (OBSERVED_WINDOW - 1), last, freq="M"))
 
 
-def _commercial_reference(item: dict, commercial: pd.DataFrame | None) -> dict[str, Any] | None:
+def _commercial_reference(item: dict, commercial: pd.DataFrame | None, months_all: list[str], units_all: list[float]) -> dict[str, Any] | None:
     if commercial is None or commercial.empty or item["unit_price"] is None:
         return None
     rows = commercial[commercial["SKU"] == item["sku"]]
@@ -133,7 +135,7 @@ def _commercial_reference(item: dict, commercial: pd.DataFrame | None) -> dict[s
         return None
     by_month = {pd.Timestamp(row["Mês"]).date().isoformat(): row for _, row in rows.iterrows() if pd.notna(row["Mês"])}
     months, model_units, commercial_units = [], [], []
-    for month, units in zip(item["forecast_months"], item["forecast_units"]):
+    for month, units in zip(months_all, units_all):
         row = by_month.get(month)
         value = None if row is None else _number(row["Previsão unidades"])
         if value is None:
@@ -160,15 +162,17 @@ def _commercial_reference(item: dict, commercial: pd.DataFrame | None) -> dict[s
 def _item(row: dict | None, sku: str, product: str | None, family: str | None, prices, sales, commercial) -> tuple[dict, dict | None]:
     price, source, conflict = _resolve_price(sku, prices, sales)
     usable = bool(row) and row.get("status") == "ok" and bool(row.get("forecast_values"))
+    months_all = list(row["forecast_months"]) if usable else []
+    units_all = list(row["forecast_values"]) if usable else []
     item: dict[str, Any] = {
         "sku": sku, "product": product, "family": family or "Sem família",
         "status": "ok", "reason": None,
         "unit_price": price, "price_source": source, "price_conflict": conflict,
         "model_label": None if not row else row.get("model_label"),
         "forecast_confidence": "baixa" if not row else row.get("forecast_confidence", "baixa"),
-        "forecast_months": list(row["forecast_months"]) if usable else [],
-        "forecast_units": list(row["forecast_values"]) if usable else [],
-        "revenue_values": [], "revenue_next_month": None, "revenue_total_3m": None,
+        "forecast_months": months_all[:REVENUE_MONTHS],
+        "forecast_units": units_all[:REVENUE_MONTHS],
+        "revenue_values": [], "revenue_next_month": None, "revenue_total_3m": None, "revenue_total_6m": None,
         "commercial_reference": None, "calculation": None,
         "nature": "estimado",
     }
@@ -181,16 +185,20 @@ def _item(row: dict | None, sku: str, product: str | None, family: str | None, p
     revenue = [_round(units * price) for units in item["forecast_units"]]
     item.update(
         revenue_values=revenue, revenue_next_month=revenue[0], revenue_total_3m=_round(sum(units * price for units in item["forecast_units"])),
+        revenue_total_6m=_round(sum(units * price for units in units_all[:6])) if len(units_all) >= 6 else None,
         calculation={"formula": FORMULA, "terms": [{"month": month, "units": units, "unit_price": price, "revenue": value}
                                                    for month, units, value in zip(item["forecast_months"], item["forecast_units"], revenue)]},
     )
     if conflict:
         item["reason"] = "O preço da tabela difere do último preço faturado; foi usado o da tabela."
-    item["commercial_reference"] = _commercial_reference(item, commercial)
+    item["commercial_reference"] = _commercial_reference(item, commercial, months_all, units_all)
 
     backtest = None
+    if row.get("backtest_actual_units") is not None and row.get("backtest_abs_error_units") is not None:
+        # Motor v2: o mesmo teste rolante que dá o erro e a confiança da previsão oficial, convertido em R$.
+        return item, {"abs_error": float(row["backtest_abs_error_units"]) * price, "actual": float(row["backtest_actual_units"]) * price}
     series = _monthly_series(sales, sku)
-    if row.get("model") and len(series) >= 6:
+    if row.get("model") in _MODELS and len(series) >= 6:
         _, predictions = _backtest(series, row["model"], 3)
         if predictions is not None:
             actual = series.iloc[-3:].tolist()
@@ -209,6 +217,8 @@ def _group(label: str, members: list[tuple[dict, dict | None]], sales: pd.DataFr
         for month, value in zip(item["forecast_months"], item["revenue_values"]):
             by_month[month] = by_month.get(month, 0.0) + value
     total = _round(sum(item["revenue_total_3m"] for item in estimated)) if estimated else None
+    with_6m = [item["revenue_total_6m"] for item in estimated if item["revenue_total_6m"] is not None]
+    total_6m = _round(sum(with_6m)) if estimated and len(with_6m) == len(estimated) else None
 
     errors = [bt for _, bt in members if bt]
     actual = sum(bt["actual"] for bt in errors)
@@ -235,6 +245,7 @@ def _group(label: str, members: list[tuple[dict, dict | None]], sales: pd.DataFr
         "skus_total": len(members), "skus_with_estimate": len(estimated), "skus_excluded": excluded,
         "by_month": [{"month": month, "revenue": _round(value)} for month, value in sorted(by_month.items())],
         "revenue_total_3m": total,
+        "revenue_total_6m": total_6m,
         "confidence_distribution": {level: sum(1 for item in estimated if item["forecast_confidence"] == level) for level in CONFIDENCE_LEVELS},
         "backtest_wape": wape,
         "observed_revenue": observed,

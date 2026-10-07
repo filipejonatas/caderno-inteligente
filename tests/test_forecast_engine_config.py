@@ -20,7 +20,9 @@ def _write(tmp_path, **changes):
 def test_versioned_config_loads_with_the_plan_defaults():
     config = load_engine_config()
 
-    assert config["engine"] == "v1"
+    assert config["engine"] == "v2"  # promovido na Etapa 15.1
+    assert config["official"] == {"model_chain": ["seasonal_level", "seasonal_naive_12", "moving_average_3"], "horizon_months": 6}
+    assert config["seasonal_level"] == {"ratio_bounds": [0.5, 3.0]}
     assert config["candidates"] == list(CANDIDATES)
     assert config["rolling"] == {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1}
     assert config["nested"] == {"outer_windows": 2}

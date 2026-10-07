@@ -78,6 +78,7 @@ const forecastOk = {
   sku: SKU_OK, reference_month: '2026-08-01', history_months: 24, model: 'moving_average_3' as const, model_label: 'Média móvel de 3 meses',
   forecast_months: ['2026-09-01', '2026-10-01', '2026-11-01'], forecast_values: [100, 110, 120], forecast_next_month: 100, forecast_total_3m: 330,
   trend: 'crescente' as const, trend_change_ratio: 0.12, backtest_wape: 0.08, forecast_confidence: 'alta', status: 'ok' as const, limitation: 'Previsão estatística sintética.',
+  engine: 'v2' as const, backtest_windows: 7,
 };
 const forecastShort = {
   sku: SKU_SHORT, reference_month: '2026-08-01', history_months: 4, model: null, model_label: 'Não selecionado', forecast_months: [], forecast_values: [],
@@ -264,9 +265,12 @@ export const validationSummary: ValidationSummary = {
   process_comparison: [{ id: 'analysis_time', label: 'Tempo de análise do PCP', informed: { value: 22, unit: 'horas/semana', nature: 'informado', source: 'Fonte sintética' }, recalculated: { value: null, unit: 'horas/semana', nature: 'recalculado', comparable: false, reason: 'Amostra insuficiente.' }, target: { value: 8, unit: 'horas/semana', nature: 'meta' } }],
   analysis_time: { feedback_count: 0, records_with_minutes: 0, total_minutes: null, average_minutes_per_decision: null, median_minutes_per_decision: null, minimum_sample: 20, sample_status: 'insuficiente', comparison_allowed: false, note: 'Amostra insuficiente.' },
   forecast_evaluation: {
-    holdout_months: 3, total_skus: 2, eligible_skus: 1, insufficient_skus: 1, insufficient_sku_list: [SKU_SHORT], zero_demand_holdout_skus: 0,
+    method: 'rolante', holdout_months: 3, total_skus: 2, eligible_skus: 1, insufficient_skus: 1, insufficient_sku_list: [SKU_SHORT], zero_demand_holdout_skus: 0,
     baseline: { model: 'naive_last', label: 'Baseline', description: 'Último mês.' },
-    models: [{ model: 'selected', label: 'Selecionado', role: 'selecionado', selected_skus: 1, evaluated_skus: 1, wape_defined_skus: 1, median_wape: 0.1, weighted_wape: 0.1 }],
+    models: [
+      { model: 'selected', label: 'Selecionado', role: 'selecionado', selected_skus: 1, evaluated_skus: 1, wape_defined_skus: 1, median_wape: 0.1, weighted_wape: 0.1, peak_weighted_wape: 0.12, normal_weighted_wape: 0.09 },
+      { model: 'naive_last', label: 'Baseline', role: 'baseline', selected_skus: 0, evaluated_skus: 1, wape_defined_skus: 1, median_wape: 0.2, weighted_wape: 0.2, peak_weighted_wape: 0.3, normal_weighted_wape: 0.15 },
+    ],
     beat_baseline_skus: 1, did_not_beat_baseline_skus: 0, not_comparable_skus: 0, items: [], limitations: ['Holdout otimista.'],
   },
   frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, pending: 0, synthetic: 0, items: [] },
@@ -314,6 +318,16 @@ export const forecastLab: ForecastLab = {
       bias_criterion_met: true, skus_beating_baseline_rolling: 2, skus_beating_baseline_v1: 1, baseline_criterion_met: true, all_met: true,
     },
   },
+  peak_evaluation: {
+    origins: ['2025-11', '2025-12', '2026-01'], horizon_months: 3, peak_months: [11, 1, 2], skus: 2,
+    procedures: {
+      v1: { label: 'Motor v1', weighted_wape: 0.1007, weighted_bias: -0.0402, peak_wape: 0.1322, peak_bias: -0.053, normal_wape: 0.0889, normal_bias: -0.0354, skus_beating_baseline: 1 },
+      v2: { label: 'Motor v2', weighted_wape: 0.0798, weighted_bias: 0.001, peak_wape: 0.0787, peak_bias: 0.0073, normal_wape: 0.0802, normal_bias: -0.0014, skus_beating_baseline: 2 },
+      v2_ratio_2: { label: 'Motor v2 com teto 2,0', weighted_wape: 0.0836, weighted_bias: -0.0056, peak_wape: 0.0924, peak_bias: -0.0169, normal_wape: 0.0802, normal_bias: -0.0014, skus_beating_baseline: 2 },
+      baseline: { label: 'Baseline', weighted_wape: 0.1887, weighted_bias: 0.0566, peak_wape: 0.2682, peak_bias: -0.0094, normal_wape: 0.1588, normal_bias: 0.0815, skus_beating_baseline: 0 },
+    },
+    criteria: { relative_wape_gain: 0.2075, peak_bias: 0.0073, max_abs_peak_bias: 0.1, bias_worsening_pp: -3.92, skus_beating_baseline_v2: 2, skus_beating_baseline_v1: 1, all_met: true },
+  },
   sensitivity: {
     cells: [
       labCell(1, 1, { relative_wape_gain: 0.2264 }),
@@ -326,6 +340,7 @@ export const forecastLab: ForecastLab = {
     lower_quantile: 0.1, upper_quantile: 0.9, level: 0.8, minimum_residuals: 6, skus_with_band: 1, skus_without_band: 1,
     calibration: { nominal_level: 0.8, tested_months: 150, hits: 72, coverage: 0.48, skus_tested: 50, origin_train_lengths: [21], median_relative_width: 0.131 },
     items: [{ sku: SKU_OK, model: 'ses', model_label: 'Suavização exponencial simples', month: '2026-09-01', point: 211.7, lower: 197.8, upper: 215.9, residuals: 9 }],
+    status: 'calibrada', status_note: null,
   },
   limitations: ['Laboratório sintético.'],
   field_nature: { nested: { nature: 'calculado', origin: 'Vendas_24m sintético' } },

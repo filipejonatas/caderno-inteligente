@@ -5,7 +5,11 @@ import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.main import app
+from backend.main import SOURCE, app
+from caderno_inteligente.forecast_candidates import SEASONAL_CODES
+from caderno_inteligente.forecasting import build_demand_forecasts
+from caderno_inteligente.ingestion import load_workbook
+from caderno_inteligente.transformations import normalise_dataset
 from caderno_inteligente.events import DEFAULT_SETTINGS, build_event_analysis, load_event_settings, parse_events
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -180,29 +184,35 @@ def test_api_events_contract_and_labels(client):
     assert all(family["factor"] and family["occurrences"] >= 1 for family in black_friday["families"])
 
 
-def test_api_scenario_is_base_times_factor_and_seasonal_skus_have_none(client):
+def test_api_seasonal_official_forecast_has_no_event_scenario(client):
+    """Motor v2 (Etapa 15.1): a previsão oficial já é sazonal; o fator de evento não pode ser somado de novo."""
     forecasts = {item["sku"]: item["forecast"] for item in client.get("/api/forecasts").json()}
-    seen_scenario = seen_seasonal = 0
-    for item in client.get("/api/events").json()["items"]:
-        forecast = forecasts[item["sku"]]
-        if forecast["model"] == "seasonal_naive_12":
-            seen_seasonal += 1
-            assert item["scenario"] is None and "já incorpora" in item["scenario_note"]
-        if item["scenario"]:
-            seen_scenario += 1
-            scenario = item["scenario"]
-            assert scenario["base_units"] == [round(v, 1) for v in forecast["forecast_values"]]
-            for base, factor, units in zip(scenario["base_units"], scenario["factors"], scenario["scenario_units"]):
-                assert units == pytest.approx(base * (1.0 if factor is None else factor), abs=0.11)
-            assert scenario["quantity"]["official"] is not None
-    assert seen_scenario > 0 and seen_seasonal > 0
+    items = client.get("/api/events").json()["items"]
+    assert items and all(forecasts[item["sku"]]["model"] in SEASONAL_CODES for item in items)
+    for item in items:
+        assert item["scenario"] is None and "já incorpora" in item["scenario_note"]
+
+
+def test_real_base_scenario_is_base_times_factor_for_moving_average_forecasts():
+    """O cenário continua existindo para previsões de média móvel (motor v1 na base real)."""
+    dataset = normalise_dataset(load_workbook(SOURCE))
+    forecasts = build_demand_forecasts(dataset["Vendas_24m"])
+    result = build_event_analysis(forecasts, dataset["Produtos"], dataset["Vendas_24m"], dataset["Calendario_Eventos"], DEFAULT_SETTINGS)
+    by_sku = {row["sku"]: row for row in forecasts.to_dict("records")}
+    scenarios = [item for item in result["items"] if item["scenario"]]
+    assert scenarios
+    for item in scenarios:
+        forecast, scenario = by_sku[item["sku"]], item["scenario"]
+        assert forecast["model"] == "moving_average_3"
+        assert scenario["base_units"] == [round(v, 1) for v in forecast["forecast_values"]]
+        for base, factor, units in zip(scenario["base_units"], scenario["factors"], scenario["scenario_units"]):
+            assert units == pytest.approx(base * (1.0 if factor is None else factor), abs=0.11)
 
 
 def test_api_sku_detail_carries_event_fields_and_keeps_official_quantity(client):
     detail = client.get("/api/priorities/CI-0001").json()
     assert detail["event_alerts"] and {"event", "decision_date", "evidence", "in_horizon"} <= set(detail["event_alerts"][0])
-    scenario = detail["event_scenario"]["scenario"]
-    assert scenario and scenario["quantity"]["official"] == detail["operational_recommendation"]["suggested_quantity"]
+    assert detail["event_scenario"]["scenario"] is None and "já incorpora" in detail["event_scenario"]["note"]
     listed = next(item for item in client.get("/api/events").json()["items"] if item["sku"] == "CI-0001")
     assert detail["event_alerts"] == listed["alerts"]
 

@@ -445,7 +445,6 @@
       "title": "Previsão oficial alcança o pico de novembro e a Volta às Aulas",
       "kind": "forecast_aggregate",
       "origin": "base",
-      "pending_until": "15.1",
       "expected": {
         "total_units_2026_11": {"between": [32546, 41111]},
         "family_units_escolar_2027_01_02": {"min": 15822}
@@ -537,6 +536,13 @@
       "reason": "Há 914 un. prometidas para 13 e 14/09 sem cobertura até a chegada da OP-7840 em 08/10; Sem ação contradiz o risco que põe o SKU no topo da fila. O VC-20 passa a ser o caso de referência.",
       "evidence": "docs/plano-etapa-15-correcao-motor-decisao.md, seção 7",
       "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "O motor oficial de previsão passou a ser o v2 (mês do ano anterior ajustado pelo nível, horizonte de 6 meses) e o erro da previsão passou a ser medido em 7 origens rolantes com meses de pico. O VC-28 deixou de ser pendente.",
+      "reason": "Na avaliação fixada antes do código (Etapa 15.0), o v2 atendeu aos quatro critérios: WAPE de 10,1% para 8,0%, viés de +0,7% nos meses de pico, viés agregado sem piora e 45 SKUs melhores que a baseline contra 40 do v1. O v1 subestimava novembro em cerca de 15%.",
+      "evidence": "docs/etapa-15-1-previsao-v2.md",
+      "changed_weights_or_models": true
     }
   ]
 }

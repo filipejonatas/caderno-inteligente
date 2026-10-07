@@ -11,10 +11,10 @@ const trails = [
 const guideGlossary = [
   { term: 'Pontos de atenção (score)', description: 'Soma dos pesos dos problemas do SKU; ordena a análise.' },
   { term: 'Confiança nos dados', description: 'Qualidade da evidência usada no ranking.' },
-  { term: 'Confiança na previsão', description: 'Baseada no erro do modelo nos últimos 3 meses.' },
-  { term: 'Erro médio (WAPE)', description: 'Quanto a previsão errou, em %, nos últimos 3 meses.' },
+  { term: 'Confiança na previsão', description: 'Baseada no erro do modelo em testes com meses já vendidos.' },
+  { term: 'Erro médio (WAPE)', description: 'Quanto a previsão errou, em %, nos testes, incluindo meses de pico.' },
   { term: 'Previsão simples (baseline)', description: 'Repete o último mês; serve de comparação.' },
-  { term: 'Teste dos últimos 3 meses (holdout)', description: 'Meses reservados para medir o erro do modelo.' },
+  { term: 'Teste em meses já vendidos (backtest)', description: 'Previsões feitas a partir de datas passadas e comparadas com o vendido.' },
   { term: 'Sell-in e sell-out', description: 'Vendido ao parceiro e vendido pelo parceiro ao consumidor.' },
   { term: 'Prazo de produção (lead time)', description: 'Dias entre pedir e receber a produção.' },
   { term: 'Cobertura', description: 'Dias que o estoque dura no ritmo atual de venda.' },

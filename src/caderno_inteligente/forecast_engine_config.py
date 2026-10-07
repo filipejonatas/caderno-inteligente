@@ -1,7 +1,10 @@
-"""Configuração do motor de previsão da Etapa 14, validada no carregamento (campos desconhecidos são rejeitados).
+"""Configuração do motor de previsão, validada no carregamento (campos desconhecidos são rejeitados).
 
-O motor `v1` (`forecasting.py`) é o único aceito por enquanto: o motor com backtest rolante só passa a existir se a
-Etapa 14.5 aprovar a promoção, e uma chave que não faz nada seria um risco silencioso.
+`engine` escolhe o motor oficial: `v1` (`forecasting.py`, escolhe entre média móvel e sazonal ingênuo num holdout de
+3 meses) ou `v2` (Etapa 15.1, `official_forecast.py`: a primeira previsão possível da cadeia `official.model_chain`, com
+horizonte `official.horizon_months` e o limite da razão sazonal em `seasonal_level.ratio_bounds`). As seções `rolling`,
+`nested`, `sensitivity`, `intervals` e `promotion` alimentam o laboratório; `evaluation` é o protocolo da avaliação com
+meses de pico, gravado na Etapa 15.0 antes do motor v2 existir.
 """
 from __future__ import annotations
 
@@ -16,7 +19,7 @@ import pandas as pd
 from .forecast_candidates import CANDIDATES
 
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config" / "forecast_engine.json"
-ENGINES = ("v1",)
+ENGINES = ("v1", "v2")
 REQUIRED_CANDIDATES = ("moving_average_3", "seasonal_naive_12")  # os modelos atuais: sem eles não há comparação com o v1
 
 DEFAULTS: dict[str, Any] = {
@@ -30,7 +33,11 @@ DEFAULTS: dict[str, Any] = {
     "promotion": {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0},
     # Etapa 15: protocolo da avaliação com meses de pico, gravado antes de o motor v2 existir (consumido na 15.1).
     "evaluation": {"first_origin": "2025-11", "last_origin": "2026-05", "horizon_months": 3, "peak_months": [11, 1, 2], "max_abs_peak_bias": 0.10},
+    # Etapa 15.1: motor oficial v2 (sem seleção por SKU: vale o primeiro modelo da cadeia que o histórico comporta).
+    "official": {"model_chain": ["seasonal_level", "seasonal_naive_12", "moving_average_3"], "horizon_months": 6},
+    "seasonal_level": {"ratio_bounds": [0.5, 3.0]},
 }
+OFFICIAL_MINIMUM_HORIZON = 3  # os campos de 3 meses (previsão, faturamento) continuam existindo
 
 
 def _number(value: Any, name: str) -> float:
@@ -148,4 +155,26 @@ def validate_engine_config(values: dict[str, Any]) -> dict[str, Any]:
         "horizon_months": _integer(evaluation["horizon_months"], "evaluation.horizon_months", 1),
         "peak_months": peaks, "max_abs_peak_bias": peak_bias,
     }
+
+    official = _section(values, "official")
+    chain = official["model_chain"]
+    if not isinstance(chain, list) or not chain or not all(isinstance(item, str) for item in chain):
+        raise ValueError("official.model_chain deve ser uma lista não vazia de códigos de modelo")
+    if len(set(chain)) != len(chain) or any(item not in CANDIDATES for item in chain):
+        raise ValueError("official.model_chain tem modelo repetido ou desconhecido")
+    if CANDIDATES[chain[-1]].min_history > 6:
+        raise ValueError("O último modelo de official.model_chain precisa funcionar com 6 meses de histórico")
+    horizon = _integer(official["horizon_months"], "official.horizon_months", OFFICIAL_MINIMUM_HORIZON)
+    if horizon > 12:
+        raise ValueError("official.horizon_months não pode passar de 12")
+    values["official"] = {"model_chain": list(chain), "horizon_months": horizon}
+
+    seasonal = _section(values, "seasonal_level")
+    bounds = seasonal["ratio_bounds"]
+    if not isinstance(bounds, list) or len(bounds) != 2:
+        raise ValueError("seasonal_level.ratio_bounds deve ter dois números")
+    low, high = (_number(item, "seasonal_level.ratio_bounds") for item in bounds)
+    if not 0 < low <= 1 <= high:
+        raise ValueError("seasonal_level.ratio_bounds deve satisfazer 0 < mínimo ≤ 1 ≤ máximo")
+    values["seasonal_level"] = {"ratio_bounds": [low, high]}
     return values

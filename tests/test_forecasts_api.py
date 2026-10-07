@@ -1,5 +1,7 @@
 import math
 
+import pytest
+
 from fastapi.testclient import TestClient
 
 from backend.main import app
@@ -40,8 +42,9 @@ def test_forecast_summary_contract_covers_all_skus():
             "confidence_reason",
         }.issubset(recommendation)
         if forecast["status"] == "ok":
-            assert len(forecast["forecast_months"]) == 3
-            assert len(forecast["forecast_values"]) == 3
+            # Motor v2 (Etapa 15.1): 6 meses; os campos de 3 meses continuam somando só os 3 primeiros.
+            assert len(forecast["forecast_months"]) == len(forecast["forecast_values"]) == 6
+            assert forecast["forecast_total_3m"] == pytest.approx(sum(forecast["forecast_values"][:3]), abs=0.11)
         else:
             assert forecast["forecast_next_month"] is None
             assert forecast["forecast_total_3m"] is None

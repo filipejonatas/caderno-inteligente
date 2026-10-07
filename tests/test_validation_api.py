@@ -34,7 +34,9 @@ def test_validation_summary_contract():
     for item in cases["items"]:
         assert item["result"] in {"passou", "falhou", "nao_encontrado", "pendente"}
         assert item["limitation"] and item["adjustment"]
-    assert all(entry["changed_weights_or_models"] is False for entry in body["adjustments"])
+    # Só a Etapa 15 muda modelo ou pesos, e sempre com a evidência do documento da subetapa.
+    for entry in body["adjustments"]:
+        assert entry["changed_weights_or_models"] is False or "docs/etapa-15-" in entry["evidence"]
 
 
 def test_forecast_evaluation_reports_sample_and_matches_existing_backtest():

@@ -4,8 +4,8 @@ Duas camadas separadas:
 1. alerta: eventos que afetam a família do SKU e exigem decisão dentro do horizonte (ou antes dele, pelo lead time);
 2. cenário: previsão base × fator sazonal medido no histórico da própria família. O fator nunca substitui a previsão.
 
-O modelo sazonal de 12 meses já repete o mesmo mês do ano anterior; para esses SKUs só há alerta, para não contar a
-sazonalidade duas vezes.
+Os modelos sazonais (sazonal ingênuo, combinação e mês do ano anterior ajustado pelo nível, o motor oficial v2) já repetem
+o mesmo mês do ano anterior; para esses SKUs só há alerta, para não contar a sazonalidade duas vezes.
 """
 from __future__ import annotations
 
@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+
+from .forecast_candidates import SEASONAL_CODES
 
 DEFAULT_SETTINGS: dict[str, Any] = {
     "minimum_factor": 0.5,
@@ -44,7 +46,7 @@ FIELD_NATURE = {
 LIMITATIONS = [
     "Cenário indicativo: o fator vem do histórico da própria família (poucas ocorrências por evento) e não prevê campanhas futuras.",
     "O fator é medido em mês calendário; eventos de poucos dias dentro do mês recebem o fator do mês inteiro.",
-    "O cenário só existe para SKUs cuja previsão é a média móvel; a previsão sazonal de 12 meses já incorpora o padrão do ano anterior.",
+    "O cenário só existe para SKUs cuja previsão é a média móvel; as previsões sazonais (incluindo o motor oficial v2) já incorporam o padrão do ano anterior.",
     "Evento sem histórico direto (ex.: lançamento) gera apenas alerta; nenhum fator é inventado.",
     "A previsão base, o ranking e a quantidade oficial sugerida não são alterados pelo cenário.",
 ]
@@ -217,8 +219,8 @@ def _plain(value: Any) -> Any:
 
 
 def _seasonal_note(model: str | None) -> str | None:
-    if model == "seasonal_naive_12":
-        return "A previsão já incorpora a sazonalidade do ano anterior (modelo sazonal de 12 meses); não há cenário, para não contar duas vezes."
+    if model in SEASONAL_CODES:
+        return "A previsão já incorpora a sazonalidade do ano anterior (modelo sazonal); não há cenário, para não contar duas vezes."
     return None
 
 

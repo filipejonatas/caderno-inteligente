@@ -36,6 +36,8 @@ export interface ModelPerformance {
   wape_defined_skus: number;
   median_wape: number | null;
   weighted_wape: number | null;
+  peak_weighted_wape?: number | null;
+  normal_weighted_wape?: number | null;
 }
 
 export interface ForecastEvaluationItem {
@@ -50,6 +52,9 @@ export interface ForecastEvaluationItem {
 }
 
 export interface ForecastEvaluation {
+  /** 'rolante' no motor v2: origens rolantes com meses de pico; ausente no v1 (holdout dos últimos 3 meses). */
+  method?: 'rolante';
+  origins?: string[];
   holdout_months: number;
   total_skus: number;
   eligible_skus: number;

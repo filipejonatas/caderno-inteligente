@@ -38,6 +38,27 @@ export interface LabCriteria {
   all_met: boolean;
 }
 
+export interface PeakProcedure {
+  label: string;
+  weighted_wape: number | null;
+  weighted_bias: number | null;
+  peak_wape: number | null;
+  peak_bias: number | null;
+  normal_wape: number | null;
+  normal_bias: number | null;
+  skus_beating_baseline: number;
+}
+
+export interface PeakEvaluation {
+  origins: string[];
+  horizon_months: number;
+  peak_months: number[];
+  skus: number;
+  procedures: Record<'v1' | 'v2' | 'v2_ratio_2' | 'baseline', PeakProcedure>;
+  criteria: { relative_wape_gain: number | null; peak_bias: number | null; max_abs_peak_bias: number; bias_worsening_pp: number | null;
+    skus_beating_baseline_v2: number; skus_beating_baseline_v1: number; all_met: boolean };
+}
+
 export interface SensitivityCell {
   outer_windows: number;
   minimum_windows: number;
@@ -101,6 +122,8 @@ export interface LabIntervals {
   skus_without_band: number;
   calibration: IntervalCalibration;
   items: IntervalItem[];
+  status?: 'calibrada' | 'nao_calibrada';
+  status_note?: string | null;
 }
 
 export interface ForecastLab {
@@ -121,6 +144,7 @@ export interface ForecastLab {
     criteria: LabCriteria;
   };
   sensitivity: { cells: SensitivityCell[]; summary: SensitivitySummary };
+  peak_evaluation?: PeakEvaluation;
   intervals: LabIntervals;
   limitations: string[];
   field_nature: Record<string, { nature: string; origin: string }>;

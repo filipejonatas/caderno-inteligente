@@ -22,7 +22,8 @@ from caderno_inteligente.feedback import (  # noqa: E402
     ACTIONS,
     PARTNER_DATA_EFFECTS,
 )
-from caderno_inteligente.forecasting import build_demand_forecasts  # noqa: E402
+from caderno_inteligente.forecast_engine_config import load_engine_config  # noqa: E402
+from caderno_inteligente.official_forecast import build_official_forecasts  # noqa: E402
 from caderno_inteligente.action_labels import label_commercial_row, label_operational, label_partner, load_action_settings  # noqa: E402
 from caderno_inteligente.events import build_event_analysis, load_event_settings  # noqa: E402
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
@@ -43,6 +44,7 @@ WEIGHTS_FILE = ROOT / "config/prioritization_weights.json"
 THRESHOLDS_FILE = ROOT / "config/rule_thresholds.json"
 EVENT_FACTORS_FILE = ROOT / "config/event_factors.json"
 CHALLENGE_ACTIONS_FILE = ROOT / "config/challenge_actions.json"
+ENGINE_CONFIG_FILE = ROOT / "config/forecast_engine.json"
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("caderno_inteligente.api")
@@ -106,7 +108,7 @@ def _file_signature(path: Path) -> tuple[int, int]:
 
 
 def _pipeline_signature() -> tuple[tuple[int, int], ...]:
-    return tuple(_file_signature(path) for path in (SOURCE, WEIGHTS_FILE, THRESHOLDS_FILE))
+    return tuple(_file_signature(path) for path in (SOURCE, WEIGHTS_FILE, THRESHOLDS_FILE, ENGINE_CONFIG_FILE))
 
 
 _pipeline_lock = Lock()
@@ -121,7 +123,7 @@ def _build_pipeline():
     indicators = build_sku_indicators(dataset)
     issues = evaluate_rules(indicators, load_rule_thresholds())
     ranking = prioritize(issues, load_weights(), indicators)
-    forecasts = build_demand_forecasts(dataset["Vendas_24m"])
+    forecasts = build_official_forecasts(dataset["Vendas_24m"], load_engine_config(ENGINE_CONFIG_FILE))
     logger.info(
         "pipeline_built duration_ms=%.1f skus=%s issues=%s",
         (perf_counter() - started) * 1000,
@@ -815,7 +817,7 @@ from backend.forecast_lab import create_forecast_lab_router  # noqa: E402
 app.include_router(create_forecast_lab_router(
     pipeline=pipeline,
     source=SOURCE,
-    engine_config_file=ROOT / "config/forecast_engine.json",
+    engine_config_file=ENGINE_CONFIG_FILE,
     describe_error=_describe_error,
 ))
 

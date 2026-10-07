@@ -9,7 +9,8 @@ def test_detail_exposes_score_contributions_and_limitations():
  assert 'capacidade' in data['limitation'].lower() and 'individual' in data['limitation'].lower()
  assert {'forecast','operational_recommendation'}.issubset(data)
  forecast=data['forecast']; recommendation=data['operational_recommendation']
- assert forecast['status']=='ok' and len(forecast['forecast_values'])==3
+ assert forecast['status']=='ok' and len(forecast['forecast_values'])==forecast['horizon_months']==6
+ assert forecast['forecast_total_3m']==round(sum(forecast['forecast_values'][:3]),1)
  assert {'model','backtest_wape','forecast_confidence','limitation'}.issubset(forecast)
  assert {'suggested_quantity','calculation','limitations','requires_human_review'}.issubset(recommendation)
  assert recommendation['requires_human_review'] is True

@@ -39,20 +39,43 @@ export function ForecastLabSection({ refreshToken = 0 }: { refreshToken?: number
   return <ForecastLabContent data={data} />;
 }
 
+const PEAK_ROWS = [
+  { key: 'v2', label: 'Motor v2 (oficial)' },
+  { key: 'v1', label: 'Motor v1 (anterior)' },
+  { key: 'v2_ratio_2', label: 'Motor v2 com teto 2,0' },
+  { key: 'baseline', label: 'Previsão simples (baseline)' },
+] as const;
+
 export function ForecastLabContent({ data }: { data: ForecastLab }) {
   const { selection, nested, sensitivity } = data;
+  const peak = data.peak_evaluation;
+  const hideBand = data.intervals.status === 'nao_calibrada';
   const { aggregate } = nested;
   const summary = sensitivity.summary;
   const procedures = [
     { key: 'baseline', label: 'Previsão simples (baseline)', value: aggregate.baseline },
-    { key: 'v1', label: 'Motor atual', value: aggregate.v1 },
+    { key: 'v1', label: 'Motor v1', value: aggregate.v1 },
     { key: 'rolling', label: 'Motor rolante (candidato)', value: aggregate.rolling },
   ] as const;
 
   return <SectionCard title="Modelos candidatos (laboratório)">
     <p className="fact-line">{data.promotion_note} O motor rolante escolheria outro modelo em <strong>{selection.changed_skus}</strong> de {selection.skus} SKUs.</p>
 
-    <h4 className="lab-heading">Avaliação em meses já ocorridos <Tooltip label="Como a avaliação é feita">Cada motor escolhe o modelo só com os dados anteriores ao período testado e é medido nos 3 meses seguintes. Assim o erro não é medido no mesmo teste em que o modelo foi escolhido. Viés negativo significa que a previsão ficou abaixo do vendido.</Tooltip></h4>
+    {peak && <>
+      <h4 className="lab-heading">Avaliação com meses de pico <Tooltip label="Como a promoção foi decidida">Cada motor prevê os {peak.horizon_months} meses seguintes a {peak.origins.length} datas passadas ({peak.origins[0]} a {peak.origins[peak.origins.length - 1]}), só com os dados de até então. Erro total e erro só nos meses de pico. Critérios fixados antes do teste: erro 5% menor que o v1, viés no pico de até {displayPercent(peak.criteria.max_abs_peak_bias)}, viés sem piorar e mais SKUs melhores que a baseline.</Tooltip></h4>
+      <Table label="Avaliação dos motores com meses de pico">
+        <thead><tr><th>Motor</th><th>Erro total · no pico</th><th>Viés no pico</th><th>SKUs melhores que a baseline</th></tr></thead>
+        <tbody>{PEAK_ROWS.map((row) => { const value = peak.procedures[row.key]; return <tr key={row.key}>
+          <td><strong>{row.label}</strong></td>
+          <td>{displayPercent(value.weighted_wape)} · {displayPercent(value.peak_wape)}</td>
+          <td>{signed(value.peak_bias)}</td>
+          <td>{row.key === 'baseline' ? '—' : value.skus_beating_baseline}</td>
+        </tr>; })}</tbody>
+      </Table>
+      <p className="fact-line">Critérios de promoção: <Badge tone={peak.criteria.all_met ? 'good' : 'critical'}>{peak.criteria.all_met ? 'Atendidos' : 'Não atendidos'}</Badge></p>
+    </>}
+
+    <h4 className="lab-heading">Motor rolante (Etapa 14) em meses já ocorridos <Tooltip label="Como a avaliação é feita">Cada motor escolhe o modelo só com os dados anteriores ao período testado e é medido nos 3 meses seguintes. Assim o erro não é medido no mesmo teste em que o modelo foi escolhido. Viés negativo significa que a previsão ficou abaixo do vendido.</Tooltip></h4>
     <Table label="Avaliação dos motores em meses já ocorridos">
       <thead><tr><th>Procedimento</th><th>Erro ponderado (WAPE)</th><th>Viés</th><th>SKUs melhores que a baseline</th></tr></thead>
       <tbody>{procedures.map((row) => <tr key={row.key}>
@@ -77,7 +100,7 @@ export function ForecastLabContent({ data }: { data: ForecastLab }) {
 
     <h4 className="lab-heading">Modelos testados</h4>
     <Table label="Modelos candidatos">
-      <thead><tr><th>Modelo</th><th>Motor atual (SKUs)</th><th>Motor rolante (SKUs)</th><th>Erro mediano (WAPE)</th></tr></thead>
+      <thead><tr><th>Modelo</th><th>Motor oficial (SKUs)</th><th>Motor rolante (SKUs)</th><th>Erro mediano (WAPE)</th></tr></thead>
       <tbody>{selection.models.map((model) => <tr key={model.model}>
         <td><strong>{model.label}</strong> <Tooltip label={`Sobre: ${model.label}`}>{model.description} Histórico mínimo: {model.min_history_months} meses.</Tooltip></td>
         <td>{model.official_selected_skus}</td>
@@ -87,8 +110,10 @@ export function ForecastLabContent({ data }: { data: ForecastLab }) {
     </Table>
 
     <h4 className="lab-heading">Faixa de previsão <Tooltip label="Como a faixa é calculada">Faixa empírica entre o 10º e o 90º percentil dos erros relativos do motor rolante nos meses de teste, aplicada à previsão. Exige pelo menos {data.intervals.minimum_residuals} erros por SKU; sem isso o SKU fica sem faixa. Nunca é negativa, sempre contém a previsão pontual e não entra no ranking nem no score.</Tooltip></h4>
-    <p className="fact-line">{coverageText(data.intervals)}{data.intervals.skus_without_band > 0 && ` ${data.intervals.skus_without_band} SKUs ficaram sem faixa por falta de erros para estimá-la.`}</p>
-    {data.intervals.items.length > 0 && <details className="validation-details"><summary>Ver a faixa do próximo mês de {data.intervals.items.length} SKUs</summary>
+    {hideBand
+      ? <p className="fact-line">{data.intervals.status_note}</p>
+      : <p className="fact-line">{coverageText(data.intervals)}{data.intervals.skus_without_band > 0 && ` ${data.intervals.skus_without_band} SKUs ficaram sem faixa por falta de erros para estimá-la.`}</p>}
+    {!hideBand && data.intervals.items.length > 0 && <details className="validation-details"><summary>Ver a faixa do próximo mês de {data.intervals.items.length} SKUs</summary>
       <Table label="Faixa de previsão do próximo mês">
         <thead><tr><th>SKU</th><th>Mês</th><th>Previsão</th><th>Faixa estimada</th></tr></thead>
         <tbody>{data.intervals.items.map((item) => <tr key={item.sku}>
@@ -102,7 +127,7 @@ export function ForecastLabContent({ data }: { data: ForecastLab }) {
 
     {selection.changed.length > 0 && <details className="validation-details"><summary>Ver os {selection.changed.length} SKUs que mudariam de modelo</summary>
       <Table label="SKUs que mudariam de modelo">
-        <thead><tr><th>SKU</th><th>Motor atual</th><th>Motor rolante</th><th>Erro na seleção (WAPE)</th></tr></thead>
+        <thead><tr><th>SKU</th><th>Motor oficial</th><th>Motor rolante</th><th>Erro na seleção (WAPE)</th></tr></thead>
         <tbody>{selection.changed.map((item) => <tr key={item.sku}>
           <td><Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link></td>
           <td>{item.official_model_label ?? NA}</td>

@@ -24,9 +24,8 @@ NEW_CODES = {"PROJECTED_SHORTFALL", "CAPACITY_SHORTFALL", "OP_FOR_DISCONTINUED",
 SUBSTEPS = {"15.1", "15.2", "15.3", "15.4", "15.5"}
 
 
-def test_peak_evaluation_protocol_is_versioned_before_the_v2_engine():
+def test_peak_evaluation_protocol_is_unchanged_since_15_0():
     config = load_engine_config()
-    assert config["engine"] == "v1"
     assert config["evaluation"] == {"first_origin": "2025-11", "last_origin": "2026-05", "horizon_months": 3,
                                     "peak_months": [11, 1, 2], "max_abs_peak_bias": 0.10}
 
@@ -89,13 +88,14 @@ def test_stage_15_cases_are_pending_until_their_substep_except_the_regression_gu
     cases = {case["id"]: case for case in load_validation_config(VALIDATION)["cases"]}
     stage = [cases[f"VC-{number}"] for number in range(20, 31)]
     assert {case["pending_until"] for case in stage if "pending_until" in case} <= SUBSTEPS
-    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-27"]
+    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1.
+    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-27", "VC-28"]
 
 
 def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
     body = TestClient(app).get("/api/validation/summary").json()["frozen_cases"]
     items = {item["id"]: item for item in body["items"]}
-    assert body["pending"] == 10
+    assert body["pending"] == 9
     assert items["VC-20"]["result"] == "pendente" and items["VC-20"]["checks"] == [] and items["VC-20"]["pending_until"] == "15.3"
     assert items["VC-27"]["result"] == "passou"
     assert body["failed"] == 0 and body["not_found"] == 0
@@ -104,7 +104,7 @@ def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
 def test_pending_marker_skips_execution_even_for_unknown_kinds():
     config = load_validation_config(VALIDATION)
     only = copy.deepcopy(config)
-    only["cases"] = [case for case in only["cases"] if case["id"] in {"VC-28", "VC-29"}]
+    only["cases"] = [{**case, "pending_until": "15.x"} if case["id"] == "VC-28" else case for case in only["cases"] if case["id"] in {"VC-28", "VC-29"}]
     empty = {"indicators": pd.DataFrame(columns=["SKU"]), "issues": pd.DataFrame(columns=["sku", "code"]),
              "ranking": pd.DataFrame(columns=["sku", "priority"]), "forecasts": pd.DataFrame(columns=["sku"]),
              "partner_items": [], "thresholds": {}}
@@ -131,3 +131,9 @@ def test_decision_snapshot_is_read_only_and_deterministic():
     assert len(first["skus"]) == 50 and len(first["top10"]) == 10
     assert first["source_sha256"] == load_validation_config(VALIDATION)["frozen_source_sha256"]
     assert {path: path.stat().st_mtime_ns for path in guarded if path.exists()} == before
+
+
+def test_pending_cases_are_not_reported_as_known_failures():
+    body = TestClient(app).get("/api/validation/summary").json()
+    pending = {item["id"] for item in body["frozen_cases"]["items"] if item["result"] == "pendente"}
+    assert pending and not any(case in failure["description"] for failure in body["known_failures"] for case in pending)

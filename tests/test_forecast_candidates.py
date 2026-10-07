@@ -177,7 +177,8 @@ def test_every_candidate_forecasts_every_real_sku():
             assert values is not None and len(values) == 3 and all(np.isfinite(v) and v >= 0 for v in values), (sku, code)
 
 
-def test_official_forecast_is_identical_to_the_14_0_snapshot():
+def test_v1_engine_is_identical_to_the_14_0_snapshot():
+    """O motor v1 continua reproduzível; desde a Etapa 15.1 o oficial é o v2 (snapshot em docs/etapa-15)."""
     sales = normalise_dataset(load_workbook(SOURCE))["Vendas_24m"]
     current = json.loads(build_demand_forecasts(sales).sort_values("sku").to_json(orient="records", force_ascii=False))
     snapshot = json.loads(SNAPSHOT.read_text(encoding="utf-8"))["forecasts"]

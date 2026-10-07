@@ -145,7 +145,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       {insufficient && <SkuEventsBlock alerts={detail.event_alerts} scenario={detail.event_scenario} />}
       {!insufficient && <details className="detail-block" open>
         <summary>Sobre a previsão</summary>
-        <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} no teste dos últimos 3 meses <Hint term="wape" /></p>
+        <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} {forecast.engine === 'v2' ? `em ${forecast.backtest_windows} testes com meses de pico` : 'no teste dos últimos 3 meses'} <Hint term="wape" /></p>
         <SkuEventsBlock embedded alerts={detail.event_alerts} scenario={detail.event_scenario} />
       </details>}
     <details className="detail-block">

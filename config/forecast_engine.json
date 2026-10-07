@@ -1,5 +1,5 @@
 {
-  "engine": "v1",
+  "engine": "v2",
   "candidates": ["moving_average_3", "seasonal_naive_12", "ses", "combo_ma_sn", "seasonal_level", "holt_damped"],
   "rolling": {
     "windows": 3,
@@ -31,5 +31,12 @@
     "horizon_months": 3,
     "peak_months": [11, 1, 2],
     "max_abs_peak_bias": 0.10
+  },
+  "official": {
+    "model_chain": ["seasonal_level", "seasonal_naive_12", "moving_average_3"],
+    "horizon_months": 6
+  },
+  "seasonal_level": {
+    "ratio_bounds": [0.5, 3.0]
   }
 }

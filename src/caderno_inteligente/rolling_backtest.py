@@ -543,3 +543,105 @@ def interval_calibration(sales: pd.DataFrame, config: dict[str, Any] | None = No
         "origin_train_lengths": sorted(lengths),
         "median_relative_width": median(widths) if widths else None,
     }
+
+
+# ------------------------------------------------------------------------------------------ avaliação com meses de pico
+
+PEAK_PROCEDURES = ("v1", "v2", "v2_ratio_2", "baseline")
+PEAK_LABELS = {
+    "v1": "Motor v1 (média móvel ou sazonal ingênuo, escolhido no holdout de 3 meses)",
+    "v2": "Motor v2 (mês do ano anterior ajustado pelo nível, razão limitada pela configuração)",
+    "v2_ratio_2": "Motor v2 com o limite antigo da razão sazonal (2,0), só para comparação",
+    "baseline": BASELINE_LABEL,
+}
+
+
+def _peak_windows(name: str, series: pd.Series, config: dict[str, Any], origins: list[pd.Period]) -> list[dict[str, Any]]:
+    """Janelas de um procedimento nas origens do protocolo; cada um só enxerga os dados anteriores à origem."""
+    from .official_forecast import chain_windows
+
+    if name == "v2":
+        return chain_windows(series, config, origins)
+    if name == "v2_ratio_2":
+        return chain_windows(series, {**config, "seasonal_level": {"ratio_bounds": [0.5, 2.0]}}, origins)
+    horizon = config["evaluation"]["horizon_months"]
+    windows = []
+    for origin in origins:
+        train = series[series.index <= origin]
+        if len(train) < MINIMUM_HISTORY:
+            continue
+        targets = pd.period_range(origin + 1, periods=horizon, freq="M")
+        code = v1_procedure(train) if name == "v1" else BASELINE_MODEL
+        windows.append({"origin": str(origin), "model": code, "months": [period.month for period in targets],
+                        "actual": [float(value) for value in series.reindex(targets).tolist()], "predicted": _predict(code, train, targets)})
+    return windows
+
+
+def peak_evaluation(sales: pd.DataFrame, config: dict[str, Any] | None = None, series_map: dict[str, pd.Series] | None = None) -> dict[str, Any]:
+    """Erro de cada motor nas origens fixadas no protocolo (Etapa 15.0), no total, nos meses de pico e nos normais."""
+    from .official_forecast import evaluation_origins, ratio, window_errors
+
+    config = load_engine_config() if config is None else config
+    evaluation = config["evaluation"]
+    series_map = series_by_sku(sales) if series_map is None else series_map
+    totals = {name: {key: 0.0 for key in window_errors([])} for name in PEAK_PROCEDURES}
+    per_sku: dict[str, dict[str, float | None]] = {}
+    origins_used: set[str] = set()
+    for sku, series in series_map.items():
+        origins = evaluation_origins(series, config)
+        if not origins or len(series) < MINIMUM_HISTORY:
+            continue
+        per_sku[sku] = {}
+        for name in PEAK_PROCEDURES:
+            windows = _peak_windows(name, series, config, origins)
+            errors = window_errors(windows, evaluation["peak_months"])
+            for key, value in errors.items():
+                totals[name][key] += value
+            per_sku[sku][name] = ratio(errors["all_abs"], errors["all_actual"])
+            origins_used.update(window["origin"] for window in windows)
+
+    def summary(name: str) -> dict[str, Any]:
+        item = totals[name]
+        beating = sum(1 for wapes in per_sku.values() if wapes[name] is not None and wapes["baseline"] is not None and wapes[name] < wapes["baseline"])
+        return {
+            "label": PEAK_LABELS[name],
+            "weighted_wape": _rounded(ratio(item["all_abs"], item["all_actual"])),
+            "weighted_bias": _rounded(ratio(item["all_signed"], item["all_actual"])),
+            "peak_wape": _rounded(ratio(item["peak_abs"], item["peak_actual"])),
+            "peak_bias": _rounded(ratio(item["peak_signed"], item["peak_actual"])),
+            "normal_wape": _rounded(ratio(item["normal_abs"], item["normal_actual"])),
+            "normal_bias": _rounded(ratio(item["normal_signed"], item["normal_actual"])),
+            "skus_beating_baseline": 0 if name == "baseline" else beating,
+        }
+
+    procedures = {name: summary(name) for name in PEAK_PROCEDURES}
+    return {
+        "origins": sorted(origins_used),
+        "horizon_months": evaluation["horizon_months"],
+        "peak_months": evaluation["peak_months"],
+        "skus": len(per_sku),
+        "procedures": procedures,
+        "criteria": peak_promotion_criteria(procedures, config),
+    }
+
+
+def peak_promotion_criteria(procedures: dict[str, dict[str, Any]], config: dict[str, Any]) -> dict[str, Any]:
+    """Os quatro critérios do plano da Etapa 15 para o v2 virar oficial; não promove nada sozinho."""
+    new, old = procedures["v2"], procedures["v1"]
+    promotion, evaluation = config["promotion"], config["evaluation"]
+    gain = None if not old["weighted_wape"] or new["weighted_wape"] is None else 1 - new["weighted_wape"] / old["weighted_wape"]
+    worsening = None
+    if new["weighted_bias"] is not None and old["weighted_bias"] is not None:
+        worsening = (abs(new["weighted_bias"]) - abs(old["weighted_bias"])) * 100
+    wape_ok = gain is not None and gain >= promotion["min_relative_wape_gain"]
+    peak_ok = new["peak_bias"] is not None and abs(new["peak_bias"]) <= evaluation["max_abs_peak_bias"]
+    bias_ok = worsening is not None and worsening <= promotion["max_bias_worsening_pp"]
+    baseline_ok = new["skus_beating_baseline"] >= old["skus_beating_baseline"]
+    return {
+        "relative_wape_gain": _rounded(gain), "min_relative_wape_gain": promotion["min_relative_wape_gain"], "wape_criterion_met": wape_ok,
+        "peak_bias": new["peak_bias"], "max_abs_peak_bias": evaluation["max_abs_peak_bias"], "peak_bias_criterion_met": peak_ok,
+        "bias_worsening_pp": _rounded(worsening), "max_bias_worsening_pp": promotion["max_bias_worsening_pp"], "bias_criterion_met": bias_ok,
+        "skus_beating_baseline_v2": new["skus_beating_baseline"], "skus_beating_baseline_v1": old["skus_beating_baseline"],
+        "baseline_criterion_met": baseline_ok,
+        "all_met": bool(wape_ok and peak_ok and bias_ok and baseline_ok),
+    }

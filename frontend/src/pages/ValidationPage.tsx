@@ -93,6 +93,7 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
   const safeFailed = safeExecuted.filter((check) => check.status === 'reprovado').length;
   const notBeating = forecast.items.filter((item) => item.outcome !== 'superou');
   const casesOk = cases.failed === 0 && cases.not_found === 0;
+  const rolling = forecast.method === 'rolante';
   // Os avisos de "caso com entrada sintética" são um só fato: viram uma linha.
   const syntheticNotes = data.known_failures.filter((item) => item.area === 'cobertura dos casos');
   const failures = data.known_failures.filter((item) => item.area !== 'cobertura dos casos');
@@ -104,12 +105,12 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
 
     <section className="verdict" aria-labelledby="verdict-title">
       <h3 id="verdict-title">Em resumo</h3>
-      <p>Em <strong>{forecast.did_not_beat_baseline_skus} de {forecast.eligible_skus} SKUs</strong> a previsão do modelo não foi melhor do que repetir o último mês. No conjunto, o erro médio é de {displayPercent(selected?.weighted_wape)} contra {displayPercent(baseline?.weighted_wape)} da previsão simples.</p>
+      <p>Em <strong>{forecast.did_not_beat_baseline_skus} de {forecast.eligible_skus} SKUs</strong> a previsão do modelo não foi melhor do que repetir o último mês. No conjunto, o erro médio é de {displayPercent(selected?.weighted_wape)} contra {displayPercent(baseline?.weighted_wape)} da previsão simples{rolling ? <>; nos meses de pico, <strong>{displayPercent(selected?.peak_weighted_wape)}</strong> contra {displayPercent(baseline?.peak_weighted_wape)}</> : null}.</p>
     </section>
 
     <div className="metrics-grid">
       <MetricCard label="Casos de teste aprovados" value={`${cases.passed} de ${cases.total - (cases.pending ?? 0)}`} detail={`${cases.synthetic} com entrada sintética${cases.pending ? ` · ${cases.pending} pendentes` : ''}`} tone={casesOk ? 'green' : 'red'} icon="validation" />
-      <MetricCard label="Erro médio da previsão (WAPE)" value={displayPercent(selected?.weighted_wape)} detail={`previsão simples: ${displayPercent(baseline?.weighted_wape)}`} tone="blue" icon="forecasts" />
+      <MetricCard label="Erro médio da previsão (WAPE)" value={displayPercent(selected?.weighted_wape)} detail={rolling ? `normais ${displayPercent(selected?.normal_weighted_wape)} · pico ${displayPercent(selected?.peak_weighted_wape)}` : `previsão simples: ${displayPercent(baseline?.weighted_wape)}`} tone="blue" icon="forecasts" />
       <MetricCard label="Modelo pior que a baseline" value={`${forecast.did_not_beat_baseline_skus} de ${forecast.eligible_skus}`} detail={`SKUs · melhor em ${forecast.beat_baseline_skus}`} tone={forecast.did_not_beat_baseline_skus ? 'amber' : 'green'} icon="forecasts" />
     </div>
 

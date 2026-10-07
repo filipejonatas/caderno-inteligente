@@ -78,7 +78,7 @@ def create_validation_router(*, pipeline: Callable, persistence: Callable, recom
             {"area": "previsão", "description": f"O modelo selecionado não superou a baseline em {forecast_evaluation['did_not_beat_baseline_skus']} de {forecast_evaluation['eligible_skus']} SKU(s) elegíveis."}
         ] if forecast_evaluation["did_not_beat_baseline_skus"] else []
         failures += [{"area": "casos", "description": f"{item['id']} — {item['title']}: resultado {item['result']}."}
-                     for item in cases["items"] if item["result"] != "passou"]
+                     for item in cases["items"] if item["result"] in ("falhou", "nao_encontrado")]  # pendente não é falha
         failures += [{"area": "comportamento seguro", "description": f"{item['label']}: reprovado."} for item in safe if item["status"] == "reprovado"]
         failures += [{"area": "cobertura dos casos", "description": f"{item['id']} — {item['title']} usa entrada sintética: {item['origin_reason']}"}
                      for item in cases["items"] if item["origin"] == "synthetic"]

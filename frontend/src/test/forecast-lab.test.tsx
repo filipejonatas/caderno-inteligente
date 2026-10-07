@@ -26,7 +26,7 @@ describe('laboratório de previsão na Validação', () => {
     expect(api.gets()).toContain('/api/forecast-lab');
   });
 
-  it('compara baseline, motor atual e motor rolante, com viés assinado', async () => {
+  it('compara baseline, motor v1 e motor rolante, com viés assinado', async () => {
     mockApi();
     await openModelsTab();
     const table = await region('Avaliação dos motores em meses já ocorridos');
@@ -34,9 +34,31 @@ describe('laboratório de previsão na Validação', () => {
 
     expect(within(row('Previsão simples (baseline)')).getByText('17,0%')).toBeInTheDocument();
     expect(within(row('Previsão simples (baseline)')).getByText('+8,5%')).toBeInTheDocument();
-    expect(within(row('Motor atual')).getByText('9,0%')).toBeInTheDocument();
-    expect(within(row('Motor atual')).getByText('-4,3%')).toBeInTheDocument();
+    expect(within(row('Motor v1')).getByText('9,0%')).toBeInTheDocument();
+    expect(within(row('Motor v1')).getByText('-4,3%')).toBeInTheDocument();
     expect(within(row('Motor rolante (candidato)')).getAllByRole('cell')[3]).toHaveTextContent('2');
+  });
+
+  it('mostra a avaliação com meses de pico que decidiu a promoção', async () => {
+    mockApi();
+    await openModelsTab();
+    const table = await region('Avaliação dos motores com meses de pico');
+    const row = (name: string) => within(table).getByText(name).closest('tr') as HTMLElement;
+
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
+    expect(row('Motor v2 (oficial)')).toHaveTextContent('8,0% · 7,9%');
+    expect(row('Motor v2 (oficial)')).toHaveTextContent('+0,7%');
+    expect(row('Motor v1 (anterior)')).toHaveTextContent('-5,3%');
+    expect(screen.getByText(/Critérios de promoção/)).toHaveTextContent('Atendidos');
+  });
+
+  it('esconde a faixa de previsão quando ela não está calibrada', () => {
+    const data = { ...forecastLab, intervals: { ...forecastLab.intervals, status: 'nao_calibrada' as const, status_note: 'A faixa cobriu 48% dos meses testados contra 80% prometidos; não é mostrada até ser recalibrada.' } };
+    render(<MemoryRouter><ForecastLabContent data={data} /></MemoryRouter>);
+
+    expect(screen.getByText(/não é mostrada até ser recalibrada/)).toBeInTheDocument();
+    expect(screen.queryByText(/Fora da amostra, a faixa de/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { hidden: true, name: 'Faixa de previsão do próximo mês' })).not.toBeInTheDocument();
   });
 
   it('a grade de sensibilidade marca a linha padrão uma vez e não esconde a combinação que reprova', async () => {

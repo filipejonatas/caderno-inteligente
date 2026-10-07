@@ -28,11 +28,11 @@ def lab(client):
 
 
 def test_lab_is_a_laboratory_and_asks_for_human_review(lab):
-    assert lab["engine"] == "v1" and lab["promotion_status"] == "pendente"
+    assert lab["engine"] == "v2" and lab["promotion_status"] == "promovido"
     assert lab["requires_human_review"] is True
-    assert "Nada foi promovido" in lab["promotion_note"]
+    assert "promovido na Etapa 15.1" in lab["promotion_note"] and lab["peak_evaluation"]["criteria"]["all_met"] is True
     assert lab["source"]["sha256"] and lab["generated_at"]
-    assert set(lab["field_nature"]) == {"nested", "sensitivity", "selection", "intervals"}
+    assert set(lab["field_nature"]) == {"nested", "sensitivity", "selection", "intervals", "peak_evaluation"}
 
 
 def test_lab_never_changes_the_official_forecast(client):

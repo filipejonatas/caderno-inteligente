@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 from datetime import date, datetime
 from pathlib import Path
 from statistics import median
@@ -11,7 +12,10 @@ from typing import Any, Iterable
 import pandas as pd
 
 from caderno_inteligente.action_labels import DEFAULT_SETTINGS as CHALLENGE_DEFAULTS, label_channel_row, label_commercial_row, label_operational, label_partner
-from caderno_inteligente.forecasting import MODEL_LABELS, _MODELS, _monthly_series, _wape, build_demand_forecasts
+from caderno_inteligente.forecast_candidates import CANDIDATE_LABELS
+from caderno_inteligente.forecast_engine_config import load_engine_config
+from caderno_inteligente.forecasting import MODEL_LABELS, _MODELS, _monthly_series, _wape
+from caderno_inteligente.official_forecast import build_official_forecasts, chain_windows, evaluation_origins, ratio, run_model, window_errors
 from caderno_inteligente.recommendations import build_operational_recommendation
 from caderno_inteligente.rules import evaluate_rules
 
@@ -62,8 +66,15 @@ def _aggregate(rows: list[dict], key: str) -> dict[str, Any]:
     }
 
 
-def evaluate_forecasts(sales: pd.DataFrame, forecasts: pd.DataFrame) -> dict[str, Any]:
-    """Recompute the holdout of every candidate and an explicit baseline, without changing the selection."""
+def evaluate_forecasts(sales: pd.DataFrame, forecasts: pd.DataFrame, engine_config: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Recompute the error of every candidate and an explicit baseline, without changing the selection.
+
+    Motor v1: holdout dos últimos 3 meses. Motor v2 (Etapa 15.1): as origens rolantes do protocolo, com o erro separado
+    em meses normais e de pico, as mesmas que dão o `backtest_wape` e a confiança da previsão oficial.
+    """
+    engines = {row.get("engine") for row in forecasts.to_dict("records") if row.get("status") == "ok"}
+    if engines == {"v2"}:
+        return _evaluate_forecasts_rolling(sales, forecasts, load_engine_config() if engine_config is None else engine_config)
     by_sku = {str(row["sku"]): row for row in forecasts.to_dict("records")}
     models = {**_MODELS, BASELINE_MODEL: _naive_last}
     rows: list[dict] = []
@@ -138,6 +149,127 @@ def evaluate_forecasts(sales: pd.DataFrame, forecasts: pd.DataFrame) -> dict[str
     }
 
 
+def _model_windows(code: str, series: pd.Series, origins: list[pd.Period], config: dict[str, Any]) -> list[dict[str, Any]]:
+    horizon = config["evaluation"]["horizon_months"]
+    windows = []
+    for origin in origins:
+        train = series[series.index <= origin]
+        targets = pd.period_range(origin + 1, periods=horizon, freq="M")
+        predicted = _naive_last(train, targets) if code == BASELINE_MODEL else run_model(code, train, targets, config)
+        if predicted is None:
+            return []  # o modelo não cobre todas as origens: fica fora da comparação deste SKU
+        windows.append({"months": [period.month for period in targets], "actual": [float(value) for value in series.reindex(targets).tolist()],
+                        "predicted": list(predicted)})
+    return windows
+
+
+def _evaluate_forecasts_rolling(sales: pd.DataFrame, forecasts: pd.DataFrame, config: dict[str, Any]) -> dict[str, Any]:
+    by_sku = {str(row["sku"]): row for row in forecasts.to_dict("records")}
+    chain = list(config["official"]["model_chain"])
+    peaks = config["evaluation"]["peak_months"]
+    keys = [*chain, "selected", BASELINE_MODEL]
+    rows: list[dict] = []
+    insufficient: list[str] = []
+    totals = {key: {name: 0.0 for name in window_errors([])} for key in keys}
+    origins_used: set[str] = set()
+    for sku, forecast in sorted(by_sku.items()):
+        series = _monthly_series(sales, sku)
+        origins = evaluation_origins(series, config)
+        if forecast.get("status") != "ok" or not origins:
+            insufficient.append(sku)
+            continue
+        windows = {code: _model_windows(code, series, origins, config) for code in [*chain, BASELINE_MODEL]}
+        windows["selected"] = chain_windows(series, config, origins)
+        origins_used.update(window["origin"] for window in windows["selected"])
+        wapes: dict[str, float | None] = {}
+        errors: dict[str, float | None] = {}
+        actual_total = 0.0
+        for key in keys:
+            if not windows[key]:
+                wapes[key] = errors[key] = None
+                continue
+            measured = window_errors(windows[key], peaks)
+            for name, value in measured.items():
+                totals[key][name] += value
+            errors[key] = measured["all_abs"]
+            value = ratio(measured["all_abs"], measured["all_actual"])
+            wapes[key] = None if value is None else round(value, 4)
+            if key == "selected":
+                actual_total = measured["all_actual"]
+        selected_wape, baseline_wape = wapes.get("selected"), wapes.get(BASELINE_MODEL)
+        if selected_wape is None or baseline_wape is None:
+            outcome = "nao_comparavel"
+        elif selected_wape < baseline_wape:
+            outcome = "superou"
+        else:
+            outcome = "nao_superou"
+        selected_model = str(forecast["model"])
+        rows.append({
+            "sku": sku,
+            "selected_model": selected_model,
+            "selected_model_label": CANDIDATE_LABELS.get(selected_model, selected_model),
+            "selected_wape": selected_wape,
+            "baseline_wape": baseline_wape,
+            "candidate_wapes": {code: wapes[code] for code in chain},
+            "outcome": outcome,
+            "holdout_actual_total": round(actual_total, 1),
+            "wapes": wapes,
+            "errors": errors,
+        })
+
+    winners: dict[str, int] = {}
+    for row in rows:
+        winners[row["selected_model"]] = winners.get(row["selected_model"], 0) + 1
+
+    def rounded(value: float | None) -> float | None:
+        return None if value is None else round(value, 4)
+
+    def split(key: str) -> dict[str, float | None]:
+        item = totals[key]
+        return {
+            "peak_weighted_wape": rounded(ratio(item["peak_abs"], item["peak_actual"])),
+            "peak_weighted_bias": rounded(ratio(item["peak_signed"], item["peak_actual"])),
+            "normal_weighted_wape": rounded(ratio(item["normal_abs"], item["normal_actual"])),
+            "normal_weighted_bias": rounded(ratio(item["normal_signed"], item["normal_actual"])),
+        }
+
+    model_rows = [
+        {"model": code, "label": CANDIDATE_LABELS[code], "role": "candidato", "selected_skus": winners.get(code, 0), **_aggregate(rows, code), **split(code)}
+        for code in chain
+    ]
+    model_rows.append({"model": "selected", "label": "Previsão oficial (motor v2)", "role": "selecionado", "selected_skus": len(rows),
+                       **_aggregate(rows, "selected"), **split("selected")})
+    model_rows.append({"model": BASELINE_MODEL, "label": BASELINE_LABEL, "role": "baseline", "selected_skus": 0,
+                       **_aggregate(rows, BASELINE_MODEL), **split(BASELINE_MODEL)})
+    outcomes = {key: sum(row["outcome"] == key for row in rows) for key in ("superou", "nao_superou", "nao_comparavel")}
+    origins = sorted(origins_used)
+    span = f"{origins[0]} a {origins[-1]}" if origins else "nenhuma"
+    return {
+        "method": "rolante",
+        "holdout_months": config["evaluation"]["horizon_months"],
+        "origins": origins,
+        "peak_months": peaks,
+        "total_skus": len(by_sku),
+        "eligible_skus": len(rows),
+        "insufficient_skus": len(insufficient),
+        "insufficient_sku_list": insufficient,
+        "zero_demand_holdout_skus": sum(row["holdout_actual_total"] <= 0 for row in rows),
+        "baseline": {"model": BASELINE_MODEL, "label": BASELINE_LABEL,
+                     "description": "Repete o último mês observado antes de cada origem. Serve apenas como referência; não participa da previsão."},
+        "models": model_rows,
+        "beat_baseline_skus": outcomes["superou"],
+        "did_not_beat_baseline_skus": outcomes["nao_superou"],
+        "not_comparable_skus": outcomes["nao_comparavel"],
+        "items": [{key: value for key, value in row.items() if key not in ("wapes", "errors")} for row in rows],
+        "limitations": [
+            f"Erro medido em {len(origins)} origens rolantes ({span}), cada uma prevendo os {config['evaluation']['horizon_months']} meses seguintes só com dados anteriores a ela.",
+            "Os meses de pico testados são janeiro e fevereiro; novembro não cai em nenhuma origem porque o modelo exige 15 meses de histórico. O pico de novembro é conferido pelo caso congelado VC-28.",
+            "As origens se sobrepõem e os SKUs compartilham a sazonalidade: não são observações independentes.",
+            "WAPE é calculado sobre faturamento mensal por SKU e não é diretamente comparável ao MAPE informado pela empresa.",
+        ],
+    }
+
+
 # ------------------------------------------------------------ analysis time
 
 def summarize_analysis_time(feedback_rows: Iterable[tuple], minimum_sample: int) -> dict[str, Any]:
@@ -174,7 +306,7 @@ def process_comparison(config: dict[str, Any], forecast_evaluation: dict[str, An
         },
         "forecast_error": {
             "value": selected["weighted_wape"],
-            "unit": "WAPE ponderado (holdout de 3 meses)",
+            "unit": "WAPE ponderado (origens rolantes com pico)" if forecast_evaluation.get("method") == "rolante" else "WAPE ponderado (holdout de 3 meses)",
             "comparable": False,
             "reason": "Erro do modelo estatístico do protótipo sobre faturamento. A empresa informa MAPE do forecast comercial; a base só traz forecast comercial para meses futuros, então esse erro não pode ser recalculado.",
         },
@@ -217,6 +349,11 @@ def _check(field: str, spec: Any, obtained: Any) -> dict[str, Any]:
         values = set(obtained or [])
         return {"field": field, "expected": "inclui ao menos um de " + ", ".join(spec["includes_any"]), "obtained": sorted(values),
                 "passed": any(code in values for code in spec["includes_any"])}
+    if isinstance(spec, dict) and "between" in spec:
+        low, high = spec["between"]
+        return {"field": field, "expected": f"entre {low} e {high}", "obtained": obtained, "passed": obtained is not None and low <= obtained <= high}
+    if isinstance(spec, dict) and "min" in spec:
+        return {"field": field, "expected": f"≥ {spec['min']}", "obtained": obtained, "passed": obtained is not None and obtained >= spec["min"]}
     if isinstance(spec, dict) and "max" in spec:
         return {"field": field, "expected": f"≤ {spec['max']}", "obtained": obtained, "passed": obtained is not None and obtained <= spec["max"]}
     if isinstance(spec, dict) and "not" in spec:
@@ -274,6 +411,34 @@ def _challenge_output(case_input: dict[str, Any], settings: dict[str, Any]) -> d
             "evidence_count": len(label["evidence"]), "requires_human_review": label["requires_human_review"]}
 
 
+_TOTAL_FIELD = re.compile(r"^total_units_(\d{4})_(\d{2})$")
+_FAMILY_FIELD = re.compile(r"^family_units_(.+?)_(\d{4})((?:_\d{2})+)$")
+
+
+def _forecast_aggregate_output(fields: Iterable[str], forecasts: pd.DataFrame, indicators: pd.DataFrame) -> dict[str, Any]:
+    """Soma da previsão oficial por mês (`total_units_AAAA_MM`) ou por família e meses (`family_units_familia_AAAA_MM_MM`)."""
+    family_by_sku = {} if indicators.empty or "family" not in indicators else dict(zip(indicators["SKU"], indicators["family"]))
+    monthly: dict[tuple[str, str], float] = {}
+    for row in forecasts.to_dict("records"):
+        if row.get("status") != "ok":
+            continue
+        family = str(family_by_sku.get(row["sku"], "")).casefold()
+        for month, value in zip(row.get("forecast_months") or [], row.get("forecast_values") or []):
+            key = (family, str(month)[:7])
+            monthly[key] = monthly.get(key, 0.0) + float(value)
+    obtained: dict[str, Any] = {}
+    for field in fields:
+        if match := _TOTAL_FIELD.match(field):
+            month = f"{match.group(1)}-{match.group(2)}"
+            values = [value for (_, key), value in monthly.items() if key == month]
+            obtained[field] = round(sum(values), 1) if values else None
+        elif match := _FAMILY_FIELD.match(field):
+            family, months = match.group(1).casefold(), [f"{match.group(2)}-{item}" for item in match.group(3).strip("_").split("_")]
+            values = [monthly.get((family, month)) for month in months]
+            obtained[field] = None if any(value is None for value in values) else round(sum(values), 1)
+    return obtained
+
+
 _OPERATIONAL_INPUT = (
     "current_stock", "coverage_days_calculated", "lead_time_days", "safety_stock_days", "backlog_order_quantity",
     "production_order_quantity", "first_promised_date", "first_production_completion", "capacity_occupation_average", "has_sell_out",
@@ -309,13 +474,17 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
     elif case["kind"] == "challenge_action":
         case_input = case["input"]
         obtained = _challenge_output(case_input, challenge_settings)
+    elif case["kind"] == "forecast_aggregate":
+        aggregate = _forecast_aggregate_output(case["expected"], forecasts, indicators)
+        if aggregate and all(value is not None for value in aggregate.values()):
+            case_input, obtained = {"origem": "previsão oficial somada por mês e família"}, aggregate
     elif case["origin"] == "synthetic":
         indicator = case["input"]["indicator"]
         codes = list(evaluate_rules(_indicator_frame(indicator), thresholds)["code"])
         if "sales" in case["input"]:
             sales = pd.DataFrame(case["input"]["sales"]).assign(SKU=indicator["SKU"])
             sales["Mês"] = pd.to_datetime(sales["Mês"])
-            forecast = build_demand_forecasts(sales).to_dict("records")[0]
+            forecast = build_official_forecasts(sales).to_dict("records")[0]
         else:
             forecast = case["input"]["forecast"]
         case_input = {**{key: indicator.get(key) for key in _OPERATIONAL_INPUT}, "forecast_status": forecast.get("status"), "forecast_next_month": forecast.get("forecast_next_month")}
@@ -394,7 +563,7 @@ def safe_behavior_checks(forecasts: pd.DataFrame, recommendations: list[dict], p
         "WAPE retornado como não calculado quando a demanda real do holdout soma zero." if zero_holdout is None else f"WAPE retornou {zero_holdout}.")
 
     short = pd.DataFrame({"Mês": pd.date_range("2026-05-01", periods=4, freq="MS"), "SKU": "SAFE-01", "Quantidade faturada": [10, 12, 11, 13]})
-    short_forecast = build_demand_forecasts(short).to_dict("records")[0]
+    short_forecast = build_official_forecasts(short).to_dict("records")[0]
     short_recommendation = build_operational_recommendation(_base_indicator(), short_forecast, [])
     add("insufficient_forecast", "Forecast insuficiente não vira quantidade",
         short_forecast["status"] == "insufficient_data" and short_recommendation["suggested_quantity"] is None and short_recommendation["action"] == "investigar_dados",

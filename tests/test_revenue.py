@@ -163,7 +163,8 @@ def test_api_revenue_matches_units_times_price_and_family_sum_equals_total(clien
     for item in body["items"]:
         if item["status"] != "ok":
             continue
-        assert item["forecast_units"] == forecasts[item["sku"]]["forecast_values"]
+        assert item["forecast_units"] == forecasts[item["sku"]]["forecast_values"][:3]
+        assert math.isclose(item["revenue_total_6m"], sum(forecasts[item["sku"]]["forecast_values"][:6]) * item["unit_price"], abs_tol=0.05)
         for units, revenue in zip(item["forecast_units"], item["revenue_values"]):
             assert math.isclose(units * item["unit_price"], revenue, abs_tol=0.01)
     assert math.isclose(sum(group["revenue_total_3m"] for group in body["families"]), body["total"]["revenue_total_3m"], abs_tol=1)

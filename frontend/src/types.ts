@@ -217,7 +217,7 @@ export interface DemandForecast {
   sku: string;
   reference_month: string | null;
   history_months: number;
-  model: 'moving_average_3' | 'seasonal_naive_12' | null;
+  model: string | null;
   model_label: string;
   forecast_months: string[];
   forecast_values: number[];
@@ -226,6 +226,11 @@ export interface DemandForecast {
   trend: 'crescente' | 'estável' | 'decrescente' | 'indeterminada';
   trend_change_ratio: number | null;
   backtest_wape: number | null;
+  /** Motor v2 (Etapa 15.1): erro medido em origens rolantes que incluem meses de pico. */
+  engine?: 'v1' | 'v2';
+  forecast_total_6m?: number | null;
+  backtest_windows?: number;
+  backtest_peak_wape?: number | null;
   forecast_confidence: Confidence;
   status: 'ok' | 'insufficient_data';
   limitation: string;
