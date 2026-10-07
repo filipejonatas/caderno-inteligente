@@ -156,3 +156,16 @@ def test_pending_cases_are_not_reported_as_known_failures(monkeypatch):
     body = TestClient(app).get("/api/validation/summary").json()
     pending = {item["id"] for item in body["frozen_cases"]["items"] if item["result"] == "pendente"}
     assert pending and not any(case in failure["description"] for failure in body["known_failures"] for case in pending)
+
+
+def test_before_after_comparison_reports_the_stage_15_cases():
+    sys.path.insert(0, str(ROOT / "scripts"))
+    import snapshot_decisions
+
+    before = json.loads((ROOT / "docs/etapa-15/antes.json").read_text(encoding="utf-8"))
+    after = json.loads((ROOT / "docs/etapa-15/depois.json").read_text(encoding="utf-8"))
+    report = snapshot_decisions.compare(before, after)
+    assert "| `sem_acao_necessaria` | 30 | 0 |" in report
+    assert "| KA-02 · CI-0009: ação comercial | `investigar_divergencia` | `conter_reposicao` |" in report
+    assert "## Capacidade (depois)" in report
+    assert (ROOT / "docs/etapa-15/antes-depois.md").read_text(encoding="utf-8") == report

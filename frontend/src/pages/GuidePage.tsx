@@ -24,7 +24,7 @@ const guideGlossary = [
 ];
 
 const guideFaq = [
-  { question: 'Um SKU com prioridade alta precisa ser produzido?', answer: 'Não necessariamente. A prioridade diz o que investigar primeiro; a recomendação pode ser “Sem ação necessária” se estoque e produção já cobrem a demanda. Os riscos continuam.' },
+  { question: 'Um SKU com prioridade alta precisa ser produzido?', answer: 'Não necessariamente. A prioridade diz o que investigar primeiro; a ação vem do plano datado: renegociar, antecipar ou rever OP, ou produzir depois.' },
   { question: 'O que significa confiança baixa?', answer: 'Faltam dados ou a cobertura é parcial. Valide as evidências antes de decidir.' },
   { question: 'O que fazer quando o sell-out está zerado ou ausente?', answer: 'Confirme se o zero foi informado. Ausente e zero são coisas diferentes.' },
   { question: 'O sistema emite uma ordem de produção?', answer: 'Não. Toda decisão e execução continuam sob responsabilidade humana.' },

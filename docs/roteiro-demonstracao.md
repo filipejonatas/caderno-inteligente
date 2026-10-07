@@ -1,14 +1,13 @@
 # Roteiro de demonstração — 5 minutos
 
-Roteiro para apresentar a V2 seguindo a ordem do plano:
+Roteiro da versão com o motor de decisão corrigido (Etapa 15). Ele responde à pergunta norteadora do desafio com quatro casos reais da base:
 
-1. problema e linha de base;
-2. visão geral;
-3. prioridade e recomendação operacional;
-4. parceiro e recomendação comercial;
-5. validação e comportamento seguro.
+1. **CI-0041:** promessa sem cobertura → renegociar e priorizar;
+2. **KA-02 · CI-0009:** estoque parado no parceiro → não repor e rever a OP-7808;
+3. **CI-0050:** OP de produto em descontinuação → cancelar;
+4. **Linha Escolar:** Volta às Aulas contra a capacidade → o que não cabe.
 
-Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803f`). Se a planilha mudar, confira-os antes de apresentar.
+Os números são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803f`), com a data de planejamento de 14/09/2026. Se a planilha mudar, confira-os antes de apresentar. O comparativo completo está em [docs/etapa-15/antes-depois.md](etapa-15/antes-depois.md).
 
 ## Antes de apresentar (10 minutos antes)
 
@@ -16,83 +15,85 @@ Os números citados são os da planilha de demonstração atual (SHA-256 `03fa0e
    ```powershell
    .\.venv\Scripts\python.exe scripts\smoke_test.py --backend https://API --frontend https://APP --expect-environment production
    ```
-2. Abrir as abas na ordem do roteiro:
+2. Abrir as abas na ordem do roteiro e carregar cada uma uma vez, para "aquecer" a API serverless (a primeira leitura da planilha é a mais lenta):
+   - `/fila`
+   - `/skus/CI-0041?tab=evidencias`
+   - `/parceiros/KA-02`
+   - `/skus/CI-0009`
+   - `/skus/CI-0050`
+   - `/capacidade`
    - `/validacao`
-   - `/`
-   - `/skus/CI-0041`
-   - `/skus/CI-0014`
-   - `/parceiros/KA-01?sku=CI-0011`
-   - `/validacao` (segunda vez, para o fechamento)
-3. Abrir cada aba uma vez para "aquecer" a API serverless; a primeira leitura da planilha é a mais lenta.
-4. Se for registrar uma decisão ao vivo, a publicação precisa estar com `WRITE_ENABLED=true`. Depois da apresentação, limpe os dados de teste (veja [Deploy](deploy-vercel-supabase.md)).
-5. **Plano B:** se a API cair, o Guia de uso (`/guia`) funciona sem a API e contém o fluxo e o roteiro resumido.
+3. Se for registrar uma decisão ao vivo, a publicação precisa estar com `WRITE_ENABLED=true`. Depois da apresentação, limpe os dados de teste (veja [Deploy](deploy-vercel-supabase.md)).
+4. **Plano B:** se a API cair, o Guia de uso (`/guia`) funciona sem a API e contém o fluxo resumido.
 
-## 0:00–1:00 — Problema e linha de base
+## 0:00–0:45 — O problema em uma frase
 
-**Tela:** `/validacao`, aba "Processo atual" (já aberta), bloco "Comparação com o processo atual". O resumo, os 3 números e as falhas conhecidas ficam acima das abas.
+**Tela:** `/fila`.
 
-- O PCP decide o que, quanto e quando produzir com dados fragmentados. A empresa informa:
-  - 22 horas semanais de análise manual;
-  - 89% de pedidos no prazo, com meta de 96%;
-  - MAPE de 31% no forecast comercial;
-  - 78% de aderência ao plano.
-- A visibilidade do parceiro é parcial: só 20% dos pares parceiro–SKU têm sell-out registrado (50 de 250). Esse número aparece em `/` ("Detalhes"), em `/qualidade` e em `/parceiros`, não em `/validacao`.
-- O protótipo separa o que a empresa **informou**, o que ele **recalculou** e a **meta**. O que a base não permite recalcular aparece como "não disponível", nunca como um número inventado.
+- O Caderno Inteligente vende para parceiros e vê o sell-in, mas só tem sell-out em 20% dos pares parceiro–SKU. O PCP precisa decidir **hoje** o que produzir, quanto e onde há risco.
+- A fila ordena 43 SKUs por risco. **Nenhum dos 10 primeiros está "sem ação":** cada linha diz o que fazer e quanto, e o motivo diz quando a falta começa ("Falta a partir de 14/09").
+- No total, 21 SKUs têm falta antes que qualquer reposição nova chegue e 22.900 un. precisam ser liberadas nas próximas 4 semanas.
 
-## 1:00–2:00 — Visão geral
+## 0:45–1:45 — Caso 1: CI-0041, promessa sem cobertura
 
-**Tela:** `/`.
+**Tela:** `/skus/CI-0041?tab=evidencias`, bloco "Plano de suprimento".
 
-- O primeiro da fila é o **CI-0041** (posição 1, 33 pontos). O motivo principal mostrado é o sinal de maior peso, "Abaixo do estoque de segurança"; os cinco sinais são:
-  - abaixo da segurança;
-  - abaixo do lead time;
-  - produção após a promessa;
-  - capacidade pressionada;
-  - sem sell-out.
-- 16 SKUs têm risco de ruptura (15 abaixo do lead time e 13 abaixo da segurança), há 12 pedidos sem OP e 20 SKUs priorizados têm confiança baixa por falta de sell-out.
-- **Mensagem:** é uma **ordem de análise**, com motivos e evidências, não uma ordem de produção. A regra aparece uma vez, na linha amarela sob o título de toda página.
+- **Pedidos sem cobertura:** 1.046 un. prometidas para 13 e 14/09 (PED-041-1 para KA-05 e PED-041-2 para KA-02), contra estoque de 132. A OP-7840 só conclui em 08/10.
+- **Por que a falta é inevitável:** nem uma ordem liberada hoje chega antes de 05/10 (lead time de 21 dias). A ação é **renegociar os prazos e garantir a OP**, com uma ordem nova de 800 un. liberada já.
+- **Cascata:** demanda até 02/11 de 1.824 + segurança de 202 − estoque de 132 − OPs no prazo de 1.200 = 694, arredondado ao lote de 400 → **800**.
+- **A projeção semanal mostra onde falta;** a coluna Capacidade avisa que essa ordem **não cabe** na Linha Escolar.
+- **Mensagem:** antes da correção, este SKU era o 1º da fila e aparecia como "Sem ação necessária". A conta olhava o mês inteiro e ignorava a data dos pedidos e da OP.
 
-## 2:00–3:00 — Prioridade e recomendação operacional
+## 1:45–2:45 — Caso 2: KA-02 · CI-0009, estoque parado no parceiro
 
-**Telas:** clicar em "Abrir evidências de CI-0041" (`/skus/CI-0041`) e depois abrir `/skus/CI-0014`. A resposta (ação e quantidade) está no topo da página; o cálculo fica no bloco "Por que esta quantidade" e as evidências em "Riscos e evidências".
+**Tela:** `/parceiros/KA-02` → CI-0009 → "Ver evidências"; depois `/skus/CI-0009`.
 
-- **CI-0041:** apesar da prioridade #1, a recomendação é **"Sem ação necessária"**. Estoque e produção aberta já cobrem a demanda do próximo mês. O risco continua exigindo análise, e a tela diz isso explicitamente.
-- **CI-0014:** a recomendação é **"Produzir após validar capacidade"**, com **400 unidades**.
-  - Demanda a cobrir: 1.327 (o maior valor entre previsão de 1.246 e carteira de 1.327; os dois não são somados).
-  - Mais segurança de 434, menos estoque de 1.490 e produção aberta de 0, resulta em necessidade de 271, arredondada ao lote mínimo de 400. A frase "Necessidade: … = 271 un.; arredondada ao lote mínimo" está no cartão de resposta.
-  - A família está com capacidade pressionada, então a confiança cai para média e a revisão humana é obrigatória.
-- **Mensagem:** cada número mostra fórmula, origem e limitação. Nenhuma sugestão libera uma OP.
+- **O que os números mostram:** em 6 meses, o KA-02 vendeu **59%** do que recebeu. O estoque estimado foi de **595 para 931 un.**, cerca de 355 dias de giro.
+- **Não é erro de dado:** a conta "estoque anterior + recebido − vendido" fecha mês a mês, então é produto parado. Ação comercial: **não repor; acionar sell-out com o parceiro** (rótulo Investigar), com o selo "Estoque acumulando".
+- **No SKU:** o CI-0009 entra na fila e a ação é **rever a OP-7808**, de 1.200 para 300 un. O motivo cita o KA-02 e a demanda em queda (cobertura de 110 dias pela previsão).
+- **Mensagem:** é exatamente o exemplo do desafio: a venda para o parceiro parecia bom resultado, mas o produto está parado na loja. Só o sinal do parceiro sobe para o SKU; o estoque do CD não é distribuído.
 
-## 3:00–4:00 — Parceiro e recomendação comercial
+## 2:45–3:30 — Caso 3: CI-0050, OP de produto saindo de linha
 
-**Tela:** `/parceiros` (aba "Oportunidades": as 12 oportunidades de 5 parceiros em uma lista) → **Papelaria Horizonte (KA-01)** → `/parceiros/KA-01?sku=CI-0011`. Em cada linha, "Ver evidências" abre o detalhe mensal na própria linha.
+**Tela:** `/skus/CI-0050`.
 
-- A recomendação comercial é por **parceiro e SKU** e usa só dados daquele parceiro.
-- **CI-0011 na KA-01: "Avaliar reposição".**
-  - Estoque estimado no parceiro: 132 unidades.
-  - Sell-out médio: 151 por mês nos últimos 3 meses contínuos.
-  - Cobertura de cerca de 26 dias, abaixo dos 30 configurados.
-  - Abrir as evidências (a tabela mensal tem 3 colunas: mês, enviado e vendido).
-- Nenhum estoque do CD, produção ou forecast global é distribuído entre parceiros. Canais sem sell-out (por exemplo, E-commerce próprio) aparecem como **"dados insuficientes"**, não como venda zero.
+- **A situação:** o produto está em descontinuação e tem a OP-7849 de **1.600 un.** liberada. O estoque (118) já cobre o único pedido em carteira (85).
+- **Ação: Rever OP**, com a sugestão de cancelar a OP-7849. Produto saindo de linha não recebe ordem nova nem previsão; só a carteira confirmada conta.
+- Há também o CI-0047 (2º da fila): a OP-7846 deve cair de 400 para 200 un. e o pedido PED-047-1 atrasa 7 dias.
 
-## 4:00–5:00 — Validação e auditoria
+## 3:30–4:15 — Caso 4: Linha Escolar e a Volta às Aulas
 
-**Telas:** `/validacao`: resumo e falhas conhecidas no topo e a aba "Modelos de previsão"; depois, o botão "Auditoria completa" (`/auditoria`) para os casos de teste e as verificações de segurança.
+**Tela:** `/capacidade` (botão "Ver capacidade" na fila).
+
+- **O que não cabe:** a previsão sazonal pede **20.800 un.** de Escolar nos picos, e a linha tem **12.960 un.** livres até o fim do calendário (03/01). **8.720 un. não cabem**, a primeira para 05/10.
+- **Quem é afetado:** CI-0014, CI-0025 e CI-0041, com pedidos de KA-02, KA-05 e Marketplace.
+- **O que decidir:** antecipar a produção, terceirizar ou repriorizar clientes. As premissas estão no "?" (capacidade livre já desconta compromissos e OPs existentes; sem calendário depois de dezembro).
+- Clássico (540 un.) e Planner (1.520 un.) também têm faltas pequenas em outubro.
+
+## 4:15–5:00 — Por que confiar
+
+**Tela:** `/validacao`; aba "Modelos de previsão"; depois "Auditoria completa".
 
 - **Previsão:**
-  - WAPE ponderado de 6,9% contra 8,0% da baseline ingênua;
-  - o modelo **não superou a baseline em 16 de 50 SKUs**, e a tela mostra isso em vez de esconder.
-- **Casos:** "8 de 8" no cartão (2 sintéticos, porque a base não tem esses exemplos); o detalhe de cada caso está na Auditoria. Os casos não ajustam pesos nem modelos.
-- **Comportamento seguro:** a linha "Verificações de segurança: 7 de 7 passaram" fica em Falhas conhecidas; a lista completa está na Auditoria. As 7 verificações: Sem sell-out, a confiança cai; sem histórico, não há quantidade; capacidade exige revisão; dado ausente não vira zero.
-- **Fechamento:** toda decisão é humana e fica registrada em **Decisões**, com o efeito do dado do parceiro e o tempo de análise. É essa medição que vai permitir comparar com as 22 horas semanais.
+  - erro médio de **8,0%**, contra 18,9% de repetir o último mês;
+  - nos meses de pico, **7,9%** contra 26,8%;
+  - o motor sazonal foi promovido porque atendeu aos quatro critérios fixados antes do teste;
+  - novembro de 2026 previsto em 36,2 mil un. (o motor anterior previa 29,2 mil para um mês que vendeu 34,3 mil em 2025).
+- **Casos de teste:** 30 de 30 aprovados. Os casos-alvo da correção (CI-0041, CI-0050, CI-0047, CI-0048, CI-0009, KA-02 · CI-0009, Escolar) foram gravados **antes** do código. As revisões de casos antigos estão no histórico de ajustes, com o motivo.
+- **Comportamento seguro:** 9 verificações executadas, entre elas:
+  - nenhuma falta projetada aparece como "sem ação";
+  - toda ordem planejada respeita o lote mínimo;
+  - dado ausente não vira zero.
+- **Fechamento:** toda sugestão exige revisão humana. Nada cria, antecipa ou reduz OP sozinho, e a decisão fica registrada em Decisões.
 
 ## Perguntas prováveis
 
 | Pergunta | Resposta curta |
 |---|---|
-| Por que o primeiro da fila não precisa de produção? | Prioridade ordena a análise de risco; a quantidade vem da recomendação, que considera estoque e produção aberta |
-| O WAPE de 6,9% é melhor que o MAPE de 31%? | Não dá para comparar: são métricas e previsões diferentes. A base não permite recalcular o forecast comercial |
-| Por que a confiança é baixa em tantos SKUs? | Só 20% dos pares parceiro–SKU têm sell-out. O sistema assume a lacuna em vez de supor venda zero |
-| Como explicar uma mudança no ranking? | Em Execuções, comparar duas execuções mostra sinais e pesos que mudaram e a decomposição do score |
-| Os dados podem ser alterados por qualquer pessoa? | Em publicação aberta, use `WRITE_ENABLED=false`. Não há login no protótipo |
-| O que falta para uso real? | Teste moderado com usuários, integração com dados reais, autenticação e limiares aprovados pela empresa |
+| Por que tantas "faltas inevitáveis" (21)? | Na base, o estoque costuma durar menos que o lead time. A falta é projetada dia a dia; quando há pedido afetado, ele aparece com a data esperada |
+| Por que nenhum SKU está "sem ação"? | O horizonte vai até fevereiro, e todo SKU precisa de alguma ordem até lá. As que não são para agora aparecem como "Produzir (liberar a partir de dd/mm)" |
+| O WAPE de 8,0% é melhor que o MAPE de 31%? | Não dá para comparar: são métricas e previsões diferentes. A base não tem o realizado do forecast comercial |
+| O pico de novembro foi testado? | Não diretamente: o modelo exige 15 meses de histórico, então o teste rolante cobre os picos de janeiro e fevereiro. Novembro é conferido por um caso congelado contra o realizado de 2025 |
+| A falta de capacidade é exata? | Não: é um encaixe em ordem de necessidade, sem otimização, e não há capacidade informada depois de dezembro. Serve para decidir onde agir |
+| O estoque do parceiro é real? | É estimado na planilha. A conta fechar mostra coerência entre as abas, não inventário físico; por isso o rótulo é "Investigar" |
+| O que falta para uso real? | Teste com usuários, dados reais (vínculo pedido–OP, capacidade além de dezembro), autenticação e limiares aprovados pela empresa |

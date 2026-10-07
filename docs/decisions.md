@@ -136,3 +136,19 @@
 - O smoke test pós-deploy é um script somente leitura, sem dependências externas. A única requisição de escrita usa um SKU inexistente e precisa ser recusada, então o script pode ser rodado contra produção sem gravar dados.
 - O roteiro de demonstração segue os cinco blocos do plano e usa exemplos reais da base: CI-0041 (prioridade alta sem produção), CI-0014 (produzir após validar capacidade) e KA-01/CI-0011 (reposição no parceiro).
 - O teste moderado com usuários permanece pendente; seu protocolo está documentado.
+
+## 2026-10-07 — Etapa 15: correção do motor de decisão (G1–G5)
+
+Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomendações erradas nos casos centrais da base. Plano em [plano-etapa-15-correcao-motor-decisao.md](plano-etapa-15-correcao-motor-decisao.md); comparação em [etapa-15/antes-depois.md](etapa-15/antes-depois.md).
+
+- **D1:** o princípio "não alterar previsão, ranking, regras nem quantidade oficial" das etapas 10–14 foi revogado para G1–G5. As mudanças foram versionadas e comparadas antes × depois, e toda alteração de caso congelado foi registrada no histórico de ajustes da validação.
+- **D2 — previsão oficial v2:** `seasonal_level` (mês do ano anterior ajustado pelo nível, teto 3,0), sem seleção por SKU, horizonte de 6 meses. Promovida porque atendeu aos quatro critérios fixados antes do teste.
+- **D3 — data de planejamento:** 14/09/2026, a primeira semana de `Capacidade_Semanal`.
+- **D4 — capacidade:** `CAPACITY_SHORTFALL` (o que não cabe após encaixar as ordens planejadas) substitui `CAPACITY_CONFLICT` (ocupação média); o peso e o limiar antigos saíram da configuração.
+- **D5 — rótulos do PDF para os riscos novos:** acúmulo no parceiro → Investigar; estoque alto estável → Monitorar; rever OP → Investigar; falta inevitável e antecipar OP → Priorizar produção.
+- **D6 — tela:** rota `/capacidade` em Planejamento, com orçamento de volume próprio. É aberta por botão na fila, sem abas, mantendo a decisão do redesign.
+- **Protocolo:** casos-alvo (VC-20 a VC-30), limiares, pesos e origens de avaliação foram gravados antes do código. Quando um caso falhou, nem código nem expectativa foram ajustados para passar; a decisão foi levada ao usuário:
+  - cobertura pela previsão dos 3 próximos meses (e não pelas vendas recentes), com o VC-03 passando do CI-0044 para o CI-0040;
+  - manutenção da precedência do plano (falta inevitável antes de produzir e de rever OP; ordem planejada antes de monitorar excesso), com VC-03, VC-08 e VC-22 revistos.
+- **Fora do escopo:** tendência ano contra ano, alocação de produto escasso entre parceiros e regiões, reconciliação Sell_In × Vendas_24m, recalibração das faixas P10–P90.
+

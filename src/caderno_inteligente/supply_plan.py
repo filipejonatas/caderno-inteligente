@@ -303,17 +303,19 @@ def _weekly(days, carteira, extra, op_receipts, planned_receipts, base_levels, p
     for day, base, with_plan in zip(days, base_levels, planned_levels):
         start = day - timedelta(days=day.weekday())
         week = weeks.setdefault(start, {"week_start": _iso(start), "carteira": 0.0, "forecast_demand": 0.0, "op_receipts": 0.0,
-                                        "planned_receipts": 0.0, "min_projected": base})
+                                        "planned_receipts": 0.0, "min_projected": base, "min_projected_with_plan": with_plan})
         week["carteira"] += carteira.get(day, 0.0)
         week["forecast_demand"] += extra.get(day, 0.0)
         week["op_receipts"] += op_receipts.get(day, 0.0)
         week["planned_receipts"] += planned_receipts.get(day, 0.0)
         week["min_projected"] = min(week["min_projected"], base)
+        week["min_projected_with_plan"] = min(week["min_projected_with_plan"], with_plan)
         week["projected_end"], week["projected_end_with_plan"] = base, with_plan
     rows = []
     for week in weeks.values():
         rows.append({**{key: round(value, 1) if isinstance(value, float) else value for key, value in week.items()},
-                     "below_safety": week["projected_end_with_plan"] < safety, "shortfall": week["min_projected"] < 0})
+                     "below_safety": week["projected_end_with_plan"] < safety, "shortfall": week["min_projected"] < 0,
+                     "shortfall_with_plan": week["min_projected_with_plan"] < 0})
     return rows
 
 

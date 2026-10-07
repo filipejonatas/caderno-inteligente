@@ -16,7 +16,8 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/events` | Calendário de eventos: alertas por SKU, evidência histórica por família e cenário com evento | — |
 | GET | `/api/direct-channels` · `/api/direct-channels/{canal}` | Canais diretos (E-commerce, Marketplace, Loja própria): faturamento observado, tendência, carteira e sugestão por SKU | — |
 | GET | `/api/data-quality/channels` | Achados entre abas que afetam a leitura dos canais | — |
-| GET | `/api/capacity/{family}` | Capacidade semanal da família | — |
+| GET | `/api/capacity-plan` | Capacidade semanal finita (Etapa 15.4): ordens planejadas encaixadas por linha e semana, faltas, picos, pedidos afetados e premissas | — |
+| GET | `/api/capacity/{family}` | Capacidade semanal da família, com `allocated` e `remaining` das ordens planejadas | — |
 | GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
 | GET | `/api/partners` | Parceiros e cobertura medida (filtros e paginação) | — |
@@ -61,14 +62,16 @@ Um SKU que aciona as duas regras contribui uma única vez para `rupture_sku_coun
 
 ## `GET /api/forecasts`
 
-Retorna uma visão consolidada, somente leitura, com um item por SKU. A resposta combina identificação, posição e score do ranking oficial quando existentes, forecast de três meses e um resumo da recomendação operacional.
+Retorna uma visão consolidada, somente leitura, com um item por SKU. A resposta combina identificação, posição e score do ranking oficial quando existentes, a previsão oficial (motor v2: 6 meses, com `forecast_total_3m`, `forecast_total_6m`, `backtest_windows` e `backtest_peak_wape`) e um resumo da recomendação operacional.
 
 - usa o mesmo pipeline em memória de prioridades e detalhe;
 - não recalcula nem altera score, ranking ou regras;
 - inclui SKUs fora do ranking, identificados por `priority = null`;
 - mantém forecast ausente como `null`, nunca como demanda zero;
 - toda recomendação retorna `requires_human_review = true`;
-- capacidade familiar é somente um contexto de validação, não garantia individual.
+- o resumo da recomendação traz `secondary_actions`, `planned_quantity_horizon` e `first_shortfall_date` (Etapa 15.3).
+
+Ações operacionais possíveis: `investigar_dados`, `antecipar_op`, `atraso_inevitavel`, `produzir`, `produzir_validar_capacidade`, `rever_op`, `monitorar_excesso` e `sem_acao_necessaria`. No detalhe (`/api/priorities/{sku}`), a recomendação inclui o plano datado: `planned_orders`, `op_adjustments`, `affected_orders`, `projection` (semanal), `capacity` (situação de cada ordem na linha), `earliest_arrival` e a cascata em `calculation`; o indicador inclui `reference_daily_demand`, `demand_source`, `coverage_days_registered` e `data_quality_warnings` (Etapa 15.2).
 
 O cálculo detalhado, as premissas e as evidências permanecem em `GET /api/priorities/{sku}`.
 

@@ -313,7 +313,7 @@ export interface OperationalRecommendation {
   confidence: Confidence;
   confidence_reason: string;
   rationale: string[];
-  calculation: Record<string, number>;
+  calculation: Record<string, number | string | null>;
   assumptions: string[];
   limitations: string[];
   requires_human_review: boolean;
@@ -324,6 +324,10 @@ export interface OperationalRecommendation {
   affected_orders?: AffectedOrder[];
   earliest_arrival?: string;
   first_shortfall_date?: string | null;
+  projection?: Array<{ week_start: string; carteira: number; forecast_demand: number; op_receipts: number; planned_receipts: number;
+    projected_end: number; projected_end_with_plan: number; below_safety: boolean; shortfall: boolean; shortfall_with_plan?: boolean }>;
+  capacity?: { status: string; status_now: string; unscheduled_quantity: number; family: string;
+    orders: Array<{ index: number; due_date: string; quantity: number; status: CapacityStatus; unscheduled: number }> } | null;
 }
 
 export interface ForecastRecommendationSummary {
@@ -339,6 +343,9 @@ export interface ForecastRecommendationSummary {
   challenge_action?: ChallengeAction;
   operational_recommendation: Pick<
     OperationalRecommendation,
+    | 'secondary_actions'
+    | 'planned_quantity_horizon'
+    | 'first_shortfall_date'
     | 'action'
     | 'action_label'
     | 'suggested_quantity'

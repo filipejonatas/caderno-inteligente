@@ -5,6 +5,7 @@ diretório temporário (nada é gravado em runtime/). A saída é determinístic
 
     python scripts/snapshot_decisions.py                                  # grava docs/etapa-15/antes.json
     python scripts/snapshot_decisions.py --saida docs/etapa-15/depois.json
+    python scripts/snapshot_decisions.py --comparar docs/etapa-15/antes.json docs/etapa-15/depois.json --saida docs/etapa-15/antes-depois.md
 """
 from __future__ import annotations
 
@@ -87,6 +88,10 @@ def _collect(main, client, build_partner_insights, load_commercial_thresholds) -
     } for row in commercial["items"]]
 
     revenue = client.get("/api/revenue-forecast").json()
+    capacity = client.get("/api/capacity-plan")
+    capacity_families = [{key: family[key] for key in ("family", "available_until_calendar_end", "planned_in_calendar", "unscheduled_quantity", "status",
+                                                        "peak_need_units", "peak_status", "skus_short")}
+                         for family in capacity.json()["families"]] if capacity.status_code == 200 else None
     validation = client.get("/api/validation/summary").json()["frozen_cases"]
     return {
         "source_sha256": file_sha256(main.SOURCE),
@@ -99,15 +104,69 @@ def _collect(main, client, build_partner_insights, load_commercial_thresholds) -
         "top10": [{key: row[key] for key in ("priority", "sku", "action", "suggested_quantity", "challenge_code")} for row in skus[:10]],
         "skus": skus,
         "partner_pairs": pairs,
+        "capacity": capacity_families,
     }
+
+
+def _num(value) -> str:
+    if value is None:
+        return "—"
+    return f"{value:,.0f}".replace(",", ".") if isinstance(value, (int, float)) else str(value)
+
+
+def _month_total(snapshot: dict, month: str):
+    return next((value for key, value in snapshot["forecast_total_by_month"].items() if key.startswith(month)), None)
+
+
+def compare(before: dict, after: dict) -> str:
+    """Resumo em Markdown das decisões antes × depois, com os números que a apresentação usa."""
+    sku_before = {row["sku"]: row for row in before["skus"]}
+    sku_after = {row["sku"]: row for row in after["skus"]}
+    pair = lambda snapshot, partner, sku: next((row for row in snapshot["partner_pairs"] if row["partner"] == partner and row["sku"] == sku), {})  # noqa: E731
+    lines = ["# Etapa 15 — Decisões antes × depois", "",
+             "Gerado por `scripts/snapshot_decisions.py --comparar` a partir de `antes.json` (início da Etapa 15.0) e `depois.json` (fim da 15.6), na mesma planilha.", ""]
+    lines += ["## Ações por SKU", "", "| Ação | Antes | Depois |", "|---|---|---|"]
+    for action in sorted(set(before["action_counts"]) | set(after["action_counts"])):
+        lines.append(f"| `{action}` | {before['action_counts'].get(action, 0)} | {after['action_counts'].get(action, 0)} |")
+    lines += ["", "## Top 10 da fila", "", "| # | Antes | Ação antes | Depois | Ação depois | Sugerido agora |", "|---|---|---|---|---|---|"]
+    for old, new in zip(before["top10"], after["top10"]):
+        lines.append(f"| {new['priority']} | {old['sku']} | `{old['action']}` | {new['sku']} | `{new['action']}` | {_num(new['suggested_quantity'])} |")
+    lines += ["", "## Previsão, cobertura e casos-alvo", "", "| Indicador | Antes | Depois |", "|---|---|---|",
+              f"| Previsão somada nov/26 (un.) | {_num(_month_total(before, '2026-11'))} | {_num(_month_total(after, '2026-11'))} |",
+              f"| Previsão somada jan/27 (un.) | {_num(_month_total(before, '2027-01'))} | {_num(_month_total(after, '2027-01'))} |",
+              f"| Faturamento estimado 3 meses (R$) | {_num((before.get('revenue_total') or {}).get('revenue_total_3m'))} | {_num((after.get('revenue_total') or {}).get('revenue_total_3m'))} |",
+              f"| SKUs na fila | {before['overview']['prioritized']} | {after['overview']['prioritized']} |",
+              f"| Quantidade sugerida agora (un.) | {_num(sum(row['suggested_quantity'] or 0 for row in before['skus']))} | {_num(sum(row['suggested_quantity'] or 0 for row in after['skus']))} |"]
+    for sku in ("CI-0041", "CI-0050", "CI-0047", "CI-0048", "CI-0009", "CI-0014", "CI-0004"):
+        old, new = sku_before.get(sku, {}), sku_after.get(sku, {})
+        lines.append(f"| {sku}: posição · ação · cobertura (dias) | {_num(old.get('priority'))} · `{old.get('action')}` · {_num(old.get('coverage_days_calculated'))} "
+                     f"| {_num(new.get('priority'))} · `{new.get('action')}` · {_num(new.get('coverage_days_calculated'))} |")
+    for partner, sku in (("KA-02", "CI-0009"), ("KA-03", "CI-0001")):
+        old, new = pair(before, partner, sku), pair(after, partner, sku)
+        lines.append(f"| {partner} · {sku}: ação comercial | `{old.get('action')}` | `{new.get('action')}` |")
+    cases_before, cases_after = before["frozen_cases"], after["frozen_cases"]
+    lines.append(f"| Casos congelados (aprovados / total / pendentes) | {cases_before['passed']} / {cases_before['total']} / {cases_before.get('pending') or 0} "
+                 f"| {cases_after['passed']} / {cases_after['total']} / {cases_after.get('pending') or 0} |")
+    if after.get("capacity"):
+        lines += ["", "## Capacidade (depois)", "", "| Família | Livre no calendário | Sem programação | Situação | Pico: necessidade · situação |", "|---|---|---|---|---|"]
+        for family in after["capacity"]:
+            lines.append(f"| {family['family']} | {_num(family['available_until_calendar_end'])} | {_num(family['unscheduled_quantity'])} | `{family['status']}` "
+                         f"| {_num(family['peak_need_units'])} · `{family['peak_status']}` |")
+    return "\n".join(lines) + "\n"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--saida", default=str(ROOT / "docs" / "etapa-15" / "antes.json"))
+    parser.add_argument("--comparar", nargs=2, metavar=("ANTES", "DEPOIS"))
     args = parser.parse_args()
     output = Path(args.saida)
     output.parent.mkdir(parents=True, exist_ok=True)
+    if args.comparar:
+        before, after = (json.loads(Path(path).read_text(encoding="utf-8")) for path in args.comparar)
+        output.write_text(compare(before, after), encoding="utf-8")
+        print(f"{output}: comparação gerada")
+        return
     snapshot = build_snapshot()
     output.write_text(json.dumps(snapshot, ensure_ascii=False, indent=1, default=str) + "\n", encoding="utf-8")
     print(f"{output}: {len(snapshot['skus'])} SKUs, {len(snapshot['partner_pairs'])} pares parceiro–SKU")

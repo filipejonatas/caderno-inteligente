@@ -4,7 +4,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 
 - valida os dados e calcula indicadores e regras auditáveis;
 - ordena SKUs para atenção;
-- prevê a demanda e sugere ações operacionais (por SKU) e comerciais (por parceiro);
+- prevê a demanda (6 meses, com sazonalidade) e projeta o estoque dia a dia para sugerir ações operacionais datadas (por SKU), verificar a capacidade de cada linha e sugerir ações comerciais (por parceiro);
 - registra as decisões humanas.
 
 **Nenhuma saída é uma decisão automática.** Cada prioridade e recomendação mostra motivos, evidências, origem dos dados, limitações, nível de confiança e exige revisão humana. Dado ausente é tratado como ausente, nunca como zero, e dados globais (estoque do CD, produção, capacidade, forecast) não são distribuídos entre parceiros.
@@ -13,14 +13,15 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 
 | Pergunta do PCP | Onde |
 |---|---|
-| O que exige atenção agora e por quê? | Início e Planejamento › Fila operacional: ranking por soma transparente de pesos de sete regras |
-| Preciso produzir? Quanto? | Planejamento › Fila operacional (posição, ação, quantidade e motivo) e Detalhe do SKU: previsão de 3 meses e o cálculo |
-| Algum parceiro tem risco ou oportunidade? | Comercial: oportunidades ordenadas por menor cobertura de estoque, com a matriz parceiro–SKU com sell-in, sell-out, estoque estimado e sugestão comercial |
+| O que exige atenção agora e por quê? | Início e Planejamento › Fila operacional: ranking por soma transparente de pesos de onze regras; o motivo diz quando a falta começa |
+| Preciso produzir? Quanto? Quando? | Fila operacional (ação, quantidade a liberar nas próximas 4 semanas) e Detalhe do SKU › Evidências › "Plano de suprimento": pedidos afetados, OPs a antecipar, reduzir ou cancelar, ordens planejadas com data de liberação e projeção semanal |
+| Onde a produção não cabe? | Planejamento › Capacidade (botão "Ver capacidade" na fila): ordens planejadas encaixadas na capacidade livre de cada linha e semana, com o que fica sem programação e os pedidos afetados |
+| Algum parceiro tem risco ou oportunidade? | Comercial: oportunidades ordenadas por menor cobertura de estoque, com a matriz parceiro–SKU com sell-in, sell-out, estoque estimado, estoque acumulando ("não repor") e sugestão comercial |
 | Quanto vamos faturar nos próximos meses? | Financeiro › Faturamento previsto: faturamento estimado (previsão em unidades × preço vigente), sempre rotulado como estimativa, com erro do teste e, no SKU, o cálculo |
 | Qual a ação do desafio para cada SKU, parceiro ou canal? | Fila operacional, Comercial e Canais diretos: rótulo (Produzir, Repor, Priorizar produção, Priorizar parceiro, Ampliar mix, Recomendar recompra, Monitorar, Investigar, Sem ação necessária) com evidências e filtro; a legenda está no Guia |
 | Como vão os canais diretos? | Comercial › Canais diretos: faturamento observado, tendência, carteira e sugestão por SKU, sem estoque por canal; achados entre abas em Dados da planilha |
 | Que evento do calendário vem aí e quando decidir? | Início e Fila operacional: alertas de eventos com data de decisão (início − lead time); no SKU, evidência histórica e cenário com evento, sempre como estimativa |
-| Quanto confiar na análise? | Confiança › Validação e Bastidores › Dados da planilha: cobertura de sell-out, baseline de previsão, casos congelados e falhas conhecidas |
+| Quanto confiar na análise? | Confiança › Validação e Bastidores › Dados da planilha: erro da previsão em meses normais e de pico, cobertura de sell-out, divergência do cadastro, casos congelados e falhas conhecidas |
 | Por que a prioridade mudou? | Bastidores › Execuções: comparação entre snapshots, com decomposição do score |
 | O que foi decidido? | Acompanhamento › Casos (status, responsável e prazo editáveis) e Histórico de decisões: ação, efeito do dado do parceiro e tempo de análise |
 
@@ -78,6 +79,7 @@ O menu tem 7 entradas (Início, Planejamento, Financeiro, Comercial, Acompanhame
 | `/fila` | Planejamento › Fila operacional: posição, SKU, ação, quantidade, motivo principal e exceções; por padrão, só os que pedem atenção; filtros na URL (`busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos`) |
 | `/prioridades` e `/previsoes` | Redirecionam para `/fila` e mantêm os mesmos parâmetros |
 | `/faturamento` | Financeiro › Faturamento previsto: estimativa em reais (sempre rotulada como estimativa), famílias, SKUs e filtros `busca` e `familia` |
+| `/capacidade` | Planejamento › Capacidade: situação de cada linha, o que não cabe até a necessidade, picos e semanas; aberta pelo botão "Ver capacidade" da fila |
 | `/skus/:sku` | Planejamento › Detalhe compartilhável: ação sugerida e botões "Registrar decisão" e "Criar caso" no topo; abas `?tab=resumo\|evidencias\|parceiros\|impacto` |
 | `/parceiros` | Comercial › Oportunidades, ordenadas por urgência; filtros `busca`, `regiao`, `canal`, `ordem`. Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais` |
 | `/carteira` | Comercial › Parceiros: cobertura de dados de sell-out e sugestões por parceiro; filtros `busca`, `regiao`, `canal`, `rotulo`, `ordem` |
@@ -127,6 +129,8 @@ Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend.
 | Canais diretos (janela da tendência, faixa neutra, inatividade) | `config/direct_channel_thresholds.json` |
 | Rótulos de ação (fila de atenção, janela de evento, reposições, recompra) | `config/challenge_actions.json` |
 | Linha de base, casos congelados e histórico de ajustes da validação | `config/validation_center.json` |
+| Motor de previsão (cadeia oficial, horizonte, teto sazonal, protocolo de avaliação com pico) | `config/forecast_engine.json` |
+| Plano de suprimento (data de planejamento, janela de decisão, cobertura-alvo, excesso projetado) | `config/supply_plan.json` |
 
 Variáveis de ambiente do backend (exemplo em `.env.example`):
 
@@ -197,3 +201,13 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Etapa 11 — Sazonalidade e eventos (plano de aderência ao desafio)](docs/etapa-11-eventos-sazonalidade.md)
 - [Etapa 12 — Visão dos canais diretos (plano de aderência ao desafio)](docs/etapa-12-canais-diretos.md)
 - [Etapa 13 — Rótulos de ação do desafio (plano de aderência ao desafio)](docs/etapa-13-rotulos-de-acao.md)
+
+**Etapa 15 — Correção do motor de decisão** ([plano](docs/plano-etapa-15-correcao-motor-decisao.md), [antes × depois](docs/etapa-15/antes-depois.md))
+
+- [15.0 — Linha de base e protocolo](docs/etapa-15-0-linha-de-base.md)
+- [15.1 — Previsão v2 com meses de pico](docs/etapa-15-1-previsao-v2.md)
+- [15.2 — Cobertura pela demanda](docs/etapa-15-2-cobertura-pela-demanda.md)
+- [15.3 — Projeção datada e motor de ação](docs/etapa-15-3-projecao-e-acao.md)
+- [15.4 — Capacidade semanal](docs/etapa-15-4-capacidade-semanal.md)
+- [15.5 — Estoque no parceiro](docs/etapa-15-5-estoque-no-parceiro.md)
+- [15.6 — Telas, documentação e roteiro](docs/etapa-15-6-telas-e-roteiro.md)

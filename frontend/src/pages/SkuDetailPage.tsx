@@ -6,6 +6,7 @@ import { ChallengeBadge } from '../components/ChallengeAction';
 import { SkuEventsBlock, UrgentEventLine } from '../components/EventAlerts';
 import { TabBar, TabPanel } from '../components/Tabs';
 import { SkuRevenueBlock } from '../components/RevenueForecast';
+import { SupplyPlanBlock } from '../components/SupplyPlan';
 import { Alert, Badge, ErrorState, Hint, PageIntro, confidenceTone, severityTone } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
@@ -137,7 +138,8 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
     <TabPanel id="resumo" active={tab === 'resumo'} prefix="sku">
       <UrgentEventLine alerts={detail.event_alerts} onOpen={() => selectTab('evidencias')} />
       <p className="fact-line">{indicator.missing_data.length > 0 ? <><strong>Dados ausentes:</strong> {indicator.missing_data.map((field) => missingDataNames[field] ?? field.split('_').join(' ')).join(', ')} (ausência não é zero).</> : <><strong>Dados ausentes:</strong> nenhum nos campos desta análise.</>}</p>
-      {recommendation.capacity_status === 'requires_review' && <p className="fact-line"><strong>Capacidade:</strong> valide a capacidade da família antes de produzir.</p>}
+      {recommendation.capacity_status === 'requires_review' && <p className="fact-line"><strong>Capacidade:</strong> {recommendation.capacity?.status === 'insuficiente' ? <>{displayQuantity(recommendation.capacity.unscheduled_quantity)} un. planejadas não cabem na linha até a data de necessidade. <Link to="/capacidade">Ver capacidade</Link>.</> : 'valide a capacidade da família antes de produzir.'}</p>}
+      {recommendation.planned_orders && <p className="fact-line">Plano datado, ordens e projeção semanal em <button type="button" className="link-button" onClick={() => selectTab('evidencias')}>Evidências</button>.</p>}
       <p className="fact-line">Cálculo, riscos e origem dos dados estão em <button type="button" className="link-button" onClick={() => selectTab('evidencias')}>Evidências</button>.</p>
     </TabPanel>
 
@@ -148,6 +150,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
         <p className="fact-line">Tendência <strong className={`trend-${forecast.trend}`}>{forecast.trend}</strong>{forecast.trend_change_ratio === null ? '' : ` (${displayPercent(forecast.trend_change_ratio)})`} · modelo {forecast.model_label} · previsão de 3 meses <strong>{displayUnits(forecast.forecast_total_3m)}</strong> <Badge tone="info">previsto</Badge> · erro médio de {displayPercent(forecast.backtest_wape)} {forecast.engine === 'v2' ? `em ${forecast.backtest_windows} testes com meses de pico` : 'no teste dos últimos 3 meses'} <Hint term="wape" /></p>
         <SkuEventsBlock embedded alerts={detail.event_alerts} scenario={detail.event_scenario} />
       </details>}
+      {!insufficient && recommendation.planned_orders && <SupplyPlanBlock recommendation={recommendation} />}
     <details className="detail-block">
       <summary>Dados do SKU</summary>
       <dl className="fact-list">

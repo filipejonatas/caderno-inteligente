@@ -1,7 +1,7 @@
 import { EmptyState, mainReason } from '../components';
 import { ChallengeBadge } from './ChallengeAction';
 import { EventBadge, mainAlert } from './EventAlerts';
-import { displayQuantity, reasonNames } from '../pages/shared';
+import { displayQuantity, formatDate, reasonNames } from '../pages/shared';
 import type { ForecastRecommendationSummary, Priority } from '../types';
 import type { EventItem } from '../types-events';
 
@@ -80,6 +80,12 @@ function exceptionTexts(row: QueueRow) {
   ].filter((item): item is string => !!item);
 }
 
+/** Etapa 15.3: com falta datada, o motivo principal diz quando ela começa (vem da projeção, não da regra de cobertura). */
+function shortfallReason(rec: ForecastRecommendationSummary['operational_recommendation'] | undefined) {
+  if (!rec || !rec.first_shortfall_date || !['atraso_inevitavel', 'antecipar_op'].includes(rec.action)) return undefined;
+  return `Falta a partir de ${formatDate(rec.first_shortfall_date)}`;
+}
+
 export function OperationalQueueTable({ rows, onSelect, weights, eventsBySku, forecastsLoaded, prioritiesLoaded }: {
   rows: QueueRow[];
   onSelect: (row: QueueRow) => void;
@@ -110,9 +116,9 @@ export function OperationalQueueTable({ rows, onSelect, weights, eventsBySku, fo
             {rec ? <span className={textTone}>{rec.action_label}</span> : <span className="is-muted-text">{forecastsLoaded ? 'Sem previsão para este SKU' : 'Ação indisponível'}</span>}
             {row.forecast?.challenge_action?.code === 'priorizar_producao' && <> <ChallengeBadge action={row.forecast.challenge_action} /></>}
           </td>
-          <td className="queue-qty" data-label="Quantidade"><strong>{displayQuantity(rec?.suggested_quantity)}</strong></td>
+          <td className="queue-qty" data-label="Quantidade" title={rec?.planned_quantity_horizon ? `${displayQuantity(rec.planned_quantity_horizon)} un. planejadas no horizonte` : undefined}><strong>{displayQuantity(rec?.suggested_quantity)}</strong></td>
           <td className="queue-reason" data-label="Motivo principal">
-            {reason ? (reasonNames[reason.code] ?? reason.description) : <span className="queue-none">{prioritiesLoaded ? 'Fora do ranking' : 'Indisponível'}</span>}
+            {shortfallReason(rec) ?? (reason ? (reasonNames[reason.code] ?? reason.description) : <span className="queue-none">{prioritiesLoaded ? 'Fora do ranking' : 'Indisponível'}</span>)}
           </td>
           <td className={`queue-exceptions ${texts.length || hasEvent ? '' : 'is-empty'}`} data-label="Exceções">
             {texts.length || hasEvent ? <>{texts.join(' · ')}{texts.length > 0 && hasEvent && ' · '}{hasEvent && event && <EventBadge item={event} />}</> : <span className="queue-none" aria-label="Sem exceções">—</span>}

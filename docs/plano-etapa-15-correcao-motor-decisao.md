@@ -2,6 +2,8 @@
 
 Plano para execução por um agente de IA (Claude Code) neste repositório. Origem: análise crítica de aderência de 2026-10-07 (PDF do Desafio 3 × base XLSM × solução). Prazo do desafio: **17/10/2026**.
 
+> **Status: concluído em 2026-10-07** (15.0 a 15.6). Resultado em [etapa-15/antes-depois.md](etapa-15/antes-depois.md); registro de cada subetapa em `docs/etapa-15-*.md`; decisões tomadas durante a execução em [decisions.md](decisions.md).
+
 O plano corrige cinco falhas que fazem a solução responder errado às perguntas centrais do PDF ("o que produzir, quanto, onde o estoque está parado, onde não dá para executar"), embora a evidência exibida esteja certa.
 
 | Gap | Sintoma medido na base atual | Subetapa |

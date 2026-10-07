@@ -20,3 +20,25 @@ describe('plano datado na fila e no detalhe', () => {
     expect(await screen.findByText('Falta inevitável: renegociar prazos e garantir a OP')).toBeInTheDocument();
   });
 });
+
+describe('bloco Plano de suprimento no detalhe do SKU', () => {
+  it('mostra a cascata, os pedidos afetados, os ajustes de OP, as ordens com capacidade e a projeção', async () => {
+    mockApi();
+    renderApp(`/skus/${encodeURIComponent(SKU_OK)}?tab=evidencias`);
+    expect(await screen.findByText('Plano de suprimento')).toBeInTheDocument();
+    expect(screen.getByText(/demanda 400 \+ segurança 100 − estoque 50 − OPs no prazo 0 =/)).toBeInTheDocument();
+    expect(screen.getByText('PED-T1')).toBeInTheDocument();
+    expect(screen.getByText('Reduzir OP-T1')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Ordens planejadas', hidden: true })).toHaveTextContent('não cabe');
+    expect(screen.getByRole('region', { name: 'Projeção semanal de estoque', hidden: true })).toHaveTextContent('falta');
+  });
+
+  it('a fila mostra quando a falta começa como motivo principal', async () => {
+    const rows = forecasts.map((item, index) => index === 0
+      ? { ...item, operational_recommendation: { ...item.operational_recommendation, action: 'atraso_inevitavel' as const, action_label: 'Falta inevitável: renegociar prazos e garantir a OP', first_shortfall_date: '2026-09-20' } }
+      : item);
+    mockApi({ forecasts: rows });
+    renderApp('/fila');
+    expect(await screen.findByText('Falta a partir de 20/09/2026')).toBeInTheDocument();
+  });
+});

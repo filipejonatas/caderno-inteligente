@@ -92,7 +92,8 @@ const forecastShort = {
 
 export const forecasts: ForecastRecommendationSummary[] = [
   { sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', priority: 1, attention_score: 29, confidence: 'média', confidence_reason: 'Motivo.', forecast: forecastOk, challenge_action: challengeUrgent,
-    operational_recommendation: { action: 'produzir', action_label: 'Produzir', suggested_quantity: 200, minimum_lot: 100, capacity_status: 'family_context_available', confidence: 'alta', confidence_reason: 'Motivo.', requires_human_review: true } },
+    operational_recommendation: { action: 'produzir', action_label: 'Produzir', suggested_quantity: 200, minimum_lot: 100, capacity_status: 'family_context_available', confidence: 'alta', confidence_reason: 'Motivo.', requires_human_review: true,
+      secondary_actions: [], planned_quantity_horizon: 600, first_shortfall_date: null } },
   { sku: SKU_SHORT, product: `Produto ${SKU_SHORT}`, family: 'Família B', priority: 2, attention_score: 28, confidence: 'baixa', confidence_reason: 'Motivo.', forecast: forecastShort, challenge_action: challengeInvestigate,
     operational_recommendation: { action: 'investigar_dados', action_label: 'Investigar dados', suggested_quantity: null, minimum_lot: 100, capacity_status: 'not_evaluated', confidence: 'baixa', confidence_reason: 'Histórico insuficiente.', requires_human_review: true } },
 ];
@@ -221,8 +222,15 @@ export const skuDetailOk: SkuDetail = {
   challenge_action: challengeUrgent,
   event_alerts: eventAlerts,
   event_scenario: { applicable: true, note: null, scenario: eventScenario },
-  operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Ordem planejada de 500 un. para chegar em 05/10, liberando até 15/09.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 },
-    planned_orders: [{ due_date: '2026-10-05', release_date: '2026-09-15', quantity: 500, urgent: true }], secondary_actions: [], op_adjustments: [], affected_orders: [] },
+  operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Ordem planejada de 500 un. para chegar em 05/10, liberando até 15/09.'], calculation: { cover_end: '2026-11-02', demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0, raw_quantity: 450 },
+    planned_orders: [{ due_date: '2026-10-05', release_date: '2026-09-15', quantity: 500, urgent: true }], secondary_actions: [], earliest_arrival: '2026-10-05', first_shortfall_date: '2026-09-20',
+    op_adjustments: [{ order: 'OP-T1', quantity: 800, finish: '2026-10-20', adjustment: 'reduzir', suggested_quantity: 300, reason: 'Excesso projetado.' }],
+    affected_orders: [{ order: 'PED-T1', client: 'KA-T', quantity: 120, promised_date: '2026-10-01', expected_date: '2026-10-05', delay_days: 4 }],
+    projection: [
+      { week_start: '2026-09-14', carteira: 0, forecast_demand: 70, op_receipts: 0, planned_receipts: 0, projected_end: -20, projected_end_with_plan: -20, below_safety: true, shortfall: true, shortfall_with_plan: true },
+      { week_start: '2026-09-21', carteira: 120, forecast_demand: 70, op_receipts: 0, planned_receipts: 500, projected_end: -210, projected_end_with_plan: 290, below_safety: false, shortfall: true, shortfall_with_plan: false },
+    ],
+    capacity: { status: 'insuficiente', status_now: 'insuficiente', unscheduled_quantity: 200, family: 'Família A', orders: [{ index: 0, due_date: '2026-10-05', quantity: 500, status: 'insuficiente', unscheduled: 200 }] } },
   limitation: 'A base não vincula pedidos a OPs por semana.',
 };
 

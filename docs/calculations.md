@@ -1,12 +1,15 @@
 # Cálculos
 
-Todos os cálculos são determinísticos, partem da planilha somente leitura e mantêm dado ausente como `null`, nunca como zero. A unidade de análise operacional é sempre o **SKU global** (`analysis_scope = "SKU global"`); nada é distribuído por parceiro, canal ou semana.
+Todos os cálculos são determinísticos, partem da planilha somente leitura e mantêm dado ausente como `null`, nunca como zero. A unidade de análise operacional é o **SKU global** (`analysis_scope = "SKU global"`): nada é distribuído por parceiro ou canal. Desde a Etapa 15, o plano de suprimento projeta o SKU por dia (resumido por semana) e a capacidade é alocada por linha e semana.
 
 ## 1. Indicadores por SKU (`indicators.py`)
 
 | Indicador | Fórmula | Fontes |
 |---|---|---|
-| Cobertura calculada | `estoque atual / venda média por dia` | `Estoque_Atual`, `Produtos` |
+| Demanda diária de referência | média da previsão oficial dos 3 próximos meses ÷ 30,4; sem previsão, média de vendas dos 3 últimos meses; por último, `Venda média/dia` (`demand_source`) | previsão, `Vendas_24m`, `Produtos` |
+| Cobertura calculada | `estoque atual / demanda diária de referência` | `Estoque_Atual` e acima |
+| Cobertura pelo cadastro | `estoque atual / Produtos.Venda média/dia` (`coverage_days_registered`, só comparação) | `Estoque_Atual`, `Produtos` |
+| Divergência do cadastro | aviso `REGISTERED_DEMAND_DIVERGENCE` quando \|demanda de referência ÷ venda média cadastrada − 1\| > 0,20 | idem |
 | Diferença de cobertura | `cobertura informada - cobertura calculada` | `Estoque_Atual`, `Produtos` |
 | Pedidos em carteira | `soma(quantidade)` por SKU | `Carteira_Pedidos` |
 | Produção em ordem | `soma(quantidade)` por SKU | `Ordens_Producao` |
@@ -21,21 +24,23 @@ Todos os cálculos são determinísticos, partem da planilha somente leitura e m
 
 - `has_sell_out = false` significa ausência de observação. O sell-out fica `null` e `missing_data` inclui `sell_out_quantity`.
 - A **lacuna operacional** é uma quantidade para análise, não uma ordem recomendada.
-- A **capacidade** é agregada por família e semana. A fonte não aloca pedidos ou OPs a semanas ou linhas, então ela é contexto, não viabilidade de uma ordem.
+- A **capacidade** média por família continua como contexto; a viabilidade das ordens vem da alocação semanal (seção 4.1).
 
 ## 2. Regras e priorização
 
-Sete regras geram sinais com valores usados e origem. O score é a soma dos pesos configurados dos sinais ativos. Detalhes em [regras](rules.md) e [priorização](prioritization.md).
+Seis regras saem dos indicadores e cinco do plano datado (falta projetada, OP de produto em descontinuação, excesso projetado, falta de capacidade e estoque acumulando no parceiro). O score é a soma dos pesos configurados dos sinais ativos. Detalhes em [regras](rules.md) e [priorização](prioritization.md).
 
-## 3. Previsão de demanda (`forecasting.py`)
+## 3. Previsão de demanda (`official_forecast.py`, motor v2 desde a Etapa 15.1)
 
 - **Série:** faturamento mensal por SKU (`Vendas_24m`), com meses sem venda preenchidos com zero entre o primeiro e o último mês observado.
 - **Histórico mínimo:** 6 meses. Abaixo disso, `status = insufficient_data` e nenhuma previsão numérica é gerada.
-- **Candidatos:**
-  - média móvel de 3 meses, aplicada de forma recursiva;
-  - sazonal ingênuo de 12 meses (mesmo mês do ano anterior).
-- **Holdout:** os 3 últimos meses são reservados. O modelo de menor WAPE vence e, em caso de empate, a ordem alfabética do código decide.
-- **WAPE:** `Σ|real − previsto| / Σ real` nos 3 meses do holdout. Se a demanda real soma zero, o WAPE fica `null`.
+- **Modelo (sem seleção por SKU):** o primeiro da cadeia que o histórico comporta:
+  1. mês do ano anterior ajustado pelo nível (`seasonal_level`, ≥ 15 meses): `nível recente (3 meses) × (mês do ano anterior ÷ nível de um ano antes)`, com a razão limitada a 0,5–3,0;
+  2. sazonal ingênuo de 12 meses;
+  3. média móvel de 3 meses.
+- **Horizonte:** 6 meses; `forecast_next_month` e `forecast_total_3m` continuam valendo para os 3 primeiros, e `forecast_total_6m` soma os 6.
+- **Erro (`backtest_wape`):** `Σ|real − previsto| / Σ real` em 7 origens rolantes (2025-11 a 2026-05), cada uma prevendo os 3 meses seguintes só com os dados anteriores a ela; o erro também é separado em meses de pico (nov, jan, fev) e normais. Novembro não cai em nenhuma origem (o modelo exige 15 meses); ele é conferido pelo caso congelado VC-28.
+- **Promoção:** o v2 virou oficial porque atendeu aos quatro critérios fixados antes do teste (WAPE 10,1% → 8,0%; viés no pico +0,7%; viés agregado sem piora; 45 SKUs melhores que a baseline contra 40). O motor v1 (`forecasting.py`, holdout dos 3 últimos meses entre média móvel e sazonal ingênuo) continua reproduzível no laboratório.
 - **Confiança da previsão:**
   - alta: WAPE ≤ 20%;
   - média: WAPE ≤ 40%;
@@ -43,7 +48,7 @@ Sete regras geram sinais com valores usados e origem. O score é a soma dos peso
 - **Tendência:** compara a média dos 3 meses recentes com a dos 3 anteriores.
   - Variação acima de 10% → crescente; abaixo de −10% → decrescente; caso contrário, estável.
   - Com média anterior zero: crescente se a recente for positiva, estável se também for zero.
-- **Horizonte:** 3 meses (`forecast_values`); `forecast_next_month` é o primeiro deles.
+- **Horizonte do v1:** 3 meses; no v2, 6 meses (acima).
 
 ### 3.1 Faturamento estimado (`revenue.py`)
 
@@ -53,9 +58,10 @@ faturamento estimado do mês = previsão em unidades do mês × preço unitário
 
 - **Preço vigente:** `Precos_Produtos` (aba opcional). Sem preço válido (> 0) nela, usa o último preço faturado do SKU em `Vendas_24m`. Sem nenhum, o SKU fica sem estimativa (`null`, nunca zero). Divergência entre as duas fontes é sinalizada em `price_conflict`; vale o preço da tabela.
 - **Agregação:** soma apenas SKUs com estimativa; os demais são listados em `skus_excluded`.
-- **Erro em reais (`backtest_wape`):** com o modelo escolhido para cada SKU, soma `|real − previsto| × preço` no teste dos últimos 3 meses e divide pelo faturamento real × preço, por SKU e mês.
+- **Horizonte:** telas e totais "3 meses" usam os 3 primeiros meses da previsão; `revenue_total_6m` soma os 6.
+- **Erro em reais (`backtest_wape`):** o mesmo teste rolante da previsão oficial, em unidades × preço (no v1, o teste dos últimos 3 meses).
 - **Variação:** estimativa de 3 meses contra o faturamento observado nos 3 meses anteriores dos mesmos SKUs.
-- **Forecast comercial:** `Forecast_Comercial` × mesmo preço, somente nos meses em comum com a previsão; é comparação, não erro.
+- **Forecast comercial:** `Forecast_Comercial` × mesmo preço, em todos os meses em comum com a previsão de 6 meses (out–dez); é comparação, não erro.
 - **Limites:** preço constante, receita bruta, global por SKU. Estimativa, não faturamento realizado.
 
 ### 3.2 Eventos e sazonalidade (`events.py`)
@@ -69,7 +75,7 @@ data de decisão = início do evento − lead time do SKU
 - **Linha de base:** meses sem evento que afete a família, raio de 6 meses, mínimo de 3 meses; acompanha a tendência da família.
 - **Fator:** média das ocorrências (mínimo de 1 e 12 meses de histórico da família), limitada por `config/event_factors.json` (padrão 0,5 a 3,0, com `capped` registrado).
 - **Alerta:** evento que cobre a família, não terminou e (começa até o fim do horizonte **ou** `início − lead time − 30 dias` cai dentro do horizonte).
-- **Sem dupla contagem:** SKU com previsão `seasonal_naive_12` só recebe alerta.
+- **Sem dupla contagem:** SKU com previsão sazonal (sazonal ingênuo, combinação ou o motor oficial v2) só recebe alerta; na base, todos os 50.
 - **Sem fator inventado:** evento sem histórico direto, família com histórico curto ou sem ocorrência mensurável geram só alerta.
 - **Quantidade oficial:** não muda; o cenário mostra a quantidade que resultaria se o próximo mês fosse afetado.
 
@@ -102,44 +108,73 @@ Recomendar recompra = ação comercial "monitorar" E sell-out recente positivo E
 - **Sem inferência:** parceiro sem sell-out suficiente nunca recebe "Repor", "Recomendar recompra" ou "Priorizar parceiro". "Ampliar mix" e "Reativar" só saem dos canais diretos, onde a ausência de faturamento é observada.
 - **Evidência:** cada rótulo traz os valores usados (posição na fila, cobertura, último sell-in, etc.), as limitações e `requires_human_review`.
 
-## 4. Recomendação operacional (`recommendations.py`)
+## 4. Plano de suprimento e recomendação operacional (`supply_plan.py`, `recommendations.py`)
+
+Projeção **diária** de 14/09/2026 (`config/supply_plan.json → reference_date`) até o fim da previsão (28/02/2027), resumida por semana:
 
 ```text
-demanda a cobrir   = máximo(previsão do próximo mês, carteira)     # não soma, para evitar dupla contagem
-segurança (unid.)  = venda média por dia × dias de segurança
-necessidade bruta  = máximo(0, demanda a cobrir + segurança − estoque atual − produção aberta)
-quantidade sugerida = arredondamento para cima ao múltiplo do lote mínimo
+demanda do dia     = carteira na data prometida (vencida → primeiro dia)
+                   + [previsão do mês × dias restantes ÷ dias do mês − carteira do mês]⁺ rateado pelos dias   # sem dupla contagem
+entradas do dia    = OPs abertas na conclusão prevista + ordens planejadas
+estoque projetado  = estoque atual + entradas − demanda          # pode ficar negativo (falta)
+segurança (unid.)  = demanda diária de referência × dias de segurança
+chegada mais cedo  = data de planejamento + lead time
+ordem planejada    = na 1ª data ≥ chegada mais cedo com estoque < segurança:
+                     segurança − estoque projetado + demanda das 4 semanas seguintes − OPs que chegam nelas,
+                     arredondada para cima ao lote; liberação = necessidade − lead time
+quantidade sugerida = soma das ordens com liberação até a data de planejamento + 4 semanas
 ```
 
-**Ação sugerida:**
+- **Pedidos afetados:** a carteira tem prioridade sobre a previsão; um pedido é afetado quando o estoque mais as entradas só o cobrem depois da data prometida.
+- **Antecipar OP:** há falta (ou pedido atrasado) antes de uma OP ainda não iniciada (Planejada/Liberada) que, iniciada na data de planejamento com a mesma duração, chegaria a tempo.
+- **Reduzir OP (excesso):** logo após a chegada, o estoque projetado passa de 90 dias de demanda futura + segurança; reduz em lotes inteiros sem criar falta nesse período.
+- **Produto em descontinuação:** sem previsão e sem ordem nova; a OP fica com o necessário para a carteira que o estoque não cobre (em lotes) ou é cancelada.
 
-| Situação | Ação |
-|---|---|
-| Previsão insuficiente | `investigar_dados`, sem quantidade (`null`) |
-| Quantidade > 0 com `CAPACITY_CONFLICT` | `produzir_validar_capacidade` |
-| Quantidade > 0 sem conflito de capacidade | `produzir` |
-| Quantidade = 0 com `EXCESS_COVERAGE` | `monitorar_excesso` |
-| Demais casos | `sem_acao_necessaria` |
+**Ação principal (precedência):**
 
-**Confiança da recomendação:** parte da confiança da previsão.
+| Ordem | Situação | Ação |
+|---|---|---|
+| 1 | Previsão insuficiente | `investigar_dados`, sem quantidade (`null`) |
+| 2 | OP não iniciada pode chegar antes da falta | `antecipar_op` |
+| 3 | Falta antes da chegada mais cedo | `atraso_inevitavel` |
+| 4 | Ordem planejada com liberação na janela de 4 semanas | `produzir` (`produzir_validar_capacidade` se não couber na linha) |
+| 5 | OP a reduzir ou cancelar | `rever_op` |
+| 6 | Ordem planejada fora da janela | `produzir` ("liberar a partir de dd/mm") |
+| 7 | Cobertura atual acima do limite, sem OP a rever | `monitorar_excesso` |
+| 8 | Estoque projetado acima da segurança no horizonte inteiro | `sem_acao_necessaria` |
 
-- Cai para baixa quando não há sell-out observado.
-- Cai de alta para média quando há pressão de capacidade.
+As ações que também valem ficam em `secondary_actions`. A recomendação traz `planned_orders`, `op_adjustments`, `affected_orders`, `projection` (semanal), `capacity` e a cascata em `calculation`.
 
-Toda recomendação tem `requires_human_review = true` e não cria nem libera ordem de produção.
+**Confiança da recomendação:** parte da confiança da previsão; cai para baixa sem sell-out observado e de alta para média quando alguma ordem não cabe na linha.
+
+Sem plano (entradas sintéticas da validação), vale a conta anterior de "próximo mês". Toda recomendação tem `requires_human_review = true` e não cria, antecipa nem reduz ordem de produção.
+
+### 4.1 Capacidade semanal finita (`capacity_plan.py`)
+
+As ordens planejadas disputam a `Capacidade disponível` de `Capacidade_Semanal` (que já desconta compromissos base e OPs existentes), por família:
+
+1. ordem de atendimento: data de necessidade, depois curva ABC e SKU;
+2. consome na semana de liberação; se faltar, antecipa semana a semana até a data de planejamento (pré-produção);
+3. o que não couber até a necessidade fica sem programação (`insuficiente`); ordem que começaria depois do calendário fica `a_confirmar`.
+
+Premissas: unidades homogêneas por família; consumo na semana de início; compromissos base não validados com a empresa; sem calendário depois de 28/12/2026; antecipar e reduzir OP não mexem na capacidade.
 
 ## 5. Visão comercial parceiro–SKU (`partner_insights.py`)
 
 Usa apenas chaves reais parceiro–SKU–mês. O estoque considerado é o estoque estimado do último sell-out do próprio parceiro, nunca o estoque do CD. Cobertura no parceiro = `estoque estimado / (média mensal de sell-out / 30)`; giro zero ou ausente gera cobertura `null`.
 
+Janela de acúmulo (Etapa 15.5, 6 meses): `sell-through = sell-out ÷ sell-in`, estoque inicial (mês anterior à janela) → final e a conta `estoque(t) = estoque(t−1) + sell-in(t) − sell-out(t)` conferida mês a mês. O sinal de acúmulo do parceiro sobe para o SKU (regra `PARTNER_STOCK_BUILDUP`) sem distribuir o estoque do CD.
+
 Sinais, limiares e precedência das ações estão em [regras comerciais](commercial-rules.md).
 
 ## 6. Central de validação (`validation_center.py`)
 
-- **Baseline de previsão:** repete o último mês observado antes do holdout. Não participa da seleção do modelo. O modelo selecionado só "supera" a baseline com WAPE estritamente menor; empate conta como não superou.
+- **Baseline de previsão:** repete o último mês observado antes de cada origem. Não participa da previsão. O modelo só "supera" a baseline com WAPE estritamente menor; empate conta como não superou.
+- **Erro com o motor v2:** as mesmas 7 origens rolantes da previsão oficial, com WAPE separado em meses normais e de pico.
 - **WAPE mediano:** mediana dos WAPE por SKU.
 - **WAPE ponderado:** `Σ erros absolutos / Σ demanda real` somando os SKUs com demanda no holdout.
-- **Casos congelados:** comparam a saída obtida pelas mesmas funções de regras, previsão e recomendação com a saída esperada registrada em `config/validation_center.json`.
+- **Casos congelados:** comparam a saída obtida pelas mesmas funções de regras, previsão, plano, capacidade e recomendação com a saída esperada registrada em `config/validation_center.json`. Um caso com `pending_until` fica listado como pendente e não conta como aprovado nem reprovado (usado no protocolo da Etapa 15; hoje nenhum está pendente).
+- **Comportamento seguro:** além das checagens anteriores, nenhuma falta projetada aparece como "Sem ação necessária" e toda ordem planejada respeita o lote mínimo.
 - **Tempo de análise:** soma, média e mediana dos minutos informados nas decisões. Antes de 20 registros, não há comparação com a linha de base.
 
 ## 7. Comparação entre execuções (`run_comparison.py`)
