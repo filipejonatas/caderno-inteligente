@@ -24,5 +24,12 @@
   "promotion": {
     "min_relative_wape_gain": 0.05,
     "max_bias_worsening_pp": 2.0
+  },
+  "evaluation": {
+    "first_origin": "2025-11",
+    "last_origin": "2026-05",
+    "horizon_months": 3,
+    "peak_months": [11, 1, 2],
+    "max_abs_peak_bias": 0.10
   }
 }

@@ -213,6 +213,10 @@ def _check(field: str, spec: Any, obtained: Any) -> dict[str, Any]:
         if spec.get("excludes"):
             parts.append("não inclui " + ", ".join(spec["excludes"]))
         return {"field": field, "expected": "; ".join(parts), "obtained": sorted(values), "passed": not missing and not unexpected}
+    if isinstance(spec, dict) and "includes_any" in spec:
+        values = set(obtained or [])
+        return {"field": field, "expected": "inclui ao menos um de " + ", ".join(spec["includes_any"]), "obtained": sorted(values),
+                "passed": any(code in values for code in spec["includes_any"])}
     if isinstance(spec, dict) and "max" in spec:
         return {"field": field, "expected": f"≤ {spec['max']}", "obtained": obtained, "passed": obtained is not None and obtained <= spec["max"]}
     if isinstance(spec, dict) and "not" in spec:
@@ -281,7 +285,12 @@ _COMMERCIAL_INPUT = (
 
 def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
                    forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, challenge_settings: dict[str, Any]) -> dict[str, Any]:
-    result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "limitation")}
+    result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "family", "limitation", "pending_until")}
+    if case.get("pending_until"):
+        # Caso gravado antes do código que o atende (protocolo da Etapa 15): fica visível, mas só é executado quando a
+        # subetapa indicada remover a marca. Não conta como aprovado nem como reprovado.
+        return {**result, "input": None, "expected": case["expected"], "obtained": None, "checks": [], "result": "pendente",
+                "adjustment": f"Caso congelado antes da implementação; será executado a partir da Etapa {case['pending_until']}."}
     obtained: dict[str, Any] | None = None
     case_input: dict[str, Any] = {}
     if case["kind"] == "commercial":
@@ -343,7 +352,7 @@ def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, i
                           challenge_settings: dict[str, Any] | None = None) -> dict[str, Any]:
     settings = challenge_settings or CHALLENGE_DEFAULTS
     items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings) for case in config["cases"]]
-    counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado")}
+    counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado", "pendente")}
     matches = source_sha256 == config["frozen_source_sha256"]
     return {
         "frozen_at": config["frozen_at"],
@@ -355,6 +364,7 @@ def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, i
         "passed": counts["passou"],
         "failed": counts["falhou"],
         "not_found": counts["nao_encontrado"],
+        "pending": counts["pendente"],
         "synthetic": sum(item["origin"] == "synthetic" for item in items),
         "items": items,
     }

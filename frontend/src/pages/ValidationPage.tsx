@@ -25,8 +25,8 @@ const inputNames: Record<string, string> = {
   estimated_stock: 'Estoque estimado do parceiro', average_monthly_sell_out: 'Sell-out médio mensal', coverage_days: 'Cobertura no parceiro (dias)',
   age_months: 'Idade do dado (meses)', backlog_quantity: 'Carteira do par',
 };
-const resultLabel: Record<FrozenCase['result'], string> = { passou: 'Passou', falhou: 'Falhou', nao_encontrado: 'Não encontrado' };
-const resultTone: Record<FrozenCase['result'], string> = { passou: 'good', falhou: 'critical', nao_encontrado: 'medium' };
+const resultLabel: Record<FrozenCase['result'], string> = { passou: 'Passou', falhou: 'Falhou', nao_encontrado: 'Não encontrado', pendente: 'Pendente' };
+const resultTone: Record<FrozenCase['result'], string> = { passou: 'good', falhou: 'critical', nao_encontrado: 'medium', pendente: 'neutral' };
 const safeLabel: Record<SafeBehaviorCheck['status'], string> = { aprovado: 'Aprovado', reprovado: 'Reprovado', coberto_por_teste: 'Coberto por teste' };
 const safeTone: Record<SafeBehaviorCheck['status'], string> = { aprovado: 'good', reprovado: 'critical', coberto_por_teste: 'neutral' };
 const roleTone: Record<string, string> = { candidato: 'neutral', selecionado: 'good', baseline: 'medium' };
@@ -108,7 +108,7 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
     </section>
 
     <div className="metrics-grid">
-      <MetricCard label="Casos de teste aprovados" value={`${cases.passed} de ${cases.total}`} detail={`${cases.synthetic} com entrada sintética`} tone={casesOk ? 'green' : 'red'} icon="validation" />
+      <MetricCard label="Casos de teste aprovados" value={`${cases.passed} de ${cases.total - (cases.pending ?? 0)}`} detail={`${cases.synthetic} com entrada sintética${cases.pending ? ` · ${cases.pending} pendentes` : ''}`} tone={casesOk ? 'green' : 'red'} icon="validation" />
       <MetricCard label="Erro médio da previsão (WAPE)" value={displayPercent(selected?.weighted_wape)} detail={`previsão simples: ${displayPercent(baseline?.weighted_wape)}`} tone="blue" icon="forecasts" />
       <MetricCard label="Modelo pior que a baseline" value={`${forecast.did_not_beat_baseline_skus} de ${forecast.eligible_skus}`} detail={`SKUs · melhor em ${forecast.beat_baseline_skus}`} tone={forecast.did_not_beat_baseline_skus ? 'amber' : 'green'} icon="forecasts" />
     </div>
@@ -168,7 +168,7 @@ export function AuditoriaContent({ data, method }: { data: ValidationSummary; me
     <PageIntro title="Auditoria: como os resultados foram testados" />
     <AuditBlock title="Casos de teste congelados" note={`${cases.total} casos, congelados em ${formatDate(cases.frozen_at)}`}>
       <p className="fact-line">{cases.policy}</p>
-      <div className="validation-cases">{cases.items.map((item) => <details key={item.id} className={`validation-case is-${item.result}`} open={item.result !== 'passou'}>
+      <div className="validation-cases">{cases.items.map((item) => <details key={item.id} className={`validation-case is-${item.result}`} open={item.result === 'falhou' || item.result === 'nao_encontrado'}>
         <summary><span className="validation-case-title"><span className="eyebrow">{item.id} · {item.kind === 'commercial' ? 'comercial' : 'operacional'}</span><strong>{item.title}</strong></span>
           <span className="validation-case-badges">{item.origin === 'synthetic' ? <Badge tone="medium">entrada sintética</Badge> : <Badge tone="neutral">base real</Badge>}<Badge tone={resultTone[item.result]}>{resultLabel[item.result]}</Badge></span></summary>
         <p className="validation-case-origin">{item.origin === 'synthetic' ? item.origin_reason : <>{item.partner ? `${item.partner} · ` : ''}{item.sku && <Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link>}</>}</p>

@@ -28,10 +28,11 @@ def test_validation_summary_contract():
     assert body["requires_human_review"] is True
     natures = {(row["informed"]["nature"], row["recalculated"]["nature"]) for row in body["process_comparison"]}
     assert natures == {("informado", "recalculado")}
-    assert len(body["frozen_cases"]["items"]) == 19
-    assert body["frozen_cases"]["passed"] + body["frozen_cases"]["failed"] + body["frozen_cases"]["not_found"] == 19
-    for item in body["frozen_cases"]["items"]:
-        assert item["result"] in {"passou", "falhou", "nao_encontrado"}
+    cases = body["frozen_cases"]
+    assert len(cases["items"]) == 30
+    assert cases["passed"] + cases["failed"] + cases["not_found"] + cases["pending"] == 30
+    for item in cases["items"]:
+        assert item["result"] in {"passou", "falhou", "nao_encontrado", "pendente"}
         assert item["limitation"] and item["adjustment"]
     assert all(entry["changed_weights_or_models"] is False for entry in body["adjustments"])
 

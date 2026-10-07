@@ -7,5 +7,9 @@
   "low_monthly_sell_out": 30,
   "minimum_excess_stock": 100,
   "divergence_ratio": 0.5,
-  "minimum_divergence_quantity": 50
+  "minimum_divergence_quantity": 50,
+  "buildup_months": 6,
+  "buildup_max_sell_through": 0.9,
+  "buildup_min_stock_growth": 0.3,
+  "stock_identity_tolerance": 1
 }

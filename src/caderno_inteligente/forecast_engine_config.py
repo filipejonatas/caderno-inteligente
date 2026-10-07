@@ -11,6 +11,8 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import pandas as pd
+
 from .forecast_candidates import CANDIDATES
 
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config" / "forecast_engine.json"
@@ -26,6 +28,8 @@ DEFAULTS: dict[str, Any] = {
     "intervals": {"lower_quantile": 0.1, "upper_quantile": 0.9, "minimum_residuals": 6},
     "parsimony_margin": 0.05,
     "promotion": {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0},
+    # Etapa 15: protocolo da avaliação com meses de pico, gravado antes de o motor v2 existir (consumido na 15.1).
+    "evaluation": {"first_origin": "2025-11", "last_origin": "2026-05", "horizon_months": 3, "peak_months": [11, 1, 2], "max_abs_peak_bias": 0.10},
 }
 
 
@@ -120,4 +124,28 @@ def validate_engine_config(values: dict[str, Any]) -> dict[str, Any]:
     if not 0 <= gain < 1 or worsening < 0:
         raise ValueError("Critérios de promoção inválidos")
     values["promotion"] = {"min_relative_wape_gain": gain, "max_bias_worsening_pp": worsening}
+
+    evaluation = _section(values, "evaluation")
+    origins = []
+    for key in ("first_origin", "last_origin"):
+        try:
+            origins.append(pd.Period(str(evaluation[key]), freq="M"))
+        except (ValueError, TypeError) as error:
+            raise ValueError(f"evaluation.{key} deve ser um mês AAAA-MM") from error
+    if origins[0] > origins[1]:
+        raise ValueError("evaluation.first_origin não pode ser posterior a evaluation.last_origin")
+    peaks = evaluation["peak_months"]
+    if not isinstance(peaks, list) or not peaks:
+        raise ValueError("evaluation.peak_months deve ser uma lista não vazia")
+    peaks = [_integer(item, "evaluation.peak_months", 1) for item in peaks]
+    if len(set(peaks)) != len(peaks) or max(peaks) > 12:
+        raise ValueError("evaluation.peak_months deve ter meses distintos entre 1 e 12")
+    peak_bias = _number(evaluation["max_abs_peak_bias"], "evaluation.max_abs_peak_bias")
+    if not 0 < peak_bias < 1:
+        raise ValueError("evaluation.max_abs_peak_bias deve estar em (0, 1)")
+    values["evaluation"] = {
+        "first_origin": str(origins[0]), "last_origin": str(origins[1]),
+        "horizon_months": _integer(evaluation["horizon_months"], "evaluation.horizon_months", 1),
+        "peak_months": peaks, "max_abs_peak_bias": peak_bias,
+    }
     return values

@@ -145,7 +145,9 @@ def backend_checks(runner: Runner, backend: str, frontend: str | None = None, ex
     if validation and runner.check("validação", "central de validação responde 200", validation.status == 200, f"status {validation.status}"):
         body = validation.json()
         cases = body.get("frozen_cases", {})
-        runner.check("validação", "casos congelados avaliados", cases.get("total", 0) >= 8 and cases.get("passed") == cases.get("total"), f"{cases.get('passed')}/{cases.get('total')} aprovados")
+        pending = cases.get("pending", 0)  # casos gravados antes do código que os atende (Etapa 15) não contam
+        executed = cases.get("total", 0) - pending
+        runner.check("validação", "casos congelados avaliados", executed >= 8 and cases.get("passed") == executed, f"{cases.get('passed')}/{executed} aprovados, {pending} pendentes")
         runner.check("validação", "planilha igual à congelada", cases.get("source_matches_frozen") is True)
         runner.check("validação", "nenhum comportamento seguro reprovado", not any(item["status"] == "reprovado" for item in body.get("safe_behavior", [])))
 

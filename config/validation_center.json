@@ -318,6 +318,167 @@
       "input": {"level": "operational", "action": "sem_acao_necessaria", "priority": 40, "forecast_status": "ok", "event_alerts": [], "capacity_status": "family_context_available", "reference_date": "2026-08-31"},
       "expected": {"code": "sem_acao_necessaria", "requires_human_review": true},
       "limitation": "Entrada sintética: comprova a regra do rótulo, não a ocorrência do caso na operação."
+    },
+    {
+      "id": "VC-20",
+      "title": "Promessa sem cobertura não pode ficar sem ação",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0041",
+      "pending_until": "15.3",
+      "expected": {
+        "action": "atraso_inevitavel",
+        "affected_order_ids": {"includes": ["PED-041-1", "PED-041-2"]},
+        "challenge_code": "priorizar_producao",
+        "requires_human_review": true
+      },
+      "limitation": "1.046 un. prometidas para 13 e 14/09 contra estoque de 132; a OP-7840 conclui em 08/10 e nem uma ordem liberada em 14/09 chegaria a tempo (lead time de 21 dias). Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-21",
+      "title": "OP de produto em descontinuação deve ser revista",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0050",
+      "pending_until": "15.3",
+      "expected": {
+        "signals": {"includes": ["OP_FOR_DISCONTINUED"]},
+        "action": "rever_op",
+        "op_adjusted_orders": {"includes": ["OP-7849"]},
+        "suggested_quantity": {"equals": 0},
+        "requires_human_review": true
+      },
+      "limitation": "Status Descontinuando em Produtos e OP-7849 de 1.600 un. contra demanda de ~370 un./mês. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-22",
+      "title": "Segunda OP de produto em descontinuação",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0047",
+      "pending_until": "15.3",
+      "expected": {
+        "signals": {"includes": ["OP_FOR_DISCONTINUED"]},
+        "action": "rever_op",
+        "op_adjusted_orders": {"includes": ["OP-7846"]},
+        "suggested_quantity": {"equals": 0},
+        "requires_human_review": true
+      },
+      "limitation": "Status Descontinuando em Produtos e OP-7846 de 400 un. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-23",
+      "title": "OP acima da necessidade gera excesso projetado",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0048",
+      "pending_until": "15.3",
+      "expected": {
+        "signals": {"includes": ["PROJECTED_EXCESS"]},
+        "op_adjusted_orders": {"includes": ["OP-7847"]},
+        "requires_human_review": true
+      },
+      "limitation": "OP-7847 de 2.000 un. contra demanda de ~270 un./mês e carteira de 404. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-24",
+      "title": "SKU em queda com OP e estoque parado no parceiro entra na fila",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0009",
+      "pending_until": "15.5",
+      "expected": {
+        "ranked": true,
+        "signals": {"includes": ["PROJECTED_EXCESS", "PARTNER_STOCK_BUILDUP"]},
+        "action": "rever_op",
+        "op_adjusted_orders": {"includes": ["OP-7808"]},
+        "requires_human_review": true
+      },
+      "limitation": "Estoque de 1.023 + OP-7808 de 1.200 contra demanda em queda (~290 un./mês, −32% a/a) e acúmulo no KA-02. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-25",
+      "title": "Estoque acumulando no parceiro não é divergência de dado",
+      "kind": "commercial",
+      "origin": "base",
+      "partner": "KA-02",
+      "sku": "CI-0009",
+      "pending_until": "15.5",
+      "expected": {
+        "signals": {"includes": ["PARTNER_STOCK_BUILDUP"], "excludes": ["SELLIN_SELLOUT_DIVERGENCE"]},
+        "action": "conter_reposicao",
+        "challenge_code": "investigar",
+        "requires_human_review": true
+      },
+      "limitation": "Estoque estimado de 235 para 931 un. em 12 meses e sell-through de 59%; a conta estoque anterior + sell-in − sell-out fecha em todos os meses. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-26",
+      "title": "Estoque alto e crescente em distribuidor",
+      "kind": "commercial",
+      "origin": "base",
+      "partner": "KA-03",
+      "sku": "CI-0001",
+      "pending_until": "15.5",
+      "expected": {
+        "signals": {"includes_any": ["PARTNER_STOCK_BUILDUP", "PARTNER_EXCESS_RISK"]},
+        "requires_human_review": true
+      },
+      "limitation": "Cobertura estimada de ~297 dias, estoque de 259 para 343 un. e sell-through de 79% em 12 meses. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-27",
+      "title": "Reposição legítima continua reposição",
+      "kind": "commercial",
+      "origin": "base",
+      "partner": "KA-01",
+      "sku": "CI-0029",
+      "expected": {
+        "action": "avaliar_reposicao",
+        "signals": {"includes": ["REPOSITION_OPPORTUNITY"]},
+        "requires_human_review": true
+      },
+      "limitation": "Guarda de regressão da Etapa 15: cobertura estimada de ~22 dias com sell-in e sell-out equilibrados."
+    },
+    {
+      "id": "VC-28",
+      "title": "Previsão oficial alcança o pico de novembro e a Volta às Aulas",
+      "kind": "forecast_aggregate",
+      "origin": "base",
+      "pending_until": "15.1",
+      "expected": {
+        "total_units_2026_11": {"between": [32546, 41111]},
+        "family_units_escolar_2027_01_02": {"min": 15822}
+      },
+      "limitation": "Faixa de 0,95× a 1,20× do realizado de nov/25 (34.259 un.) e ao menos 90% de Escolar em jan+fev/26 (8.622 + 8.958 un.). Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-29",
+      "title": "Capacidade da Linha Escolar para a Volta às Aulas",
+      "kind": "capacity_family",
+      "origin": "base",
+      "family": "Escolar",
+      "pending_until": "15.4",
+      "expected": {
+        "peak_status": {"in": ["pre_producao", "insuficiente", "a_confirmar"]},
+        "peak_need_units": {"positive": true},
+        "available_until_calendar_end": {"positive": true}
+      },
+      "limitation": "Linha Escolar com ocupação de 90–96% e 12.960 un. livres de 14/09 a 28/12/2026; não há capacidade informada depois disso. Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
+    },
+    {
+      "id": "VC-30",
+      "title": "Cobertura medida pela demanda, não pelo cadastro",
+      "kind": "operational",
+      "origin": "base",
+      "sku": "CI-0014",
+      "pending_until": "15.2",
+      "expected": {
+        "coverage_days_calculated": {"max": 54},
+        "data_quality_warnings": {"includes": ["REGISTERED_DEMAND_DIVERGENCE"]},
+        "requires_human_review": true
+      },
+      "limitation": "Cobertura cadastrada de 55 dias usa Venda média/dia de 27,1; a média real dos últimos 12 meses é ~1.505 un./mês (×1,85). Gravado em 2026-10-07 (Etapa 15.0), antes do código que o atende; campos novos do resultado são criados pela subetapa indicada."
     }
   ],
   "adjustments": [
@@ -361,6 +522,20 @@
       "change": "Foram adicionados 11 casos congelados (VC-09 a VC-19) para os rótulos de ação do desafio, todos sintéticos e executados pelo mesmo rotulador do produto.",
       "reason": "Cada rótulo precisa de ao menos um caso congelado; vários não ocorrem na base atual (Priorizar parceiro, Ampliar mix, Recomendar recompra, Reativar).",
       "evidence": "docs/etapa-13-rotulos-de-acao.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "Foram adicionados 11 casos congelados da Etapa 15 (VC-20 a VC-30): dez ficam pendentes até a subetapa que os atende e o VC-27 é uma guarda de regressão ativa. A central passou a aceitar o resultado pendente, que não conta como aprovado nem como reprovado.",
+      "reason": "Protocolo da Etapa 15: casos, limiares e origens de avaliação gravados antes do código que corrige G1–G5, para que não sejam ajustados depois de ver os resultados.",
+      "evidence": "docs/plano-etapa-15-correcao-motor-decisao.md e docs/etapa-15-0-linha-de-base.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "Registrado que o VC-04 (CI-0041 com prioridade alta e Sem ação necessária) será revisto na Etapa 15.3.",
+      "reason": "Há 914 un. prometidas para 13 e 14/09 sem cobertura até a chegada da OP-7840 em 08/10; Sem ação contradiz o risco que põe o SKU no topo da fila. O VC-20 passa a ser o caso de referência.",
+      "evidence": "docs/plano-etapa-15-correcao-motor-decisao.md, seção 7",
       "changed_weights_or_models": false
     }
   ]

@@ -766,6 +766,7 @@
         "frozen_cases.items",
         "frozen_cases.not_found",
         "frozen_cases.passed",
+        "frozen_cases.pending",
         "frozen_cases.policy",
         "frozen_cases.source_matches_frozen",
         "frozen_cases.source_note",

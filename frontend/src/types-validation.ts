@@ -85,7 +85,8 @@ export interface FrozenCase {
   expected: Record<string, unknown>;
   obtained: Record<string, unknown> | null;
   checks: CaseCheck[];
-  result: 'passou' | 'falhou' | 'nao_encontrado';
+  result: 'passou' | 'falhou' | 'nao_encontrado' | 'pendente';
+  pending_until?: string | null;
   adjustment: string;
 }
 
@@ -99,6 +100,7 @@ export interface FrozenCases {
   passed: number;
   failed: number;
   not_found: number;
+  pending?: number;
   synthetic: number;
   items: FrozenCase[];
 }

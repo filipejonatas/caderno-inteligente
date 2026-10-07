@@ -21,6 +21,10 @@ const thresholdNames: Record<string, string> = {
   minimum_excess_stock: 'Estoque mínimo para apontar excesso (unidades)',
   divergence_ratio: 'Divergência sell-in × sell-out (proporção)',
   minimum_divergence_quantity: 'Divergência mínima (unidades)',
+  buildup_months: 'Janela de acúmulo no parceiro (meses)',
+  buildup_max_sell_through: 'Sell-through máximo para acúmulo (proporção)',
+  buildup_min_stock_growth: 'Crescimento mínimo do estoque para acúmulo (proporção)',
+  stock_identity_tolerance: 'Tolerância da conta de estoque (unidades)',
 };
 
 const rowKey = (row: CommercialRow) => `${row.partner}-${row.sku}`;

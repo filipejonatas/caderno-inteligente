@@ -269,7 +269,7 @@ export const validationSummary: ValidationSummary = {
     models: [{ model: 'selected', label: 'Selecionado', role: 'selecionado', selected_skus: 1, evaluated_skus: 1, wape_defined_skus: 1, median_wape: 0.1, weighted_wape: 0.1 }],
     beat_baseline_skus: 1, did_not_beat_baseline_skus: 0, not_comparable_skus: 0, items: [], limitations: ['Holdout otimista.'],
   },
-  frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, synthetic: 0, items: [] },
+  frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, pending: 0, synthetic: 0, items: [] },
   safe_behavior: [{ id: 'a', label: 'Verificação', status: 'aprovado', method: 'executado', evidence: 'ok' }],
   known_failures: [], known_limitations: ['Limitação.'], adjustments: [], requires_human_review: true,
 };

@@ -1,0 +1,2803 @@
+{
+ "source_sha256": "03fa0ed400aa3f8e14de8f8232cd12727a54c85089a36672f009cae37b78803f",
+ "config_sha256": {
+  "config/forecast_engine.json": "ce6a256d6d513ae11dce79077caf1588669546193a228ef713e4113212397823",
+  "config/prioritization_weights.json": "074ef7b2d06771bc897abe11997b6d7cacca306918941a119854c94b9cefd25a",
+  "config/rule_thresholds.json": "15aecfea43fe4ea894e89f325cde8e46e66d56fba1f306c9f1f295820c35e06d",
+  "config/commercial_thresholds.json": "7aa396f597efe6634830c7f0a94ab0cea208084ff63c699cbbf2542707c80742",
+  "config/challenge_actions.json": "bf7513389d6e07bc9103427f756d60464a2d501be3be8155bad70749b9806be4",
+  "config/event_factors.json": "e28266e8eb06921bba721aa5e966833172b28a0a8a62950bbc35517e0133f6db",
+  "config/supply_plan.json": "ce8bac4dada2dd577d8ec3cdd3026f5b1eca77b0d0a83641e7576e92af85d44d"
+ },
+ "overview": {
+  "total_skus": 50,
+  "prioritized": 41,
+  "risk_count": 16,
+  "rupture_sku_count": 16,
+  "below_lead_time_count": 15,
+  "below_safety_stock_count": 13,
+  "rupture_signal_count": 28,
+  "order_without_production": 12,
+  "excess_count": 6,
+  "low_confidence": 20,
+  "risk_distribution": {
+   "PRODUCTION_AFTER_PROMISE": 20,
+   "LOW_SELLOUT_VISIBILITY": 20,
+   "RUP_LEAD_TIME": 15,
+   "RUP_SAFETY_STOCK": 13,
+   "ORDER_WITHOUT_PRODUCTION": 12,
+   "CAPACITY_CONFLICT": 6,
+   "EXCESS_COVERAGE": 6
+  },
+  "confidence_distribution": {
+   "média": 21,
+   "baixa": 20
+  },
+  "decision_count": 0,
+  "partner_data_influenced_decision_count": 0
+ },
+ "forecast_total_by_month": {
+  "2026-09-01": 25682.1,
+  "2026-10-01": 25722.2,
+  "2026-11-01": 29235.4
+ },
+ "revenue_total": {
+  "label": "Total da empresa",
+  "skus_total": 50,
+  "skus_with_estimate": 50,
+  "skus_excluded": [],
+  "by_month": [
+   {
+    "month": "2026-09-01",
+    "revenue": 1614608.79
+   },
+   {
+    "month": "2026-10-01",
+    "revenue": 1617568.28
+   },
+   {
+    "month": "2026-11-01",
+    "revenue": 1806313.46
+   }
+  ],
+  "revenue_total_3m": 5038490.53,
+  "confidence_distribution": {
+   "alta": 50,
+   "média": 0,
+   "baixa": 0
+  },
+  "backtest_wape": 0.0672,
+  "observed_revenue": {
+   "months": [
+    "2025-09-01",
+    "2025-10-01",
+    "2025-11-01",
+    "2025-12-01",
+    "2026-01-01",
+    "2026-02-01",
+    "2026-03-01",
+    "2026-04-01",
+    "2026-05-01",
+    "2026-06-01",
+    "2026-07-01",
+    "2026-08-01"
+   ],
+   "values": [
+    1597745.8,
+    1578985.9,
+    2184609.1,
+    1761803.2,
+    2138363.7,
+    2030699.9,
+    1602168.6,
+    1632362.2,
+    1609928.9,
+    1618103.7,
+    1644723.3,
+    1633364.6
+   ]
+  },
+  "observed_last_3m_same_skus": 4896191.6,
+  "change_vs_last_3m": 0.0291,
+  "commercial_reference": {
+   "months": [
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "skus_compared": 50,
+   "model_revenue": 3423881.74,
+   "commercial_revenue": 3578609.5,
+   "difference_ratio": -0.0432
+  }
+ },
+ "frozen_cases": {
+  "total": 30,
+  "passed": 20,
+  "failed": 0,
+  "not_found": 0,
+  "pending": 10
+ },
+ "action_counts": {
+  "monitorar_excesso": 6,
+  "produzir": 12,
+  "produzir_validar_capacidade": 2,
+  "sem_acao_necessaria": 30
+ },
+ "top10": [
+  {
+   "priority": 1,
+   "sku": "CI-0041",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 2,
+   "sku": "CI-0050",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 3,
+   "sku": "CI-0025",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 4,
+   "sku": "CI-0033",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 5,
+   "sku": "CI-0049",
+   "action": "produzir",
+   "suggested_quantity": 300.0,
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "priority": 6,
+   "sku": "CI-0002",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 7,
+   "sku": "CI-0015",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 8,
+   "sku": "CI-0017",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "priority": 9,
+   "sku": "CI-0018",
+   "action": "produzir",
+   "suggested_quantity": 500.0,
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "priority": 10,
+   "sku": "CI-0048",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "challenge_code": "sem_acao_necessaria"
+  }
+ ],
+ "skus": [
+  {
+   "sku": "CI-0041",
+   "family": "Escolar",
+   "priority": 1,
+   "attention_score": 33,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    754.7,
+    739.6,
+    750.7
+   ],
+   "backtest_wape": 0.0603,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "requires_review",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0050",
+   "family": "Escolar",
+   "priority": 2,
+   "attention_score": 33,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    372.3,
+    373.1,
+    383.1
+   ],
+   "backtest_wape": 0.071,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "requires_review",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0025",
+   "family": "Escolar",
+   "priority": 3,
+   "attention_score": 31,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 18.0,
+   "coverage_days_source": 18.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    652.0,
+    651.3,
+    638.4
+   ],
+   "backtest_wape": 0.0597,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "requires_review",
+   "confidence": "média",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0033",
+   "family": "Acessórios",
+   "priority": 4,
+   "attention_score": 28,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    269.7,
+    263.6,
+    263.1
+   ],
+   "backtest_wape": 0.0435,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0049",
+   "family": "Acessórios",
+   "priority": 5,
+   "attention_score": 28,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 5.9,
+   "coverage_days_source": 6.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    308.0,
+    350.0,
+    452.0
+   ],
+   "backtest_wape": 0.0694,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 300.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "sku": "CI-0002",
+   "family": "Clássico",
+   "priority": 6,
+   "attention_score": 26,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    203.0,
+    217.0,
+    252.0
+   ],
+   "backtest_wape": 0.0509,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0015",
+   "family": "Executivo",
+   "priority": 7,
+   "attention_score": 26,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    454.3,
+    438.8,
+    454.4
+   ],
+   "backtest_wape": 0.1318,
+   "forecast_confidence": "alta",
+   "trend": "decrescente",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0017",
+   "family": "Planner",
+   "priority": 8,
+   "attention_score": 26,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    211.3,
+    211.1,
+    213.8
+   ],
+   "backtest_wape": 0.0314,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0018",
+   "family": "Refis",
+   "priority": 9,
+   "attention_score": 26,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    286.0,
+    285.7,
+    287.9
+   ],
+   "backtest_wape": 0.0718,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 500.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "sku": "CI-0048",
+   "family": "Refis",
+   "priority": 10,
+   "attention_score": 20,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    274.3,
+    265.4,
+    265.3
+   ],
+   "backtest_wape": 0.0731,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0010",
+   "family": "Acessórios",
+   "priority": 11,
+   "attention_score": 18,
+   "signals": [
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    638.0,
+    704.0,
+    961.0
+   ],
+   "backtest_wape": 0.1079,
+   "forecast_confidence": "alta",
+   "trend": "crescente",
+   "action": "produzir",
+   "suggested_quantity": 900.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0023",
+   "family": "Refis",
+   "priority": 12,
+   "attention_score": 18,
+   "signals": [
+    "RUP_LEAD_TIME",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 6.0,
+   "coverage_days_source": 6.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    554.0,
+    537.7,
+    553.9
+   ],
+   "backtest_wape": 0.1036,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0037",
+   "family": "Clássico",
+   "priority": 13,
+   "attention_score": 18,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    516.7,
+    534.2,
+    529.3
+   ],
+   "backtest_wape": 0.0594,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0047",
+   "family": "Executivo",
+   "priority": 14,
+   "attention_score": 18,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE",
+    "RUP_LEAD_TIME"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    199.3,
+    197.1,
+    196.1
+   ],
+   "backtest_wape": 0.036,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0014",
+   "family": "Escolar",
+   "priority": 15,
+   "attention_score": 14,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    1246.3,
+    1295.1,
+    1269.1
+   ],
+   "backtest_wape": 0.0735,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir_validar_capacidade",
+   "suggested_quantity": 400.0,
+   "capacity_status": "requires_review",
+   "confidence": "média",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0016",
+   "family": "Escolar",
+   "priority": 16,
+   "attention_score": 14,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    160.7,
+    166.9,
+    165.9
+   ],
+   "backtest_wape": 0.0662,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir_validar_capacidade",
+   "suggested_quantity": 400.0,
+   "capacity_status": "requires_review",
+   "confidence": "média",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0032",
+   "family": "Acessórios",
+   "priority": 17,
+   "attention_score": 14,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "LOW_SELLOUT_VISIBILITY",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 110.0,
+   "coverage_days_source": 110.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    233.7,
+    233.2,
+    235.0
+   ],
+   "backtest_wape": 0.0751,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0038",
+   "family": "Refis",
+   "priority": 18,
+   "attention_score": 14,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "LOW_SELLOUT_VISIBILITY",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 109.9,
+   "coverage_days_source": 110.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    561.0,
+    473.0,
+    656.0
+   ],
+   "backtest_wape": 0.0411,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0040",
+   "family": "Executivo",
+   "priority": 19,
+   "attention_score": 14,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "LOW_SELLOUT_VISIBILITY",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 110.0,
+   "coverage_days_source": 110.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    316.0,
+    303.3,
+    301.4
+   ],
+   "backtest_wape": 0.1324,
+   "forecast_confidence": "alta",
+   "trend": "decrescente",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0022",
+   "family": "Executivo",
+   "priority": 20,
+   "attention_score": 12,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 110.0,
+   "coverage_days_source": 110.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    489.0,
+    440.0,
+    664.0
+   ],
+   "backtest_wape": 0.0417,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0045",
+   "family": "Acessórios",
+   "priority": 21,
+   "attention_score": 12,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "RUP_SAFETY_STOCK"
+   ],
+   "coverage_days_calculated": 18.0,
+   "coverage_days_source": 18.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    951.0,
+    854.0,
+    1370.0
+   ],
+   "backtest_wape": 0.0756,
+   "forecast_confidence": "alta",
+   "trend": "crescente",
+   "action": "produzir",
+   "suggested_quantity": 300.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0021",
+   "family": "Clássico",
+   "priority": 22,
+   "attention_score": 11,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 110.0,
+   "coverage_days_source": 110.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    411.0,
+    407.3,
+    412.4
+   ],
+   "backtest_wape": 0.0406,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0036",
+   "family": "Clássico",
+   "priority": 23,
+   "attention_score": 11,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    430.7,
+    439.6,
+    424.7
+   ],
+   "backtest_wape": 0.09,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 600.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "sku": "CI-0042",
+   "family": "Planner",
+   "priority": 24,
+   "attention_score": 11,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    811.7,
+    834.6,
+    829.7
+   ],
+   "backtest_wape": 0.068,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 400.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0035",
+   "family": "Acessórios",
+   "priority": 25,
+   "attention_score": 10,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    376.7,
+    377.2,
+    364.0
+   ],
+   "backtest_wape": 0.0863,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0043",
+   "family": "Refis",
+   "priority": 26,
+   "attention_score": 10,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 85.0,
+   "coverage_days_source": 85.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    780.7,
+    766.9,
+    763.5
+   ],
+   "backtest_wape": 0.0345,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0046",
+   "family": "Clássico",
+   "priority": 27,
+   "attention_score": 10,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY",
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 18.0,
+   "coverage_days_source": 18.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    155.0,
+    152.3,
+    150.1
+   ],
+   "backtest_wape": 0.0529,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0004",
+   "family": "Planner",
+   "priority": 28,
+   "attention_score": 9,
+   "signals": [
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    500.7,
+    500.9,
+    497.9
+   ],
+   "backtest_wape": 0.0984,
+   "forecast_confidence": "alta",
+   "trend": "crescente",
+   "action": "produzir",
+   "suggested_quantity": 800.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0012",
+   "family": "Clássico",
+   "priority": 29,
+   "attention_score": 9,
+   "signals": [
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    684.0,
+    688.0,
+    943.0
+   ],
+   "backtest_wape": 0.01,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 300.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "priorizar_producao"
+  },
+  {
+   "sku": "CI-0020",
+   "family": "Acessórios",
+   "priority": 30,
+   "attention_score": 9,
+   "signals": [
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    380.3,
+    373.8,
+    382.0
+   ],
+   "backtest_wape": 0.0581,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 600.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0030",
+   "family": "Refis",
+   "priority": 31,
+   "attention_score": 9,
+   "signals": [
+    "ORDER_WITHOUT_PRODUCTION"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    928.0,
+    1000.0,
+    1104.0
+   ],
+   "backtest_wape": 0.0561,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 1000.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0005",
+   "family": "Refis",
+   "priority": 32,
+   "attention_score": 8,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    567.3,
+    564.4,
+    573.3
+   ],
+   "backtest_wape": 0.0909,
+   "forecast_confidence": "alta",
+   "trend": "crescente",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0006",
+   "family": "Refis",
+   "priority": 33,
+   "attention_score": 8,
+   "signals": [
+    "RUP_LEAD_TIME"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    435.7,
+    443.6,
+    439.1
+   ],
+   "backtest_wape": 0.0625,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0011",
+   "family": "Clássico",
+   "priority": 34,
+   "attention_score": 8,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    729.0,
+    700.0,
+    890.0
+   ],
+   "backtest_wape": 0.0419,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0019",
+   "family": "Acessórios",
+   "priority": 35,
+   "attention_score": 8,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 17.9,
+   "coverage_days_source": 18.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    326.0,
+    279.0,
+    429.0
+   ],
+   "backtest_wape": 0.0774,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0027",
+   "family": "Clássico",
+   "priority": 36,
+   "attention_score": 8,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    719.0,
+    715.0,
+    1049.0
+   ],
+   "backtest_wape": 0.103,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0029",
+   "family": "Planner",
+   "priority": 37,
+   "attention_score": 8,
+   "signals": [
+    "PRODUCTION_AFTER_PROMISE"
+   ],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    886.3,
+    885.4,
+    878.6
+   ],
+   "backtest_wape": 0.0748,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0039",
+   "family": "Escolar",
+   "priority": 38,
+   "attention_score": 7,
+   "signals": [
+    "CAPACITY_CONFLICT",
+    "LOW_SELLOUT_VISIBILITY"
+   ],
+   "coverage_days_calculated": 85.0,
+   "coverage_days_source": 85.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    635.0,
+    633.3,
+    622.8
+   ],
+   "backtest_wape": 0.0422,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "requires_review",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0044",
+   "family": "Acessórios",
+   "priority": 39,
+   "attention_score": 5,
+   "signals": [
+    "EXCESS_COVERAGE",
+    "LOW_SELLOUT_VISIBILITY"
+   ],
+   "coverage_days_calculated": 110.0,
+   "coverage_days_source": 110.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    917.0,
+    960.0,
+    953.7
+   ],
+   "backtest_wape": 0.1313,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "monitorar_excesso",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "monitorar"
+  },
+  {
+   "sku": "CI-0031",
+   "family": "Refis",
+   "priority": 40,
+   "attention_score": 2,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY"
+   ],
+   "coverage_days_calculated": 10.0,
+   "coverage_days_source": 10.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    65.3,
+    64.4,
+    64.3
+   ],
+   "backtest_wape": 0.1997,
+   "forecast_confidence": "alta",
+   "trend": "decrescente",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0034",
+   "family": "Acessórios",
+   "priority": 41,
+   "attention_score": 2,
+   "signals": [
+    "LOW_SELLOUT_VISIBILITY"
+   ],
+   "coverage_days_calculated": 17.9,
+   "coverage_days_source": 18.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    326.0,
+    335.0,
+    440.0
+   ],
+   "backtest_wape": 0.0712,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "baixa",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0001",
+   "family": "Clássico",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 18.0,
+   "coverage_days_source": 18.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    211.7,
+    215.2,
+    218.3
+   ],
+   "backtest_wape": 0.0508,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0003",
+   "family": "Clássico",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    269.7,
+    263.2,
+    270.3
+   ],
+   "backtest_wape": 0.0561,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0007",
+   "family": "Acessórios",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    492.0,
+    454.0,
+    680.0
+   ],
+   "backtest_wape": 0.061,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0008",
+   "family": "Acessórios",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 18.0,
+   "coverage_days_source": 18.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    478.0,
+    492.0,
+    727.0
+   ],
+   "backtest_wape": 0.0588,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0009",
+   "family": "Acessórios",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    290.3,
+    281.8,
+    273.7
+   ],
+   "backtest_wape": 0.1166,
+   "forecast_confidence": "alta",
+   "trend": "decrescente",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0013",
+   "family": "Refis",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    802.0,
+    852.0,
+    1140.0
+   ],
+   "backtest_wape": 0.0754,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0024",
+   "family": "Acessórios",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    606.0,
+    621.0,
+    611.3
+   ],
+   "backtest_wape": 0.0601,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 600.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  },
+  {
+   "sku": "CI-0026",
+   "family": "Clássico",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 55.0,
+   "coverage_days_source": 55.0,
+   "model": "moving_average_3",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    1030.7,
+    1036.2,
+    1061.3
+   ],
+   "backtest_wape": 0.0606,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "sem_acao_necessaria",
+   "suggested_quantity": 0.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "sem_acao_necessaria"
+  },
+  {
+   "sku": "CI-0028",
+   "family": "Clássico",
+   "priority": null,
+   "attention_score": null,
+   "signals": [],
+   "coverage_days_calculated": 30.0,
+   "coverage_days_source": 30.0,
+   "model": "seasonal_naive_12",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    785.0,
+    852.0,
+    1180.0
+   ],
+   "backtest_wape": 0.0173,
+   "forecast_confidence": "alta",
+   "trend": "estável",
+   "action": "produzir",
+   "suggested_quantity": 600.0,
+   "capacity_status": "family_context_available",
+   "confidence": "alta",
+   "challenge_code": "produzir"
+  }
+ ],
+ "partner_pairs": [
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0009",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0018",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0023",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0036",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0043",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "E-commerce",
+   "sku": "CI-0047",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0002",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 128.3,
+   "estimated_stock": 181.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0005",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 91.8,
+   "estimated_stock": 207.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0008",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 55.4,
+   "estimated_stock": 192.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0011",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 26.2,
+   "estimated_stock": 132.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0012",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0014",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 24.4,
+   "estimated_stock": 102.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0017",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 60.9,
+   "estimated_stock": 71.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0020",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 93.6,
+   "estimated_stock": 234.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0021",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0023",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 41.9,
+   "estimated_stock": 153.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0026",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 28.4,
+   "estimated_stock": 119.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0027",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0029",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 22.5,
+   "estimated_stock": 133.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-01",
+   "sku": "CI-0049",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0003",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 83.6,
+   "estimated_stock": 104.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0004",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0006",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 73.2,
+   "estimated_stock": 183.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0009",
+   "action": "investigar_divergencia",
+   "data_quality": "sufficient",
+   "signals": [
+    "SELLIN_SELLOUT_DIVERGENCE"
+   ],
+   "coverage_days": 355.0,
+   "estimated_stock": 931.0,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0011",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0012",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 40.3,
+   "estimated_stock": 219.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0014",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0015",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 20.6,
+   "estimated_stock": 113.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0018",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 176.5,
+   "estimated_stock": 255.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0021",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 81.0,
+   "estimated_stock": 181.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0024",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 64.1,
+   "estimated_stock": 243.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0027",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 14.0,
+   "estimated_stock": 67.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0030",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 57.1,
+   "estimated_stock": 257.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0035",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0036",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0038",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0041",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-02",
+   "sku": "CI-0049",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0001",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 296.8,
+   "estimated_stock": 343.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0002",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0004",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 187.3,
+   "estimated_stock": 206.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0007",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 63.9,
+   "estimated_stock": 198.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0010",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 37.1,
+   "estimated_stock": 150.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0013",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 30.7,
+   "estimated_stock": 125.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0016",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [
+    "PARTNER_EXCESS_RISK"
+   ],
+   "coverage_days": 150.0,
+   "estimated_stock": 120.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0019",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 40.1,
+   "estimated_stock": 99.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0022",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 50.6,
+   "estimated_stock": 194.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0025",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 74.8,
+   "estimated_stock": 311.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0028",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 21.5,
+   "estimated_stock": 92.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-03",
+   "sku": "CI-0029",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0002",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 145.5,
+   "estimated_stock": 194.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0005",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 55.4,
+   "estimated_stock": 131.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0008",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 43.5,
+   "estimated_stock": 144.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0011",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 79.4,
+   "estimated_stock": 224.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0013",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0014",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 36.3,
+   "estimated_stock": 247.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0017",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 45.9,
+   "estimated_stock": 51.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0019",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0020",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 23.0,
+   "estimated_stock": 47.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0023",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 84.7,
+   "estimated_stock": 222.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0026",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 54.5,
+   "estimated_stock": 252.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0029",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 11.1,
+   "estimated_stock": 78.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0042",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-04",
+   "sku": "CI-0046",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0003",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 133.3,
+   "estimated_stock": 280.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0004",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0006",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 32.9,
+   "estimated_stock": 116.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0009",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 66.6,
+   "estimated_stock": 239.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0012",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 19.0,
+   "estimated_stock": 85.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0015",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 72.3,
+   "estimated_stock": 306.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0017",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0018",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 125.0,
+   "estimated_stock": 232.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0021",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 41.5,
+   "estimated_stock": 137.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0022",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0023",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0024",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 20.8,
+   "estimated_stock": 67.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0027",
+   "action": "monitorar_estoque",
+   "data_quality": "sufficient",
+   "signals": [],
+   "coverage_days": 38.6,
+   "estimated_stock": 154.0,
+   "challenge_code": "monitorar"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0030",
+   "action": "avaliar_reposicao",
+   "data_quality": "sufficient",
+   "signals": [
+    "REPOSITION_OPPORTUNITY"
+   ],
+   "coverage_days": 25.6,
+   "estimated_stock": 156.0,
+   "challenge_code": "repor"
+  },
+  {
+   "partner": "KA-05",
+   "sku": "CI-0041",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0007",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0020",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0030",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0032",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0034",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0040",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0045",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0048",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Loja própria",
+   "sku": "CI-0050",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0005",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0015",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0016",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0025",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0033",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0037",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  },
+  {
+   "partner": "Marketplace",
+   "sku": "CI-0046",
+   "action": "dados_insuficientes",
+   "data_quality": "insufficient",
+   "signals": [
+    "INSUFFICIENT_PARTNER_DATA"
+   ],
+   "coverage_days": null,
+   "estimated_stock": null,
+   "challenge_code": "investigar"
+  }
+ ]
+}

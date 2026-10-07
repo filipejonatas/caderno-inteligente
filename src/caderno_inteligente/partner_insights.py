@@ -12,6 +12,8 @@ DEFAULT_THRESHOLDS = {
     "reposition_coverage_days": 30, "excess_coverage_days": 90,
     "low_monthly_sell_out": 30, "minimum_excess_stock": 100,
     "divergence_ratio": .5, "minimum_divergence_quantity": 50,
+    # Etapa 15: estoque acumulando no parceiro; gravados na 15.0, antes do código que os usa (15.5).
+    "buildup_months": 6, "buildup_max_sell_through": .9, "buildup_min_stock_growth": .3, "stock_identity_tolerance": 1,
 }
 ACTION_LABELS = {
     "avaliar_reposicao": "Avaliar reposição",
@@ -74,7 +76,7 @@ def _validate_thresholds(values: dict) -> dict:
     for key, value in values.items():
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
             raise ValueError(f"Limiar comercial inválido: {key}")
-    for key in ("recent_months", "minimum_sell_out_months", "maximum_age_months"):
+    for key in ("recent_months", "minimum_sell_out_months", "maximum_age_months", "buildup_months"):
         if int(values[key]) != values[key]:
             raise ValueError(f"Limiar precisa ser inteiro: {key}")
         values[key] = int(values[key])
@@ -82,6 +84,10 @@ def _validate_thresholds(values: dict) -> dict:
         raise ValueError("Janela comercial deve conter de 1 a 24 meses e a amostra mínima")
     if values["excess_coverage_days"] <= values["reposition_coverage_days"]:
         raise ValueError("Limite de excesso deve superar o limite de reposição")
+    if not 2 <= values["buildup_months"] <= 12:
+        raise ValueError("Janela de acúmulo no parceiro deve ter de 2 a 12 meses")
+    if not 0 < values["buildup_max_sell_through"] <= 1:
+        raise ValueError("Sell-through máximo de acúmulo deve estar em (0, 1]")
     return values
 
 

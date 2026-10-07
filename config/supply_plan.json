@@ -1,0 +1,7 @@
+{
+  "reference_date": "2026-09-14",
+  "decision_window_weeks": 4,
+  "target_cover_weeks": 4,
+  "excess_coverage_days": 90,
+  "days_per_month": 30.4
+}
