@@ -115,7 +115,7 @@ describe('oportunidades: linhas', () => {
     mockApi({ commercial: page(ROWS) });
     renderApp('/parceiros');
     expect(await screen.findByRole('columnheader', { name: 'Cobertura de estoque (dias)' })).toBeInTheDocument();
-    await user.click(screen.getByRole('link', { name: /Parceiros \(/ }));
+    await user.click(screen.getByRole('link', { name: 'Parceiros' }));
     expect(await screen.findByRole('columnheader', { name: 'Cobertura de dados de sell-out' })).toBeInTheDocument();
   });
 });

@@ -146,7 +146,7 @@ describe('recomendação com dados insuficientes', () => {
     renderApp('/fila');
     const table = await screen.findByRole('region', { name: /Fila operacional/ });
     const row = within(table).getByText(SKU_SHORT).closest('tr')!;
-    expect(within(row).getByText('Dados insuficientes')).toBeInTheDocument();
+    expect(within(row).getByText(/Dados insuficientes/)).toBeInTheDocument();
     expect(within(row).getByText('Investigar dados')).toBeInTheDocument();
     expect(within(row).queryByText('0')).not.toBeInTheDocument();
   });

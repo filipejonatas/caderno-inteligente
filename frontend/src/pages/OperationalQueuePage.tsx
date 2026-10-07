@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { api, dashboardReaders } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
@@ -86,7 +86,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
   const clear = () => { setParams({}, { replace: true }); setExtra(0); };
 
   return <div className="operational-queue">
-    <PageIntro title="Qual SKU analisar, o que fazer e quanto" description={description} />
+    <PageIntro title="Qual SKU analisar, o que fazer e quanto" description={description} action={<Link className="secondary-button" to="/cenarios">Simular pesos</Link>} />
     {forecasts.error && priorities.data && <Alert tone="warning" title="Ação e quantidade indisponíveis" action={<button className="secondary-button" onClick={retry}>Tentar novamente</button>}>{forecasts.error} A posição na fila continua exibida; nenhuma sugestão foi estimada no lugar.</Alert>}
     {priorities.error && forecasts.data && <Alert tone="warning" title="Posição e motivo indisponíveis" action={<button className="secondary-button" onClick={retry}>Tentar novamente</button>}>{priorities.error} Ação e quantidade continuam exibidas, sem a ordem da fila de atenção.</Alert>}
     <div className="filter-bar queue-filters" role="search" aria-label="Filtrar a fila operacional">

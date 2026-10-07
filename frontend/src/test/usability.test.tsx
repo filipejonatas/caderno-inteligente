@@ -44,8 +44,8 @@ describe('navegação agrupada', () => {
     await screen.findByRole('heading', { level: 2, name: 'Posso confiar na planilha?' });
     const tabs = screen.getByRole('navigation', { name: 'Seções desta área' });
     expect(within(tabs).getByRole('link', { name: 'Dados da planilha' })).toHaveAttribute('aria-current', 'page');
-    expect(within(tabs).getByRole('link', { name: 'Validação' })).toHaveAttribute('href', '/validacao');
-    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Confiança/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(tabs).getByRole('link', { name: 'Auditoria' })).toHaveAttribute('href', '/auditoria');
+    expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Bastidores/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('diz a regra uma vez, só onde há sugestão, e não a repete nas demais telas', async () => {
@@ -113,13 +113,13 @@ describe('parceiros: oportunidades e evidências na própria linha', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('a aba de parceiros fica na URL e abre o detalhe do parceiro', async () => {
+  it('a página de parceiros tem endereço próprio e abre o detalhe do parceiro', async () => {
     const user = userEvent.setup();
     mockApi();
     renderApp('/parceiros');
     await screen.findByRole('heading', { level: 2, name: 'Onde há oportunidade de reposição' });
-    await user.click(screen.getByRole('link', { name: /^Parceiros \(/ }));
-    expect(currentLocation()).toBe('/parceiros?aba=parceiros');
+    await user.click(within(screen.getByRole('navigation', { name: 'Seções desta área' })).getByRole('link', { name: 'Parceiros' }));
+    expect(currentLocation()).toBe('/carteira');
     expect(await screen.findByRole('link', { name: /Abrir parceiro/ })).toHaveAttribute('href', `/parceiros/${encodeURIComponent(PARTNER)}`);
   });
 });
@@ -145,8 +145,11 @@ describe('validação: veredito e falhas visíveis, detalhes em abas', () => {
     mockApi();
     renderApp('/auditoria');
     expect(await screen.findByRole('heading', { level: 2, name: 'Auditoria: como os resultados foram testados' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Casos de teste congelados' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Histórico de ajustes' })).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: /Método comercial/ })).toBeInTheDocument();
+    // Os blocos começam recolhidos: o título e uma nota ficam visíveis, o conteúdo abre sob demanda.
+    for (const title of ['Casos de teste congelados', 'Comportamento seguro', 'Limitações', 'Histórico de ajustes']) {
+      const summary = screen.getByText(title, { selector: 'summary' });
+      expect(summary.closest('details')).not.toHaveAttribute('open');
+    }
+    expect(await screen.findByText('Método comercial', { selector: 'summary' })).toBeInTheDocument();
   });
 });

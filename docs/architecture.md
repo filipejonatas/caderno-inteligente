@@ -73,7 +73,7 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
-O menu agrupa as rotas em 5 entradas: Início; Planejamento (`/fila`, `/faturamento`, `/cenarios` e o detalhe `/skus/:sku`); Comercial (`/parceiros`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`, `/qualidade`, `/auditoria`, `/execucoes`). Dentro de cada grupo as rotas viram abas (`SubNav`); `/parceiros` tem as abas `?aba=oportunidades|parceiros|diretos` e `/skus/:sku` tem `?tab=resumo|evidencias|parceiros|impacto`. Não existe grupo "Avançado". `/prioridades` e `/previsoes` continuam abrindo e redirecionam para `/fila` com os mesmos parâmetros.
+O menu agrupa as rotas em 7 entradas: Início; Planejamento (`/fila`, `/cenarios` e o detalhe `/skus/:sku`); Financeiro (`/faturamento`); Comercial (`/parceiros`, `/carteira`, `/canais`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`); Bastidores (`/auditoria`, `/execucoes`, `/qualidade`). Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais`. Todos os estilos estão em `frontend/src/styles.css` (tokens no topo).
 
 | URL | Página | Dados consultados |
 |---|---|---|
@@ -85,7 +85,9 @@ O menu agrupa as rotas em 5 entradas: Início; Planejamento (`/fila`, `/faturame
 | `/skus/:sku` | Detalhe do SKU (compartilhável), abas em `?tab=`; o contexto comercial só carrega na aba Parceiros | `priorities/{sku}`, `commercial-recommendations?sku=` (aba Parceiros) |
 | `/casos` | Casos — edição por linha (`PUT cases/{id}`), filtros `status`, `responsavel` | `cases`, `priorities`, `config` |
 | `/qualidade` | Dados da planilha | `data-quality` |
-| `/parceiros` | Comercial (oportunidades, parceiros e canais) — filtros `busca`, `regiao`, `canal`, `ordem`, `aba` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
+| `/parceiros` | Comercial › Oportunidades — filtros `busca`, `regiao`, `canal`, `ordem` | `partners`, `commercial-recommendations?action=avaliar_reposicao` |
+| `/carteira` | Comercial › Parceiros — filtros `busca`, `regiao`, `canal`, `rotulo`, `ordem` | `partners` |
+| `/canais` | Comercial › Canais diretos | `direct-channels` |
 | `/parceiros/:codigo` | Detalhe do parceiro — filtros `sku`, `acao`, `qualidade`, `offset` | `partners/{codigo}`, `partners/{codigo}/skus` |
 | `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
 | `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |

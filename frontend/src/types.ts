@@ -10,6 +10,8 @@ export type PageId =
   | 'cases'
   | 'quality'
   | 'b2b'
+  | 'partners'
+  | 'channels'
   | 'scenarios'
   | 'runs'
   | 'feedback'

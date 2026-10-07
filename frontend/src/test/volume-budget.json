@@ -1,21 +1,149 @@
 {
   "description": "Orçamento de volume por tela (docs/analise-enxugamento.md, seção 4). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
   "routes": {
-    "/": { "fixed": 200, "perRow": 12, "perEvidence": 90, "numbers": 16, "blocks": 5, "columns": 5, "alerts": 1 },
-    "/faturamento": { "fixed": 90, "perRow": 14, "perEvidence": 90, "numbers": 8, "blocks": 4, "columns": 5, "alerts": 1 },
-    "/fila": { "fixed": 110, "perRow": 18, "perEvidence": 90, "numbers": 8, "blocks": 4, "columns": 5, "alerts": 1 },
-    "/skus/TEST-001": { "fixed": 340, "perRow": 14, "perEvidence": 90, "numbers": 35, "blocks": 6, "columns": 5, "alerts": 1 },
-    "/parceiros": { "fixed": 70, "perRow": 14, "perEvidence": 90, "numbers": 6, "blocks": 3, "columns": 5, "alerts": 1 },
-    "/parceiros?aba=parceiros": { "fixed": 120, "perRow": 20, "perEvidence": 90, "numbers": 20, "blocks": 3, "columns": 5, "alerts": 1 },
-    "/parceiros/KA%20T1": { "fixed": 90, "perRow": 16, "perEvidence": 90, "numbers": 8, "blocks": 3, "columns": 5, "alerts": 1 },
-    "/casos": { "fixed": 110, "perRow": 20, "perEvidence": 90, "numbers": 10, "blocks": 4, "columns": 5, "alerts": 0 },
-    "/qualidade": { "fixed": 70, "perRow": 20, "perEvidence": 90, "numbers": 8, "blocks": 2, "columns": 5, "alerts": 0 },
-    "/cenarios": { "fixed": 55, "perRow": 12, "perEvidence": 90, "numbers": 6, "blocks": 1, "columns": 5, "alerts": 0 },
-    "/execucoes": { "fixed": 60, "perRow": 20, "perEvidence": 90, "numbers": 30, "blocks": 2, "columns": 5, "alerts": 0 },
-    "/decisoes": { "fixed": 120, "perRow": 20, "perEvidence": 90, "numbers": 4, "blocks": 2, "columns": 5, "alerts": 0 },
-    "/parceiros?aba=diretos": { "fixed": 70, "perRow": 22, "perEvidence": 90, "numbers": 6, "blocks": 3, "columns": 4, "alerts": 1 },
-    "/canais/Loja%20pr%C3%B3pria": { "fixed": 80, "perRow": 22, "perEvidence": 90, "numbers": 12, "blocks": 4, "columns": 5, "alerts": 1 },
-    "/guia": { "fixed": 500, "perRow": 20, "perEvidence": 90, "numbers": 8, "blocks": 4, "columns": 5, "alerts": 0 },
-    "/validacao": { "fixed": 300, "perRow": 25, "perEvidence": 90, "numbers": 20, "blocks": 7, "columns": 4, "alerts": 1 }
+    "/": {
+      "fixed": 200,
+      "perRow": 12,
+      "perEvidence": 90,
+      "numbers": 16,
+      "blocks": 5,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/faturamento": {
+      "fixed": 90,
+      "perRow": 14,
+      "perEvidence": 90,
+      "numbers": 8,
+      "blocks": 4,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/fila": {
+      "fixed": 110,
+      "perRow": 18,
+      "perEvidence": 90,
+      "numbers": 8,
+      "blocks": 4,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/skus/TEST-001": {
+      "fixed": 340,
+      "perRow": 14,
+      "perEvidence": 90,
+      "numbers": 35,
+      "blocks": 6,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/parceiros": {
+      "fixed": 70,
+      "perRow": 14,
+      "perEvidence": 90,
+      "numbers": 6,
+      "blocks": 3,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/carteira": {
+      "fixed": 120,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 20,
+      "blocks": 3,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/parceiros/KA%20T1": {
+      "fixed": 90,
+      "perRow": 16,
+      "perEvidence": 90,
+      "numbers": 8,
+      "blocks": 3,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/casos": {
+      "fixed": 110,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 10,
+      "blocks": 4,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/qualidade": {
+      "fixed": 70,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 8,
+      "blocks": 2,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/cenarios": {
+      "fixed": 55,
+      "perRow": 12,
+      "perEvidence": 90,
+      "numbers": 6,
+      "blocks": 1,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/execucoes": {
+      "fixed": 60,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 30,
+      "blocks": 2,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/decisoes": {
+      "fixed": 120,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 4,
+      "blocks": 2,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/canais": {
+      "fixed": 70,
+      "perRow": 22,
+      "perEvidence": 90,
+      "numbers": 6,
+      "blocks": 3,
+      "columns": 4,
+      "alerts": 1
+    },
+    "/canais/Loja%20pr%C3%B3pria": {
+      "fixed": 80,
+      "perRow": 22,
+      "perEvidence": 90,
+      "numbers": 12,
+      "blocks": 4,
+      "columns": 5,
+      "alerts": 1
+    },
+    "/guia": {
+      "fixed": 500,
+      "perRow": 20,
+      "perEvidence": 90,
+      "numbers": 8,
+      "blocks": 4,
+      "columns": 5,
+      "alerts": 0
+    },
+    "/validacao": {
+      "fixed": 300,
+      "perRow": 25,
+      "perEvidence": 90,
+      "numbers": 20,
+      "blocks": 7,
+      "columns": 4,
+      "alerts": 1
+    }
   }
 }

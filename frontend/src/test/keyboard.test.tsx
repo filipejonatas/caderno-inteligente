@@ -25,7 +25,7 @@ describe('navegação por teclado', () => {
     const parceiros = within(nav).getByRole('link', { name: /Comercial/ });
     parceiros.focus();
     await user.keyboard('{Enter}');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Parceiros' })).toHaveFocus();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Oportunidades' })).toHaveFocus();
   });
 
   it('no celular o menu abre com foco, fecha com Esc e devolve o foco ao botão', async () => {

@@ -26,10 +26,10 @@ describe('formatos dos canais', () => {
   });
 });
 
-describe('Parceiros: aba Canais diretos', () => {
+describe('Comercial: Canais diretos', () => {
   it('lista os canais com faturamento observado, tendência, carteira e link para o detalhe', async () => {
     const api = mockApi();
-    renderApp('/parceiros?aba=diretos');
+    renderApp('/canais');
     const table = await screen.findByRole('region', { name: /Canais diretos; role horizontalmente/ });
     const row = within(table).getByText('E-commerce próprio').closest('tr') as HTMLElement;
     expect(within(row).getByText(/R\$\s?11\.606\.120/)).toBeInTheDocument();
@@ -38,14 +38,14 @@ describe('Parceiros: aba Canais diretos', () => {
     expect(within(row).getByText('7 pedidos · 2.464 un.')).toBeInTheDocument();
     expect(within(row).getByRole('link', { name: /Abrir canal E-commerce próprio/ })).toHaveAttribute('href', '/canais/E-commerce');
     expect(screen.getByText(/somam/).textContent).toContain('68%');
-    const tabs = screen.getByRole('navigation', { name: 'Visões de parceiros' });
+    const tabs = screen.getByRole('navigation', { name: 'Seções desta área' });
     expect(within(tabs).getByRole('link', { name: 'Canais diretos' })).toHaveAttribute('aria-current', 'page');
     expect(screen.queryByRole('search', { name: 'Filtrar parceiros' })).not.toBeInTheDocument();
     expect(api.gets().some((path) => path.startsWith('/api/commercial-recommendations'))).toBe(false);
     expect(api.gets()).toContain('/api/direct-channels');
   });
 
-  it('a aba padrão não busca os canais diretos', async () => {
+  it('a página de oportunidades não busca os canais diretos', async () => {
     const api = mockApi();
     renderApp('/parceiros');
     await screen.findByRole('heading', { level: 2, name: 'Onde há oportunidade de reposição' });
@@ -55,7 +55,7 @@ describe('Parceiros: aba Canais diretos', () => {
 
   it('falha da análise mostra erro com nova tentativa', async () => {
     mockApi({ directChannels: fail(500, 'Erro interno.') });
-    renderApp('/parceiros?aba=diretos');
+    renderApp('/canais');
     expect(await screen.findByText('Erro interno.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Tentar novamente/ })).toBeInTheDocument();
   });
@@ -110,7 +110,7 @@ describe('Detalhe do canal', () => {
     renderApp(`/canais/${encoded}`);
     await screen.findByRole('heading', { level: 2, name: 'Loja própria' });
     expect(within(screen.getByRole('navigation', { name: 'Navegação principal' })).getByRole('link', { name: /Comercial/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: 'Voltar aos canais' })).toHaveAttribute('href', '/parceiros?aba=diretos');
+    expect(screen.getByRole('link', { name: 'Voltar aos canais' })).toHaveAttribute('href', '/canais');
   });
 });
 

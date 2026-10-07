@@ -14,7 +14,11 @@ const ROUTES: Array<[string, string, string]> = [
   ['/previsoes', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/casos', 'Casos', 'Casos em acompanhamento'],
   ['/qualidade', 'Dados da planilha', 'Posso confiar na planilha?'],
-  ['/parceiros', 'Parceiros', 'Onde há oportunidade de reposição'],
+  ['/parceiros', 'Oportunidades', 'Onde há oportunidade de reposição'],
+  ['/carteira', 'Parceiros', 'Parceiros e cobertura de dados'],
+  ['/canais', 'Canais diretos', 'Canais diretos: faturamento observado'],
+  ['/parceiros?aba=parceiros', 'Parceiros', 'Parceiros e cobertura de dados'],
+  ['/parceiros?aba=diretos', 'Canais diretos', 'Canais diretos: faturamento observado'],
   ['/cenarios', 'Cenários', 'E se o peso de um sinal mudar?'],
   ['/execucoes', 'Execuções', 'O que mudou entre duas execuções'],
   ['/decisoes', 'Histórico de decisões', 'Histórico de decisões'],
@@ -101,7 +105,7 @@ describe('menu', () => {
     mockApi();
     renderApp('/prioridades');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(5);
+    expect(within(nav).getAllByRole('link')).toHaveLength(7);
     expect(within(nav).getByRole('link', { name: /Planejamento/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Início/ })).not.toHaveAttribute('aria-current');
     await user.click(within(nav).getByRole('link', { name: /Confiança/ }));

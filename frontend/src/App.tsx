@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { matchPath, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
@@ -9,8 +10,7 @@ import { SystemInfoContext } from './hooks/useSystemInfo';
 import type { SystemInfo } from './hooks/useSystemInfo';
 import { api } from './api';
 import type { PageLoadStatus } from './hooks/usePageLoadStatus';
-import './App.css';
-import './usability.css';
+import './styles.css';
 
 const GuidePage = lazy(() => import('./pages/GuidePage'));
 const OverviewPage = lazy(() => import('./pages/OverviewPage'));
@@ -19,6 +19,8 @@ const RevenueForecastPage = lazy(() => import('./pages/RevenueForecastPage'));
 const CasesPage = lazy(() => import('./pages/CasesPage'));
 const QualityPage = lazy(() => import('./pages/QualityPage'));
 const B2BPage = lazy(() => import('./pages/B2BPage'));
+const PartnersListPage = lazy(() => import('./pages/PartnersListPage'));
+const DirectChannelsPage = lazy(() => import('./pages/DirectChannelsPage'));
 const PartnerDetailPage = lazy(() => import('./pages/PartnerDetailPage'));
 const ChannelDetailPage = lazy(() => import('./pages/ChannelDetailPage'));
 const ScenariosPage = lazy(() => import('./pages/ScenariosPage'));
@@ -37,6 +39,17 @@ const PAGE_FIELDS = {
   RunsPage: ['runs'],
   FeedbackPage: ['feedback', 'priorities', 'config'],
 } as const;
+
+/** Endereços antigos das abas de Parceiros (?aba=parceiros e ?aba=diretos) abrem as páginas novas com os mesmos filtros. */
+function LegacyPartnersRoute({ children }: { children: ReactNode }) {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const tab = params.get('aba');
+  if (tab !== 'parceiros' && tab !== 'diretos') return <>{children}</>;
+  params.delete('aba');
+  const search = params.size ? `?${params}` : '';
+  return <Navigate to={{ pathname: tab === 'diretos' ? '/canais' : '/carteira', search }} replace />;
+}
 
 function App() {
   const location = useLocation();
@@ -104,7 +117,9 @@ function App() {
             <Route path="/previsoes" element={<Navigate to={{ pathname: '/fila', search: location.search }} replace />} />
             <Route path="/casos" element={<PageResource key="CasesPage" fields={PAGE_FIELDS.CasesPage} refreshToken={refreshToken}>{(dashboard, reload) => <CasesPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/qualidade" element={<PageResource key="QualityPage" fields={PAGE_FIELDS.QualityPage} refreshToken={refreshToken}>{(dashboard, reload) => <QualityPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
-            <Route path="/parceiros" element={<B2BPage refreshToken={refreshToken} />} />
+            <Route path="/parceiros" element={<LegacyPartnersRoute><B2BPage refreshToken={refreshToken} /></LegacyPartnersRoute>} />
+            <Route path="/carteira" element={<PartnersListPage refreshToken={refreshToken} />} />
+            <Route path="/canais" element={<DirectChannelsPage refreshToken={refreshToken} />} />
             <Route path="/parceiros/:codigo" element={<PartnerDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="/canais/:canal" element={<ChannelDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="/cenarios" element={<PageResource key="ScenariosPage" fields={PAGE_FIELDS.ScenariosPage} refreshToken={refreshToken}>{(dashboard, reload) => <ScenariosPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />

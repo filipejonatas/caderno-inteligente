@@ -33,7 +33,7 @@ export default function ChannelDetailPage({ refreshToken }: { refreshToken: numb
   const signals = (Object.keys(data.signal_labels) as ChannelSignal[]).filter((code) => (channel.signal_counts[code] ?? 0) > 0);
   const from = `${location.pathname}${location.search}`;
   return <>
-    <PageIntro title={channel.name ?? channel.code} description={`${channel.code} · ${channel.region ?? 'Região ausente'} · dados até ${formatMonth(data.reference_month)}`} action={<Link className="secondary-button" to="/parceiros?aba=diretos">Voltar aos canais</Link>} />
+    <PageIntro title={channel.name ?? channel.code} description={`${channel.code} · ${channel.region ?? 'Região ausente'} · dados até ${formatMonth(data.reference_month)}`} action={<Link className="secondary-button" to="/canais">Voltar aos canais</Link>} />
     {error && <Alert title="Falha na atualização" tone="warning" action={<button className="secondary-button" onClick={() => void refresh()}>Tentar novamente</button>}>{error}</Alert>}
     <p className="summary-line">Faturamento <strong>{displayCurrency(channel.revenue_24m)}</strong> em 24 meses <Badge tone="neutral">Observado</Badge> · {displayShare(channel.share_of_revenue)} do total · <TrendBadge trend={channel.trend} ratio={channel.change_ratio} /> · {channel.observed_skus} de {channel.catalog_skus} SKUs com faturamento · {backlogText(channel.backlog.open_orders, channel.backlog.open_quantity).toLocaleLowerCase('pt-BR')} <Hint term="canais_diretos" /></p>
     <RevenueTrend observed={{ months: channel.monthly.months, values: channel.monthly.revenue }} months={[]} values={[]} label={`Faturamento mensal observado de ${channel.name ?? channel.code}`} />

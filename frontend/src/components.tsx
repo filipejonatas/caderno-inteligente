@@ -53,7 +53,9 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'revenue', path: '/faturamento', label: 'Faturamento previsto', description: 'Estimativa em reais para três meses' },
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
-  { id: 'b2b', path: '/parceiros', label: 'Parceiros', description: 'Oportunidades e cobertura' },
+  { id: 'b2b', path: '/parceiros', label: 'Oportunidades', description: 'Onde repor, por parceiro e SKU' },
+  { id: 'partners', path: '/carteira', label: 'Parceiros', description: 'Cobertura de dados por parceiro' },
+  { id: 'channels', path: '/canais', label: 'Canais diretos', description: 'Faturamento observado' },
   { id: 'scenarios', path: '/cenarios', label: 'Cenários', description: 'Simulações sem alterar o ranking' },
   { id: 'runs', path: '/execucoes', label: 'Execuções', description: 'Histórico e comparação entre execuções' },
   { id: 'feedback', path: '/decisoes', label: 'Histórico de decisões', description: 'Decisões registradas pelo PCP' },
@@ -61,18 +63,20 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'audit', path: '/auditoria', label: 'Auditoria', description: 'Casos de teste, método e histórico' },
 ];
 
-/** Menu principal: 5 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
-export const menuGroups: Array<{ id: string; label: string; description: string; to: string; icon: IconName; paths: string[] }> = [
-  { id: 'home', label: 'Início', description: 'O que olhar primeiro', to: '/', icon: 'overview', paths: ['/'] },
-  { id: 'production', label: 'Planejamento', description: 'Fila, faturamento e cenários', to: '/fila', icon: 'priorities', paths: ['/fila', '/faturamento', '/cenarios', '/prioridades', '/previsoes', '/skus'] },
-  { id: 'partners', label: 'Comercial', description: 'Oportunidades, parceiros e canais', to: '/parceiros', icon: 'b2b', paths: ['/parceiros', '/canais'] },
-  { id: 'decisions', label: 'Acompanhamento', description: 'Casos e histórico de decisões', to: '/casos', icon: 'feedback', paths: ['/decisoes', '/casos'] },
-  { id: 'trust', label: 'Confiança', description: 'Quanto confiar nos números', to: '/validacao', icon: 'validation', paths: ['/validacao', '/qualidade', '/auditoria', '/execucoes'] },
+/** Menu principal: 7 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
+export const menuGroups: Array<{ id: string; label: string; to: string; paths: string[] }> = [
+  { id: 'home', label: 'Início', to: '/', paths: ['/'] },
+  { id: 'production', label: 'Planejamento', to: '/fila', paths: ['/fila', '/cenarios', '/prioridades', '/previsoes', '/skus'] },
+  { id: 'finance', label: 'Financeiro', to: '/faturamento', paths: ['/faturamento'] },
+  { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'] },
+  { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'] },
+  { id: 'trust', label: 'Confiança', to: '/validacao', paths: ['/validacao'] },
+  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade'] },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
-  production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Faturamento previsto', to: '/faturamento' }, { label: 'Cenários', to: '/cenarios' }],
-  trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }],
+  partners: [{ label: 'Oportunidades', to: '/parceiros' }, { label: 'Parceiros', to: '/carteira' }, { label: 'Canais diretos', to: '/canais' }],
+  backstage: [{ label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }, { label: 'Dados da planilha', to: '/qualidade' }],
   decisions: [{ label: 'Casos', to: '/casos' }, { label: 'Histórico de decisões', to: '/decisoes' }],
 };
 
@@ -96,16 +100,14 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
     <div className={`sidebar-scrim ${open ? 'is-open' : ''}`} onClick={onClose} aria-hidden="true" />
     <aside ref={aside} id="menu-principal" aria-label="Menu" aria-hidden={mobile && !open ? true : undefined} className={`sidebar ${open ? 'is-open' : ''}`}>
       <div className="brand">
-        <div className="brand-mark">CI</div>
-        <div><strong>Caderno</strong><span>Inteligente</span></div>
+        <span className="brand-name">Caderno Inteligente</span>
         <button className="icon-button sidebar-close" onClick={onClose} aria-label="Fechar menu"><Icon name="close" /></button>
       </div>
       <nav aria-label="Navegação principal">
         {menuGroups.map((item) => {
           const active = inGroup(pathname, item.paths);
           return <Link key={item.id} to={item.to} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={onClose}>
-            <span className="nav-icon"><Icon name={item.icon} /></span>
-            <span><strong>{item.label}</strong></span>
+            <strong>{item.label}</strong>
           </Link>;
         })}
       </nav>

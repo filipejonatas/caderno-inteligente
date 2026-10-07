@@ -106,13 +106,14 @@ describe('Faturamento previsto: página própria', () => {
     expect(within(screen.getByRole('region', { name: /Faturamento estimado por SKU/ })).queryByText(SKU_SHORT)).not.toBeInTheDocument();
   });
 
-  it('o submenu de Planejamento liga a fila ao faturamento', async () => {
+  it('o faturamento tem grupo próprio no menu, separado do Planejamento', async () => {
     mockApi();
     renderApp('/faturamento');
     await screen.findByRole('heading', { level: 2, name: 'Quanto se estima faturar nos próximos três meses' });
-    const tabs = screen.getByRole('navigation', { name: 'Seções desta área' });
-    expect(within(tabs).getByRole('link', { name: 'Faturamento previsto' })).toHaveAttribute('aria-current', 'page');
-    expect(within(tabs).getByRole('link', { name: 'Fila operacional' })).toHaveAttribute('href', '/fila');
+    const menu = within(screen.getByRole('navigation', { name: 'Navegação principal' }));
+    expect(menu.getByRole('link', { name: 'Financeiro' })).toHaveAttribute('aria-current', 'page');
+    expect(menu.getByRole('link', { name: 'Planejamento' })).toHaveAttribute('href', '/fila');
+    expect(menu.getByRole('link', { name: 'Planejamento' })).not.toHaveAttribute('aria-current');
   });
 });
 

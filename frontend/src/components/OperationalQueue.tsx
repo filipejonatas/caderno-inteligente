@@ -1,4 +1,4 @@
-import { Badge, EmptyState, confidenceTone, mainReason, severityTone } from '../components';
+import { EmptyState, mainReason } from '../components';
 import { ChallengeBadge } from './ChallengeAction';
 import { EventBadge, mainAlert } from './EventAlerts';
 import { displayQuantity, reasonNames } from '../pages/shared';
@@ -54,24 +54,28 @@ export function sortQueue(rows: QueueRow[], sort: QueueSort) {
   });
 }
 
-function actionTone(action: Recommendation['action']) {
-  if (action === 'investigar_dados' || action === 'produzir_validar_capacidade') return 'medium';
-  if (action === 'produzir') return 'info';
-  return 'neutral';
+type Urgency = 'urgent' | 'review' | 'none' | 'missing';
+
+/** Margem da linha: urgente só quando o sinal principal é crítico; revisar quando ele é alto, há exceção ou a ação pede validação; tracejada quando não há previsão. */
+function urgencyOf(row: QueueRow, severity: string | undefined, exceptions: number): Urgency {
+  if (!row.forecast) return 'missing';
+  if (severity === 'crítica') return 'urgent';
+  if (severity === 'alta') return 'review';
+  const action = row.forecast.operational_recommendation.action;
+  if (exceptions > 0 || action === 'investigar_dados' || action === 'produzir_validar_capacidade') return 'review';
+  return 'none';
 }
 
-function Exceptions({ row, event }: { row: QueueRow; event?: EventItem }) {
+function exceptionTexts(row: QueueRow) {
   const rec = row.forecast?.operational_recommendation;
   const forecastConfidence = row.forecast?.forecast.forecast_confidence;
   const dataConfidence = row.priority?.confidence ?? row.forecast?.confidence;
-  const parts = [
-    row.forecast?.forecast.status === 'insufficient_data' && <Badge key="insufficient" tone="medium">Dados insuficientes</Badge>,
-    rec?.capacity_status === 'requires_review' && <Badge key="capacity" tone="medium">Validar capacidade</Badge>,
-    forecastConfidence && forecastConfidence !== 'alta' && row.forecast?.forecast.status === 'ok' && <Badge key="forecast" tone={confidenceTone(forecastConfidence)}>Previsão com confiança {forecastConfidence}</Badge>,
-    dataConfidence === 'baixa' && <Badge key="data" tone="low">Dados com confiança baixa</Badge>,
-    event && mainAlert(event.alerts) && <EventBadge key="event" item={event} />,
-  ].filter(Boolean);
-  return <td className="cell-stack" data-label="Exceções">{parts.length ? parts : <span className="queue-none" aria-label="Sem exceções">—</span>}</td>;
+  return [
+    row.forecast?.forecast.status === 'insufficient_data' && 'Dados insuficientes',
+    rec?.capacity_status === 'requires_review' && 'Validar capacidade',
+    forecastConfidence && forecastConfidence !== 'alta' && row.forecast?.forecast.status === 'ok' && `Previsão com confiança ${forecastConfidence}`,
+    dataConfidence === 'baixa' && 'Dados com confiança baixa',
+  ].filter((item): item is string => !!item);
 }
 
 export function OperationalQueueTable({ rows, onSelect, weights, eventsBySku, forecastsLoaded, prioritiesLoaded }: {
@@ -90,24 +94,29 @@ export function OperationalQueueTable({ rows, onSelect, weights, eventsBySku, fo
       <tbody>{rows.map((row) => {
         const rec = row.forecast?.operational_recommendation;
         const reason = row.priority ? mainReason(row.priority.reasons, weights) : undefined;
-        return <tr key={row.sku}>
+        const event = eventsBySku.get(row.sku);
+        const hasEvent = !!(event && mainAlert(event.alerts));
+        const texts = exceptionTexts(row);
+        const urgency = urgencyOf(row, reason?.severity, texts.length + (hasEvent ? 1 : 0));
+        const textTone = !rec || rec.action === 'sem_acao_necessaria' ? 'is-muted-text' : urgency === 'urgent' ? 'is-urgent-text' : urgency === 'review' ? 'is-review-text' : '';
+        return <tr key={row.sku} className={`is-${urgency}`}>
           <td className="queue-sku" data-label="SKU">
             <span className={`rank ${row.position !== null && row.position <= 3 ? 'top' : ''}`} title="Posição na fila de atenção">{row.position ?? '–'}</span>
             <div><button type="button" className="link-button" onClick={() => onSelect(row)} aria-label={`Ver detalhes de ${row.sku}`}><strong>{row.sku}</strong></button><small>{row.product}</small></div>
           </td>
-          <td className="cell-stack" data-label="Ação sugerida">
-            {rec ? <><Badge tone={actionTone(rec.action)}>{rec.action_label}</Badge>{row.forecast?.challenge_action?.code === 'priorizar_producao' && <ChallengeBadge action={row.forecast.challenge_action} />}</>
-              : <Badge tone="neutral">{forecastsLoaded ? 'Sem previsão para este SKU' : 'Ação indisponível'}</Badge>}
+          <td className="queue-action" data-label="Ação sugerida">
+            {rec ? <span className={textTone}>{rec.action_label}</span> : <span className="is-muted-text">{forecastsLoaded ? 'Sem previsão para este SKU' : 'Ação indisponível'}</span>}
+            {row.forecast?.challenge_action?.code === 'priorizar_producao' && <> <ChallengeBadge action={row.forecast.challenge_action} /></>}
           </td>
-          <td data-label="Quantidade"><strong>{displayQuantity(rec?.suggested_quantity)}</strong></td>
-          <td className="cell-stack" data-label="Motivo principal">
-            {reason ? <Badge tone={severityTone(reason.severity)}>{reasonNames[reason.code] ?? reason.description}</Badge>
-              : <span className="queue-none">{prioritiesLoaded ? 'Fora do ranking' : 'Indisponível'}</span>}
+          <td className="queue-qty" data-label="Quantidade"><strong>{displayQuantity(rec?.suggested_quantity)}</strong></td>
+          <td className="queue-reason" data-label="Motivo principal">
+            {reason ? (reasonNames[reason.code] ?? reason.description) : <span className="queue-none">{prioritiesLoaded ? 'Fora do ranking' : 'Indisponível'}</span>}
           </td>
-          <Exceptions row={row} event={eventsBySku.get(row.sku)} />
+          <td className={`queue-exceptions ${texts.length || hasEvent ? '' : 'is-empty'}`} data-label="Exceções">
+            {texts.length || hasEvent ? <>{texts.join(' · ')}{texts.length > 0 && hasEvent && ' · '}{hasEvent && event && <EventBadge item={event} />}</> : <span className="queue-none" aria-label="Sem exceções">—</span>}
+          </td>
         </tr>;
       })}</tbody>
     </table>
   </div>;
 }
-

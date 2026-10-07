@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { UpcomingEvents } from '../components/EventAlerts';
-import { Badge, EmptyState, Icon, MetricCard, PageIntro, PriorityTable, SectionCard, confidenceTone, mainReason, severityTone } from '../components';
+import { Badge, EmptyState, Icon, PageIntro, PriorityTable, SectionCard, confidenceTone, mainReason, severityTone } from '../components';
 import type { PageProps } from './shared';
 import { formatDate, positiveDelayDays, reasonNames, sortReasons } from './shared';
 
@@ -22,11 +22,7 @@ export default function OverviewPage({ data, onSelect }: PageProps<'overview' | 
         <button className="primary-button" onClick={() => onSelect(first)}>Abrir evidências de {first.sku}<Icon name="arrow" /></button>
       </div>
     </article> : <><EmptyState title="Nenhum SKU na fila de atenção" description="Não foram retornadas prioridades. Isso não substitui a avaliação da qualidade dos dados." /><Link className="secondary-button" to="/fila">Ver a fila operacional</Link></>}
-    <div className="metrics-grid">
-      <MetricCard label="SKUs com risco de ruptura" value={data.overview.rupture_sku_count} detail={`${data.overview.below_lead_time_count} abaixo do prazo de produção, ${data.overview.below_safety_stock_count} abaixo da segurança`} tone="red" icon="quality" />
-      <MetricCard label="Pedidos sem ordem de produção" value={data.overview.order_without_production} detail="pedidos em carteira sem OP" tone="amber" icon="cases" />
-      <MetricCard label="Com confiança baixa" value={data.overview.low_confidence} detail={`de ${data.overview.prioritized} SKUs na fila`} tone="slate" icon="b2b" />
-    </div>
+    <p className="summary-line">{data.overview.rupture_sku_count} SKUs com risco de ruptura ({data.overview.below_lead_time_count} abaixo do prazo de produção, {data.overview.below_safety_stock_count} abaixo da segurança), {data.overview.order_without_production} pedidos sem ordem de produção e {data.overview.low_confidence} de {data.overview.prioritized} SKUs com confiança baixa.</p>
     <UpcomingEvents />
     <SectionCard title={`Fila de atenção (${data.overview.prioritized} de ${data.overview.total_skus})`} action={<Link className="secondary-button" to="/fila?todos=1">Ver a fila completa</Link>}><PriorityTable rows={data.priorities.slice(0, 5)} onSelect={onSelect} weights={weights} /></SectionCard>
   </div>;

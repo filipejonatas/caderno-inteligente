@@ -154,12 +154,18 @@ export function ValidationContent({ data, error = '', onRetry }: { data: Validat
   </div>;
 }
 
+/** Bloco recolhido da Auditoria: o título e uma nota curta ficam visíveis; o conteúdo abre sob demanda. */
+function AuditBlock({ title, note, children }: { title: string; note: string; children: ReactNode }) {
+  return <details className="detail-block audit-block"><summary>{title}<small>{note}</small></summary>{children}</details>;
+}
+
 /** Material de auditoria (não é tela de decisão): casos congelados, verificações, limitações, ajustes e origem dos dados. */
 export function AuditoriaContent({ data, method }: { data: ValidationSummary; method?: ReactNode }) {
   const { frozen_cases: cases, forecast_evaluation: forecast } = data;
   return <div className="validation-page">
     <PageIntro title="Auditoria: como os resultados foram testados" />
-    <SectionCard title="Casos de teste congelados" subtitle={`Congelados em ${formatDate(cases.frozen_at)}. ${cases.policy}`}>
+    <AuditBlock title="Casos de teste congelados" note={`${cases.total} casos, congelados em ${formatDate(cases.frozen_at)}`}>
+      <p className="fact-line">{cases.policy}</p>
       <div className="validation-cases">{cases.items.map((item) => <details key={item.id} className={`validation-case is-${item.result}`} open={item.result !== 'passou'}>
         <summary><span className="validation-case-title"><span className="eyebrow">{item.id} · {item.kind === 'commercial' ? 'comercial' : 'operacional'}</span><strong>{item.title}</strong></span>
           <span className="validation-case-badges">{item.origin === 'synthetic' ? <Badge tone="medium">entrada sintética</Badge> : <Badge tone="neutral">base real</Badge>}<Badge tone={resultTone[item.result]}>{resultLabel[item.result]}</Badge></span></summary>
@@ -170,19 +176,21 @@ export function AuditoriaContent({ data, method }: { data: ValidationSummary; me
         </div>
         <footer><p><strong>Limitação:</strong> {item.limitation}</p><p><strong>Ajuste realizado:</strong> {item.adjustment}</p></footer>
       </details>)}</div>
-    </SectionCard>
-    <SectionCard title="Comportamento seguro" subtitle="Verificações executadas a cada consulta com entradas controladas, além das cobertas por testes automatizados.">
+    </AuditBlock>
+    <AuditBlock title="Comportamento seguro" note={`${data.safe_behavior.length} verificações`}>
+      <p className="fact-line">Verificações executadas a cada consulta com entradas controladas, além das cobertas por testes automatizados.</p>
       <ul className="validation-safe">{data.safe_behavior.map((check) => <li key={check.id}><Badge tone={safeTone[check.status]}>{safeLabel[check.status]}</Badge><div><strong>{check.label}</strong><small>{check.evidence}</small></div></li>)}</ul>
-    </SectionCard>
+    </AuditBlock>
     <div className="validation-two-columns">
-      <SectionCard title="Limitações">
+      <AuditBlock title="Limitações" note={`${forecast.limitations.length + data.known_limitations.length} itens`}>
         <ul className="validation-list">{[...forecast.limitations, ...data.known_limitations].map((item) => <li key={item}>{item}</li>)}</ul>
-      </SectionCard>
-      <SectionCard title="Histórico de ajustes" subtitle="Mudanças feitas após testes e revisões. Nenhuma alterou pesos ou modelos.">
+      </AuditBlock>
+      <AuditBlock title="Histórico de ajustes" note={`${data.adjustments.length} ajustes`}>
+        <p className="fact-line">Mudanças feitas após testes e revisões. Nenhuma alterou pesos ou modelos.</p>
         <ol className="validation-timeline">{data.adjustments.map((entry) => <li key={`${entry.date}-${entry.change}`}><time>{formatDate(entry.date)}</time><strong>{entry.change}</strong><small>{entry.reason}</small><small>Evidência: {entry.evidence} · {entry.changed_weights_or_models ? 'alterou pesos/modelos' : 'não alterou pesos nem modelos'}</small></li>)}</ol>
-      </SectionCard>
+      </AuditBlock>
     </div>
-    {method && <SectionCard title="Método comercial: natureza dos campos e limites configurados">{method}</SectionCard>}
+    {method && <AuditBlock title="Método comercial" note="natureza dos campos e limites configurados">{method}</AuditBlock>}
     <p className="validation-source">Planilha SHA-256 {data.source.sha256.slice(0, 12)}… · Referência de vendas: {formatDate(data.source.sales_reference_month)} · Gerado em {new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(data.generated_at))} (Brasília)</p>
   </div>;
 }
