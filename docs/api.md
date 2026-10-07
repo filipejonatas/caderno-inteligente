@@ -115,7 +115,7 @@ Campo opcional e aditivo, derivado das ações e dos sinais já calculados; não
 - Estrutura: `code`, `label`, `source` (`operational`, `commercial`, `partner` ou `channel`), `origin_action`, `reason`, `signals_used`, `evidence[]` (`label`, `value`, `origin`), `limitations[]` e `requires_human_review`.
 - Códigos: `produzir`, `repor`, `priorizar_producao`, `priorizar_parceiro`, `ampliar_mix`, `recomendar_recompra`, `reativar`, `monitorar`, `investigar` e `sem_acao_necessaria`.
 - Filtro `challenge_action` em `/api/partners`, `/api/partners/{codigo}/skus`, `/api/commercial-recommendations` e `/api/direct-channels/{canal}` (422 para código inválido). As respostas de parceiros e canais trazem `challenge_labels`.
-- Limiares em `config/challenge_actions.json`. Regras e precedência em [Etapa 13](etapa-13-rotulos-de-acao.md).
+- Limiares em `config/challenge_actions.json`. Regras e precedência em [Etapa 13](historico.md).
 - `POST /api/feedback` aceita `challenge_action` opcional (validado); `GET /api/feedback` o devolve (`null` em decisões anteriores). Exige a migração `003_challenge_action.sql` no Supabase para ser gravado; sem ela, a decisão é registrada sem o rótulo.
 
 ## `GET /api/b2b2c/visibility`
@@ -236,4 +236,4 @@ Com `WRITE_ENABLED=false`, `POST /api/feedback`, `POST /api/cases`, `PUT /api/ca
 
 ## Etapa de usabilidade — sem mudança de contrato
 
-A etapa de usabilidade (`docs/etapa-usabilidade.md`) não adicionou, removeu nem alterou campos ou rotas. A interface passou a usar rotas que já existiam: `GET /api/config` (pesos, para ordenar os sinais por peso) em `/` e `/prioridades`, `GET /api/commercial-recommendations?action=avaliar_reposicao` na lista de oportunidades de `/parceiros` e `score_contributions` de `GET /api/priorities/{sku}` (decomposição do score). A etapa de enxugamento (`docs/etapa-enxugamento.md`) também não alterou contratos: a página `/auditoria` usa `GET /api/validation/summary` e `GET /api/partners?limit=1` (método comercial), e vários campos deixaram de ser exibidos sem deixar de existir.
+A etapa de usabilidade ([histórico](historico.md)) não adicionou, removeu nem alterou campos ou rotas. A interface passou a usar rotas que já existiam: `GET /api/config` (pesos, para ordenar os sinais por peso) em `/` e `/prioridades`, `GET /api/commercial-recommendations?action=avaliar_reposicao` na lista de oportunidades de `/parceiros` e `score_contributions` de `GET /api/priorities/{sku}` (decomposição do score). A etapa de enxugamento (`docs/etapa-enxugamento.md`) também não alterou contratos: a página `/auditoria` usa `GET /api/validation/summary` e `GET /api/partners?limit=1` (método comercial), e vários campos deixaram de ser exibidos sem deixar de existir.

@@ -139,7 +139,7 @@
 
 ## 2026-10-07 — Etapa 15: correção do motor de decisão (G1–G5)
 
-Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomendações erradas nos casos centrais da base. Protocolo em [etapa-15-0-linha-de-base.md](etapa-15-0-linha-de-base.md); comparação em [etapa-15/antes-depois.md](etapa-15/antes-depois.md).
+Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomendações erradas nos casos centrais da base. Protocolo em [historico.md](historico.md), Etapa 15.0; comparação em [etapa-15/antes-depois.md](etapa-15/antes-depois.md).
 
 - **D1:** o princípio "não alterar previsão, ranking, regras nem quantidade oficial" das etapas 10–14 foi revogado para G1–G5. As mudanças foram versionadas e comparadas antes × depois, e toda alteração de caso congelado foi registrada no histórico de ajustes da validação.
 - **D2 — previsão oficial v2:** `seasonal_level` (mês do ano anterior ajustado pelo nível, teto 3,0), sem seleção por SKU, horizonte de 6 meses. Promovida porque atendeu aos quatro critérios fixados antes do teste.

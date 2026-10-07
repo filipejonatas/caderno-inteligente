@@ -185,27 +185,7 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Decisões técnicas](docs/decisions.md)
 - [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md)
 
-**Registro das etapas da V2**
+**Histórico**
 
-- [Etapa 2 — Carregamento por página](docs/etapa-2-carregamento-por-pagina.md)
-- [Etapa 3 — Jornada visual](docs/etapa-3-jornada-visual.md)
-- [Etapa 4 — Parceiros e recomendação comercial](docs/etapa-4-parceiros-comercial.md)
-- [Etapa 5 — Central de validação](docs/etapa-5-validacao.md)
-- [Etapa 6 — Comparação entre execuções](docs/etapa-6-comparacao-execucoes.md)
-- [Etapa 7 — Testes do frontend, acessibilidade e robustez](docs/etapa-7-testes-acessibilidade.md)
-- [Etapa 8 — Segurança e modo de demonstração](docs/etapa-8-seguranca-modo-demo.md)
-- [Etapa 9 — Documentação, deploy e demonstração](docs/etapa-9-documentacao-demo.md)
-- [Etapa 10 — Previsão de faturamento (plano de aderência ao desafio)](docs/etapa-10-faturamento-estimado.md)
-- [Etapa 11 — Sazonalidade e eventos (plano de aderência ao desafio)](docs/etapa-11-eventos-sazonalidade.md)
-- [Etapa 12 — Visão dos canais diretos (plano de aderência ao desafio)](docs/etapa-12-canais-diretos.md)
-- [Etapa 13 — Rótulos de ação do desafio (plano de aderência ao desafio)](docs/etapa-13-rotulos-de-acao.md)
-
-**Etapa 15 — Correção do motor de decisão** ([antes × depois](docs/etapa-15/antes-depois.md))
-
-- [15.0 — Linha de base e protocolo](docs/etapa-15-0-linha-de-base.md)
-- [15.1 — Previsão v2 com meses de pico](docs/etapa-15-1-previsao-v2.md)
-- [15.2 — Cobertura pela demanda](docs/etapa-15-2-cobertura-pela-demanda.md)
-- [15.3 — Projeção datada e motor de ação](docs/etapa-15-3-projecao-e-acao.md)
-- [15.4 — Capacidade semanal](docs/etapa-15-4-capacidade-semanal.md)
-- [15.5 — Estoque no parceiro](docs/etapa-15-5-estoque-no-parceiro.md)
-- [15.6 — Telas, documentação e roteiro](docs/etapa-15-6-telas-e-roteiro.md)
+- [Histórico das etapas](docs/historico.md): o que cada etapa da V2 entregou, decisões e limitações
+- [Etapa 15 — antes × depois](docs/etapa-15/antes-depois.md)
