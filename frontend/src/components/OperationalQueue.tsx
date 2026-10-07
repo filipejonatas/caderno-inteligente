@@ -59,7 +59,9 @@ type Urgency = 'urgent' | 'review' | 'none' | 'missing';
 /** Margem da linha: urgente só quando o sinal principal é crítico; revisar quando ele é alto, há exceção ou a ação pede validação; tracejada quando não há previsão. */
 function urgencyOf(row: QueueRow, severity: string | undefined, exceptions: number): Urgency {
   if (!row.forecast) return 'missing';
-  if (severity === 'crítica') return 'urgent';
+  const planned = row.forecast.operational_recommendation.action;
+  if (severity === 'crítica' || planned === 'atraso_inevitavel' || planned === 'antecipar_op') return 'urgent';
+  if (planned === 'rever_op') return 'review';
   if (severity === 'alta') return 'review';
   const action = row.forecast.operational_recommendation.action;
   if (exceptions > 0 || action === 'investigar_dados' || action === 'produzir_validar_capacidade') return 'review';

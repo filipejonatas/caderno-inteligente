@@ -23,11 +23,37 @@ def _demand(row: pd.Series) -> dict[str, Any]:
     return {"daily_demand": daily, "demand_source": row.get("demand_source") or "cadastro"}
 
 
-def evaluate_rules(indicators: pd.DataFrame, thresholds: dict[str, float] | None = None) -> pd.DataFrame:
-    """Avalia riscos determinísticos; não ordena prioridades nem toma decisões de produção."""
+def _plan_issues(row: pd.Series, plan: dict[str, Any]) -> list[dict[str, Any]]:
+    """Regras da Etapa 15.3, lidas do plano de suprimento datado do SKU."""
+    issues = []
+    origin = ["Estoque_Atual.Estoque atual", "Carteira_Pedidos.Data prometida", "Ordens_Producao.Conclusão prevista", "previsão oficial", "Produtos.Lead time (dias)"]
+    if "PROJECTED_SHORTFALL" in plan["signals"]:
+        late = [order["order"] for order in plan["affected_orders"]]
+        issues.append(_issue(row, "PROJECTED_SHORTFALL", "Falta projetada antes que uma reposição nova consiga chegar (data de planejamento + lead time).", "crítica",
+                             {"first_shortfall_date": plan["first_shortfall_date"], "earliest_arrival": plan["earliest_arrival"], "affected_orders": late}, origin))
+    if "OP_FOR_DISCONTINUED" in plan["signals"]:
+        issues.append(_issue(row, "OP_FOR_DISCONTINUED", "Há OP aberta para produto em descontinuação.", "alta",
+                             {"orders": [item["order"] for item in plan["op_adjustments"] if item.get("cause") == "produto_em_descontinuacao"]},
+                             ["Produtos.Status", "Ordens_Producao.Quantidade", "Carteira_Pedidos.Quantidade"]))
+    if "PROJECTED_EXCESS" in plan["signals"]:
+        reductions = [item for item in plan["op_adjustments"] if item.get("cause") == "excesso_projetado"]
+        issues.append(_issue(row, "PROJECTED_EXCESS", "Depois da chegada da OP, o estoque projetado passa do limite de excesso.", "média",
+                             {"orders": [item["order"] for item in reductions], "projected_after_arrival": [item["projected_after_arrival"] for item in reductions]},
+                             ["Ordens_Producao.Quantidade", "previsão oficial", "config.supply_plan.excess_coverage_days"]))
+    return issues
+
+
+def evaluate_rules(indicators: pd.DataFrame, thresholds: dict[str, float] | None = None, plans: dict[str, dict[str, Any]] | None = None) -> pd.DataFrame:
+    """Avalia riscos determinísticos; não ordena prioridades nem toma decisões de produção.
+
+    Com `plans` (Etapa 15.3), soma as regras do plano datado: falta projetada, OP de produto em descontinuação e excesso
+    projetado depois da chegada da OP.
+    """
     thresholds = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
     issues: list[dict[str, Any]] = []
     for _, row in indicators.iterrows():
+        if plans and row["SKU"] in plans:
+            issues.extend(_plan_issues(row, plans[row["SKU"]]))
         demand = _demand(row)
         demand_origin = DEMAND_ORIGIN if "reference_daily_demand" in row else "Produtos.Venda média/dia"
         if row["coverage_days_calculated"] < row["lead_time_days"]:

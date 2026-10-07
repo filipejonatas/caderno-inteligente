@@ -12,7 +12,7 @@ export const CHALLENGE_NAMES: Record<string, string> = {
   recomendar_recompra: 'Recomendar recompra', reativar: 'Reativar', monitorar: 'Monitorar', investigar: 'Investigar', sem_acao_necessaria: 'Sem ação necessária',
 };
 export const CHALLENGE_DEFINITIONS: Record<string, string> = {
-  produzir: 'Há necessidade líquida de produção para o próximo mês, segundo previsão, carteira, estoque e produção aberta.',
+  produzir: 'Há ordem planejada no horizonte, segundo a projeção diária de estoque, carteira, previsão e OPs abertas.',
   repor: 'O estoque estimado do parceiro cobre poucos dias do giro observado; avaliar reposição comercial.',
   priorizar_producao: 'Produzir com urgência: o SKU está entre os primeiros da fila de atenção ou tem decisão de evento próxima.',
   priorizar_parceiro: 'O parceiro reúne várias oportunidades de reposição, incluindo SKU entre os primeiros da fila de atenção.',

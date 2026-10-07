@@ -258,8 +258,16 @@ export interface DemandForecast {
   limitation: string;
 }
 
+export type OperationalAction = 'investigar_dados' | 'atraso_inevitavel' | 'antecipar_op' | 'produzir_validar_capacidade' | 'produzir'
+  | 'rever_op' | 'monitorar_excesso' | 'sem_acao_necessaria';
+
+/** Etapa 15.3: plano datado do SKU. */
+export interface PlannedOrder { due_date: string; release_date: string; quantity: number; urgent: boolean; late?: boolean }
+export interface OpAdjustment { order: string; quantity: number; finish: string | null; adjustment: 'antecipar' | 'reduzir' | 'cancelar'; suggested_quantity: number; suggested_finish?: string; reason: string }
+export interface AffectedOrder { order: string; client: string; quantity: number; promised_date: string; expected_date: string | null; delay_days: number | null }
+
 export interface OperationalRecommendation {
-  action: 'investigar_dados' | 'produzir_validar_capacidade' | 'produzir' | 'monitorar_excesso' | 'sem_acao_necessaria';
+  action: OperationalAction;
   action_label: string;
   horizon: string;
   suggested_quantity: number | null;
@@ -278,6 +286,13 @@ export interface OperationalRecommendation {
   assumptions: string[];
   limitations: string[];
   requires_human_review: boolean;
+  secondary_actions?: OperationalAction[];
+  planned_quantity_horizon?: number;
+  planned_orders?: PlannedOrder[];
+  op_adjustments?: OpAdjustment[];
+  affected_orders?: AffectedOrder[];
+  earliest_arrival?: string;
+  first_shortfall_date?: string | null;
 }
 
 export interface ForecastRecommendationSummary {

@@ -221,7 +221,8 @@ export const skuDetailOk: SkuDetail = {
   challenge_action: challengeUrgent,
   event_alerts: eventAlerts,
   event_scenario: { applicable: true, note: null, scenario: eventScenario },
-  operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Demanda a cobrir sintética.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 } },
+  operational_recommendation: { ...recommendationBase, action: 'produzir', action_label: 'Produzir', suggested_quantity: 500, raw_quantity: 450, forecast_next_month: 100, safety_stock_quantity: 100, capacity_status: 'family_context_available', confidence: 'baixa', confidence_reason: 'Sell-out não observado.', rationale: ['Ordem planejada de 500 un. para chegar em 05/10, liberando até 15/09.'], calculation: { demand_to_cover: 400, safety_stock_quantity: 100, current_stock: 50, open_production_quantity: 0 },
+    planned_orders: [{ due_date: '2026-10-05', release_date: '2026-09-15', quantity: 500, urgent: true }], secondary_actions: [], op_adjustments: [], affected_orders: [] },
   limitation: 'A base não vincula pedidos a OPs por semana.',
 };
 

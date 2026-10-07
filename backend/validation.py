@@ -31,6 +31,7 @@ def _sha256(path: Path) -> str:
 
 
 def create_validation_router(*, pipeline: Callable, persistence: Callable, recommendations: Callable, sku_detail: Callable,
+                             supply_plans: Callable | None = None,
                              source: Path, config_file: Path, thresholds_file: Path, commercial_thresholds_file: Path,
                              challenge_actions_file: Path | None = None,
                              describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
@@ -58,10 +59,11 @@ def create_validation_router(*, pipeline: Callable, persistence: Callable, recom
         cases = evaluate_frozen_cases(
             config, indicators=indicators, issues=issues, ranking=ranking, forecasts=forecasts,
             partner_items=partner_items, thresholds=load_rule_thresholds(thresholds_file), source_sha256=source_sha256,
+            plans=None if supply_plans is None else supply_plans(),
             challenge_settings=None if challenge_actions_file is None else load_action_settings(challenge_actions_file),
         )
 
-        safe = safe_behavior_checks(forecasts, recommendations(), partner_items)
+        safe = safe_behavior_checks(forecasts, recommendations(), partner_items, None if supply_plans is None else supply_plans())
         try:
             sku_detail("__VALIDACAO_SKU_INEXISTENTE__")
             missing_sku_ok = False

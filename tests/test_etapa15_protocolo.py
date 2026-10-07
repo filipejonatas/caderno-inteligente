@@ -77,25 +77,27 @@ def test_partner_buildup_thresholds_are_versioned_and_validated(tmp_path):
             load_commercial_thresholds(path)
 
 
-def test_new_rule_weights_exist_but_no_rule_emits_them_yet():
+def test_new_rule_weights_exist_and_only_the_later_rules_are_still_silent():
     assert NEW_CODES <= set(load_weights(ROOT / "config/prioritization_weights.json"))
     _, _, issues, _ = data()
-    assert NEW_CODES.isdisjoint(set(issues["code"]))  # as regras novas entram a partir da 15.3
+    emitted = set(issues["code"])
+    assert {"PROJECTED_SHORTFALL", "OP_FOR_DISCONTINUED", "PROJECTED_EXCESS"} <= emitted  # Etapa 15.3
+    assert {"CAPACITY_SHORTFALL", "PARTNER_STOCK_BUILDUP"}.isdisjoint(emitted)  # entram na 15.4 e na 15.5
 
 
 def test_stage_15_cases_are_pending_until_their_substep_except_the_regression_guard():
     cases = {case["id"]: case for case in load_validation_config(VALIDATION)["cases"]}
     stage = [cases[f"VC-{number}"] for number in range(20, 31)]
     assert {case["pending_until"] for case in stage if "pending_until" in case} <= SUBSTEPS
-    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1 e VC-30 na 15.2.
-    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-27", "VC-28", "VC-30"]
+    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1, VC-30 na 15.2 e VC-20 a VC-23 na 15.3.
+    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-20", "VC-21", "VC-22", "VC-23", "VC-27", "VC-28", "VC-30"]
 
 
 def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
     body = TestClient(app).get("/api/validation/summary").json()["frozen_cases"]
     items = {item["id"]: item for item in body["items"]}
-    assert body["pending"] == 8
-    assert items["VC-20"]["result"] == "pendente" and items["VC-20"]["checks"] == [] and items["VC-20"]["pending_until"] == "15.3"
+    assert body["pending"] == 4
+    assert items["VC-24"]["result"] == "pendente" and items["VC-24"]["checks"] == [] and items["VC-24"]["pending_until"] == "15.5"
     assert items["VC-27"]["result"] == "passou"
     assert body["failed"] == 0 and body["not_found"] == 0
 

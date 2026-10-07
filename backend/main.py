@@ -28,7 +28,7 @@ from caderno_inteligente.action_labels import label_commercial_row, label_operat
 from caderno_inteligente.events import build_event_analysis, load_event_settings  # noqa: E402
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators, registered_demand_warning  # noqa: E402
-from caderno_inteligente.supply_plan import load_supply_settings  # noqa: E402
+from caderno_inteligente.supply_plan import build_supply_plans, load_supply_settings  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
@@ -114,7 +114,7 @@ def _pipeline_signature() -> tuple[tuple[int, int], ...]:
 
 
 _pipeline_lock = Lock()
-_pipeline_cache: tuple[tuple[tuple[int, int], ...], tuple] | None = None
+_pipeline_cache: tuple[tuple[tuple[int, int], ...], tuple, dict] | None = None
 _cache_hits = 0
 
 
@@ -123,14 +123,17 @@ def _build_pipeline():
     dataset = normalise_dataset(load_workbook(SOURCE))
     quality = validate_dataset(dataset)
     thresholds = load_rule_thresholds()
+    supply_settings = load_supply_settings(SUPPLY_PLAN_FILE)
     # A previsão vem antes dos indicadores: a cobertura usa a demanda de referência (Etapa 15.2).
     forecasts = build_official_forecasts(dataset["Vendas_24m"], load_engine_config(ENGINE_CONFIG_FILE))
-    demand_settings = {"days_per_month": load_supply_settings(SUPPLY_PLAN_FILE)["days_per_month"], "registered_demand_divergence": thresholds["registered_demand_divergence"]}
+    demand_settings = {"days_per_month": supply_settings["days_per_month"], "registered_demand_divergence": thresholds["registered_demand_divergence"]}
     indicators = build_sku_indicators(dataset, forecasts, demand_settings)
     warning = registered_demand_warning(indicators, thresholds["registered_demand_divergence"])
     if warning:
         quality["warnings"].append(warning)
-    issues = evaluate_rules(indicators, thresholds)
+    # Etapa 15.3: plano datado por SKU (projeção diária, ordens planejadas, ajustes de OP) alimenta regras e ações.
+    plans = build_supply_plans(dataset, indicators, forecasts, supply_settings)
+    issues = evaluate_rules(indicators, thresholds, plans)
     ranking = prioritize(issues, load_weights(), indicators)
     logger.info(
         "pipeline_built duration_ms=%.1f skus=%s issues=%s",
@@ -138,20 +141,29 @@ def _build_pipeline():
         len(indicators),
         len(issues),
     )
-    return dataset, quality, indicators, issues, ranking, forecasts
+    return (dataset, quality, indicators, issues, ranking, forecasts), plans
 
 
-def pipeline():
-    """Return cached data, invalidated when the source or configuration changes."""
+def _cached():
     global _pipeline_cache, _cache_hits
     signature = _pipeline_signature()
     with _pipeline_lock:
         if _pipeline_cache and _pipeline_cache[0] == signature:
             _cache_hits += 1
-            return _pipeline_cache[1]
-        result = _build_pipeline()
-        _pipeline_cache = (signature, result)
-        return result
+            return _pipeline_cache
+        result, plans = _build_pipeline()
+        _pipeline_cache = (signature, result, plans)
+        return _pipeline_cache
+
+
+def pipeline():
+    """Return cached data, invalidated when the source or configuration changes."""
+    return _cached()[1]
+
+
+def supply_plans() -> dict[str, dict]:
+    """Plano de suprimento datado por SKU (Etapa 15.3), do mesmo cache do pipeline."""
+    return _cached()[2]
 
 
 _revenue_cache: tuple[tuple, dict] | None = None
@@ -208,7 +220,7 @@ def event_analysis() -> dict:
         forecast = _forecast_record(forecasts, item["sku"])
         codes = [{"code": code} for code in codes_by_sku.get(item["sku"], [])]
         official = _recommendation_for(indicator, forecast, codes)["suggested_quantity"]
-        with_event = _recommendation_for(indicator, {**forecast, "forecast_next_month": scenario["scenario_units"][0]}, codes)["suggested_quantity"]
+        with_event = _recommendation_for(indicator, {**forecast, "forecast_next_month": scenario["scenario_units"][0]}, codes, use_plan=False)["suggested_quantity"]
         scenario["quantity"] = {
             "official": official, "with_event": with_event, "differs": official != with_event,
             "note": "A quantidade oficial cobre só o próximo mês; o evento fora dele não altera a quantidade, e sim a data de decisão.",
@@ -280,11 +292,13 @@ def _forecast_record(forecasts, sku: str):
     }
 
 
-def _recommendation_for(indicator, forecast, item_issues):
+def _recommendation_for(indicator, forecast, item_issues, use_plan: bool = True):
+    """Recomendação do SKU; com o plano datado (Etapa 15.3) sempre que a previsão é a oficial."""
     return build_operational_recommendation(
         indicator,
         forecast,
         (item["code"] for item in item_issues),
+        supply_plans().get(indicator["SKU"]) if use_plan else None,
     )
 
 
@@ -447,7 +461,7 @@ def forecast_summaries():
                         "confidence_reason",
                         "requires_human_review",
                     )
-                },
+                } | {key: recommendation[key] for key in ("secondary_actions", "planned_quantity_horizon", "first_shortfall_date") if key in recommendation},
             }
         )
 
@@ -538,7 +552,7 @@ def scenario(item: Scenario):
     dataset, _, indicators, _, _, _ = pipeline()
     thresholds = {**load_rule_thresholds(), **(item.thresholds or {})}
     weights = {**load_weights(), **(item.weights or {})}
-    scenario_issues = evaluate_rules(indicators, thresholds)
+    scenario_issues = evaluate_rules(indicators, thresholds, supply_plans())
     ranking = prioritize(scenario_issues, weights, indicators)
     return {
         "is_simulation": True,
@@ -803,13 +817,14 @@ from backend.validation import create_validation_router  # noqa: E402
 
 
 def _all_operational_recommendations():
-    return [item["operational_recommendation"] for item in forecast_summaries()]
+    return [{**item["operational_recommendation"], "sku": item["sku"]} for item in forecast_summaries()]
 
 
 app.include_router(create_validation_router(
     pipeline=pipeline,
     persistence=_persistence,
     recommendations=_all_operational_recommendations,
+    supply_plans=supply_plans,
     sku_detail=detail,
     source=SOURCE,
     config_file=ROOT / "config/validation_center.json",

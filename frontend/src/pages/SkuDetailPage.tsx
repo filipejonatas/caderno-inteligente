@@ -68,7 +68,7 @@ export type AnswerTone = 'info' | 'review' | 'blocked' | 'success';
 
 /** Aparência do cartão de resposta: só reflete o que a recomendação já diz; azul é sugestão, âmbar exige revisão. Verde/vermelho não são produzidos aqui (nenhuma ação do SKU é "concluída" ou bloqueada). */
 export function answerToneFor(action: string, capacityStatus: string, confidence: string, rankingConfidence: string, insufficient: boolean): AnswerTone {
-  if (insufficient || action === 'investigar_dados' || action === 'produzir_validar_capacidade' || capacityStatus === 'requires_review'
+  if (insufficient || action === 'investigar_dados' || action === 'produzir_validar_capacidade' || action === 'rever_op' || capacityStatus === 'requires_review'
     || confidence === 'baixa' || rankingConfidence === 'baixa') return 'review';
   return 'info';
 }
@@ -114,7 +114,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
       <div className="answer-main">
         <span className="eyebrow" id="answer-title">Ação operacional sugerida</span>
         <p className="answer-sentence">{answer}</p>
-        {insufficient ? <p className="answer-why">{forecast.limitation}</p> : <p className="answer-why">{why}</p>}
+        {insufficient ? <p className="answer-why">{forecast.limitation}</p> : recommendation.planned_orders ? recommendation.rationale.map((line) => <p key={line} className="answer-why">{line}</p>) : <p className="answer-why">{why}</p>}
         {recommendation.action === 'sem_acao_necessaria' && <p className="answer-why">Sem produção neste horizonte; os riscos abaixo continuam.</p>}
         <div className="answer-badges"><ChallengeBadge action={detail.challenge_action} />{recommendation.capacity_status === 'requires_review' && <Badge tone="medium">Validar capacidade</Badge>}{insufficient ? <><Badge tone="medium">Dados insuficientes</Badge><Badge tone="medium">{recommendation.action_label}</Badge></> : <Badge tone="info">previsto</Badge>}</div>
         <div className="answer-actions">

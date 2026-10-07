@@ -376,8 +376,10 @@ def _indicator_frame(values: dict[str, Any]) -> pd.DataFrame:
     return frame
 
 
-def _operational_output(indicator: dict[str, Any], forecast: dict[str, Any], codes: list[str], priority: int | None) -> dict[str, Any]:
-    recommendation = build_operational_recommendation(indicator, forecast, codes)
+def _operational_output(indicator: dict[str, Any], forecast: dict[str, Any], codes: list[str], priority: int | None,
+                        plan: dict[str, Any] | None = None, settings: dict[str, Any] | None = None) -> dict[str, Any]:
+    recommendation = build_operational_recommendation(indicator, forecast, codes, plan)
+    challenge = label_operational(recommendation["action"], priority, forecast.get("status"), None, recommendation["capacity_status"], None, settings or CHALLENGE_DEFAULTS)
     return {
         "signals": sorted(codes),
         "ranked": priority is not None,
@@ -390,6 +392,11 @@ def _operational_output(indicator: dict[str, Any], forecast: dict[str, Any], cod
         "requires_human_review": recommendation["requires_human_review"],
         "coverage_days_calculated": indicator.get("coverage_days_calculated"),
         "data_quality_warnings": list(indicator.get("data_quality_warnings") or []),
+        "challenge_code": challenge["code"],
+        "secondary_actions": list(recommendation.get("secondary_actions") or []),
+        "affected_order_ids": [item["order"] for item in recommendation.get("affected_orders") or []],
+        "op_adjusted_orders": [item["order"] for item in recommendation.get("op_adjustments") or [] if item["adjustment"] in ("reduzir", "cancelar")],
+        "op_anticipated_orders": [item["order"] for item in recommendation.get("op_adjustments") or [] if item["adjustment"] == "antecipar"],
     }
 
 
@@ -451,7 +458,8 @@ _COMMERCIAL_INPUT = (
 
 
 def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
-                   forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, challenge_settings: dict[str, Any]) -> dict[str, Any]:
+                   forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, challenge_settings: dict[str, Any],
+                   plans: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
     result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "family", "limitation", "pending_until")}
     if case.get("pending_until"):
         # Caso gravado antes do código que o atende (protocolo da Etapa 15): fica visível, mas só é executado quando a
@@ -490,7 +498,7 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
         else:
             forecast = case["input"]["forecast"]
         case_input = {**{key: indicator.get(key) for key in _OPERATIONAL_INPUT}, "forecast_status": forecast.get("status"), "forecast_next_month": forecast.get("forecast_next_month")}
-        obtained = _operational_output(indicator, forecast, codes, None)
+        obtained = _operational_output(indicator, forecast, codes, None, None, challenge_settings)
     else:
         row = indicators[indicators.SKU == case["sku"]]
         if not row.empty:
@@ -501,7 +509,7 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
             ranked = ranking[ranking.sku == case["sku"]]
             priority = None if ranked.empty else int(ranked["priority"].iloc[0])
             case_input = {**{key: indicator.get(key) for key in _OPERATIONAL_INPUT}, "forecast_status": forecast.get("status"), "forecast_next_month": forecast.get("forecast_next_month")}
-            obtained = _operational_output(indicator, forecast, codes, priority)
+            obtained = _operational_output(indicator, forecast, codes, priority, (plans or {}).get(case["sku"]), challenge_settings)
 
     if obtained is None:
         return {**result, "input": None, "expected": case["expected"], "obtained": None, "checks": [], "result": "nao_encontrado",
@@ -520,9 +528,10 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
 
 def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
                           forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, source_sha256: str,
-                          challenge_settings: dict[str, Any] | None = None) -> dict[str, Any]:
+                          challenge_settings: dict[str, Any] | None = None, plans: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+    """`plans` (Etapa 15.3): plano datado por SKU; os casos da base usam a mesma recomendação do produto."""
     settings = challenge_settings or CHALLENGE_DEFAULTS
-    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings) for case in config["cases"]]
+    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings, plans) for case in config["cases"]]
     counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado", "pendente")}
     matches = source_sha256 == config["frozen_source_sha256"]
     return {
@@ -548,7 +557,8 @@ def _base_indicator() -> dict[str, Any]:
             "production_order_quantity": 0, "backlog_order_quantity": 0, "has_sell_out": True}
 
 
-def safe_behavior_checks(forecasts: pd.DataFrame, recommendations: list[dict], partner_items: list[dict]) -> list[dict[str, Any]]:
+def safe_behavior_checks(forecasts: pd.DataFrame, recommendations: list[dict], partner_items: list[dict],
+                         plans: dict[str, dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     """Execute the guard rails with controlled inputs; results are reported, never hidden."""
     checks: list[dict[str, Any]] = []
 
@@ -586,4 +596,17 @@ def safe_behavior_checks(forecasts: pd.DataFrame, recommendations: list[dict], p
     invented = [item for item in partner_items if item["estimated_stock"] is None and item["coverage_days"] is not None]
     add("no_false_precision", "Dado ausente não é convertido em zero ou cobertura inventada", zeros == 0 and not invented,
         f"{len(insufficient)} previsão(ões) insuficiente(s) com valor: {zeros}; {len(invented)} par(es) com cobertura sem estoque estimado.")
+
+    if plans:
+        # Etapa 15.3 — I1/I2: falta projetada nunca fica "Sem ação necessária"; I3: ordem planejada respeita o lote mínimo.
+        action_by_sku = {item.get("sku"): item.get("action") for item in recommendations if item.get("sku")}
+        hidden = [sku for sku, plan in plans.items()
+                  if any(week["shortfall"] for week in plan["projection"]) and action_by_sku.get(sku) == "sem_acao_necessaria"]
+        add("no_hidden_shortfall", "Falta projetada nunca aparece como 'Sem ação necessária'", not hidden,
+            f"{sum(1 for plan in plans.values() if any(week['shortfall'] for week in plan['projection']))} SKU(s) com falta projetada no horizonte; "
+            f"{len(hidden)} sem ação: {', '.join(hidden) or 'nenhum'}.")
+        off_lot = [f"{sku} ({order['quantity']:g})" for sku, plan in plans.items() for order in plan["planned_orders"]
+                   if plan["minimum_lot"] > 0 and order["quantity"] % plan["minimum_lot"]]
+        add("planned_lot", "Ordem planejada é múltiplo do lote mínimo", not off_lot,
+            f"{sum(len(plan['planned_orders']) for plan in plans.values())} ordem(ns) planejada(s); fora do lote: {', '.join(off_lot) or 'nenhuma'}.")
     return checks

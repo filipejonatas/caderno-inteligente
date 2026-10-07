@@ -100,7 +100,7 @@
       "sku": "CI-0040",
       "expected": {
         "signals": {"includes": ["EXCESS_COVERAGE"], "excludes": ["RUP_LEAD_TIME", "RUP_SAFETY_STOCK"]},
-        "action": "monitorar_excesso",
+        "secondary_actions": {"includes": ["monitorar_excesso"]},
         "suggested_quantity": {"equals": 0},
         "requires_human_review": true
       },
@@ -108,17 +108,16 @@
     },
     {
       "id": "VC-04",
-      "title": "Prioridade alta sem necessidade de produção adicional",
+      "title": "Prioridade alta não fica sem ação",
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0041",
       "expected": {
         "priority": {"max": 5},
-        "action": "sem_acao_necessaria",
-        "suggested_quantity": {"equals": 0},
+        "action": {"not": "sem_acao_necessaria"},
         "requires_human_review": true
       },
-      "limitation": "Prioridade alta indica o que investigar primeiro; não significa que falta produção."
+      "limitation": "Revisto na Etapa 15.3: antes esperava 'Sem ação necessária' com quantidade 0, o que contradizia os pedidos sem cobertura que põem o SKU no topo (ver VC-20)."
     },
     {
       "id": "VC-05",
@@ -202,7 +201,7 @@
       "sku": "CI-0014",
       "expected": {
         "signals": {"includes": ["CAPACITY_CONFLICT"]},
-        "action": "produzir_validar_capacidade",
+        "secondary_actions": {"includes": ["produzir"]},
         "capacity_status": "requires_review",
         "confidence": {"not": "alta"},
         "requires_human_review": true
@@ -325,7 +324,6 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0041",
-      "pending_until": "15.3",
       "expected": {
         "action": "atraso_inevitavel",
         "affected_order_ids": {"includes": ["PED-041-1", "PED-041-2"]},
@@ -340,7 +338,6 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0050",
-      "pending_until": "15.3",
       "expected": {
         "signals": {"includes": ["OP_FOR_DISCONTINUED"]},
         "action": "rever_op",
@@ -356,10 +353,10 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0047",
-      "pending_until": "15.3",
       "expected": {
         "signals": {"includes": ["OP_FOR_DISCONTINUED"]},
-        "action": "rever_op",
+        "action": "atraso_inevitavel",
+        "secondary_actions": {"includes": ["rever_op"]},
         "op_adjusted_orders": {"includes": ["OP-7846"]},
         "suggested_quantity": {"equals": 0},
         "requires_human_review": true
@@ -372,7 +369,6 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0048",
-      "pending_until": "15.3",
       "expected": {
         "signals": {"includes": ["PROJECTED_EXCESS"]},
         "op_adjusted_orders": {"includes": ["OP-7847"]},
@@ -555,6 +551,20 @@
       "change": "O VC-03 (excesso de estoque) passou do CI-0044 para o CI-0040, com as mesmas expectativas.",
       "reason": "Com a cobertura pela demanda prevista dos 3 próximos meses (inclui o pico de novembro), o CI-0044 tem 84,8 dias, abaixo do limite de 90: deixou de ser excesso pela regra, sem erro de cálculo. A alternativa de medir pela média de vendas dos 3 últimos meses (98,8 dias) foi apresentada ao usuário, que manteve o desenho do plano. O CI-0040 tem ~200 dias com demanda −32% a/a.",
       "evidence": "docs/etapa-15-2-cobertura-pela-demanda.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "A ação e a quantidade operacionais passaram a sair da projeção diária datada (Etapa 15.3): carteira na data prometida, previsão rateada, OPs na conclusão prevista, ordens planejadas com data de liberação e ajustes de OP. Entraram as regras PROJECTED_SHORTFALL, OP_FOR_DISCONTINUED e PROJECTED_EXCESS, com os pesos gravados na Etapa 15.0. VC-20 a VC-23 deixaram de ser pendentes.",
+      "reason": "A conta de 'próximo mês' descontava toda OP aberta sem olhar a data e deixava 8 dos 10 primeiros da fila como 'Sem ação necessária', mesmo com pedidos sem cobertura.",
+      "evidence": "docs/etapa-15-3-projecao-e-acao.md",
+      "changed_weights_or_models": true
+    },
+    {
+      "date": "2026-10-07",
+      "change": "Casos revistos pela precedência de ações do plano da Etapa 15: VC-04 (CI-0041) passou a exigir ação diferente de 'Sem ação necessária'; VC-03 (CI-0040) verifica o excesso como sinal e ação secundária; VC-08 (CI-0014) verifica 'Produzir' como ação secundária e a capacidade em revisão; VC-22 (CI-0047) espera 'Falta inevitável' com 'Rever OP' como secundária.",
+      "reason": "Pela precedência do plano, falta inevitável vem antes de produzir e de rever OP, e ordem planejada vem antes de monitorar excesso. O usuário confirmou manter essa precedência depois de ver os resultados; as alternativas (excesso antes de ordem futura; rever OP antes da falta em descontinuados) foram apresentadas e recusadas.",
+      "evidence": "docs/etapa-15-3-projecao-e-acao.md",
       "changed_weights_or_models": false
     }
   ]

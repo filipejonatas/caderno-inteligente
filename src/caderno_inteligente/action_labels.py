@@ -37,7 +37,7 @@ LABELS = {
 CHALLENGE_PDF_CODES = ("produzir", "repor", "priorizar_producao", "priorizar_parceiro", "ampliar_mix", "recomendar_recompra", "monitorar", "investigar", "sem_acao_necessaria")
 
 DEFINITIONS = {
-    "produzir": "Há necessidade líquida de produção para o próximo mês, segundo previsão, carteira, estoque e produção aberta.",
+    "produzir": "Há ordem planejada no horizonte, segundo a projeção diária de estoque, carteira, previsão e OPs abertas.",
     "repor": "O estoque estimado do parceiro cobre poucos dias do giro observado; avaliar reposição comercial.",
     "priorizar_producao": "Produzir com urgência: o SKU está entre os primeiros da fila de atenção ou tem decisão de evento próxima.",
     "priorizar_parceiro": "O parceiro reúne várias oportunidades de reposição, incluindo SKU entre os primeiros da fila de atenção.",
@@ -50,7 +50,8 @@ DEFINITIONS = {
 }
 
 PRECEDENCE = {
-    "operational": ["investigar (dado insuficiente)", "priorizar produção ou produzir", "monitorar (excesso)", "sem ação necessária"],
+    "operational": ["investigar (dado insuficiente)", "priorizar produção (antecipar OP ou falta inevitável)", "priorizar produção ou produzir (ordem planejada)",
+                    "investigar (rever OP)", "monitorar (excesso)", "sem ação necessária"],
     "commercial": ["investigar (dado antigo, insuficiente ou divergente)", "repor", "recomendar recompra", "monitorar"],
     "partner": ["priorizar parceiro (várias reposições com SKU de alta prioridade)"],
     "channel": ["ampliar mix", "reativar", "monitorar saída de linha", "investigar queda", "monitorar crescimento", "sem ação necessária"],
@@ -123,6 +124,15 @@ def label_operational(
     if action == "investigar_dados" or forecast_status == "insufficient_data":
         return _result("investigar", "operational", action, ["INSUFFICIENT_FORECAST_HISTORY"], [_ev("Previsão", "histórico insuficiente", "forecasting")],
                        "Histórico insuficiente para prever; investigar e completar os dados antes de sugerir produção.")
+    if action in ("atraso_inevitavel", "antecipar_op"):
+        reason = ("Falta antes que qualquer reposição nova chegue: garantir a OP, priorizar os pedidos e renegociar prazos com os clientes afetados."
+                  if action == "atraso_inevitavel" else "Uma OP ainda não iniciada pode chegar antes da falta: antecipar o início.")
+        evidence = [] if priority is None else [_ev("Posição na fila de atenção", priority, "ranking oficial")]
+        return _result("priorizar_producao", "operational", action, ["PROJECTED_SHORTFALL" if action == "atraso_inevitavel" else "OP_ANTICIPATION"], evidence, reason,
+                       ["A data da falta vem da projeção diária: carteira na data prometida, previsão rateada e OPs na conclusão prevista."])
+    if action == "rever_op":
+        return _result("investigar", "operational", action, ["OP_REVIEW"], [] if priority is None else [_ev("Posição na fila de atenção", priority, "ranking oficial")],
+                       "Rever a OP: ela supera a necessidade projetada ou é de produto em descontinuação. Não produzir antes de confirmar.")
     if action in ("produzir", "produzir_validar_capacidade"):
         signals, evidence, reasons = [f"operational_action:{action}"], [], []
         extra = ["A capacidade da família está pressionada: validar antes de executar."] if action == "produzir_validar_capacidade" or capacity_status == "requires_review" else []

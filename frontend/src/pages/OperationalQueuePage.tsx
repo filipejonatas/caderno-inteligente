@@ -72,7 +72,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
   if (bothFailed) return <ErrorState message={priorities.error || forecasts.error} onRetry={() => { void priorities.refresh(); void forecasts.refresh(); }} />;
 
   const source = forecasts.data ?? [];
-  const production = source.filter((item) => ['produzir', 'produzir_validar_capacidade'].includes(item.operational_recommendation.action)).length;
+  const production = source.filter((item) => ['produzir', 'produzir_validar_capacidade', 'atraso_inevitavel', 'antecipar_op'].includes(item.operational_recommendation.action)).length;
   const capacity = source.filter((item) => item.operational_recommendation.capacity_status === 'requires_review').length;
   const investigate = source.filter((item) => item.forecast.status === 'insufficient_data' || item.operational_recommendation.action === 'investigar_dados').length;
   const description = forecasts.data
@@ -91,7 +91,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
     {priorities.error && forecasts.data && <Alert tone="warning" title="Posição e motivo indisponíveis" action={<button className="secondary-button" onClick={retry}>Tentar novamente</button>}>{priorities.error} Ação e quantidade continuam exibidas, sem a ordem da fila de atenção.</Alert>}
     <div className="filter-bar queue-filters" role="search" aria-label="Filtrar a fila operacional">
       <label className="search-field"><span>Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="SKU ou produto" /></label>
-      <label><span>Ação</span><select value={action} onChange={(event) => update('acao', event.target.value)}><option value="">Todas</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>
+      <label><span>Ação</span><select value={action} onChange={(event) => update('acao', event.target.value)}><option value="">Todas</option><option value="atraso_inevitavel">Falta inevitável</option><option value="antecipar_op">Antecipar OP</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="rever_op">Rever OP</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>
       <div className="filter-count" role="status"><strong>{filtered.length}</strong><span>de {all.length} SKUs</span></div>
       <details className="more-filters">
         <summary>Mais filtros</summary>

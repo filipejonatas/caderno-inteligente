@@ -452,6 +452,7 @@
         "operational_recommendation.limitations",
         "operational_recommendation.minimum_lot",
         "operational_recommendation.open_production_quantity",
+        "operational_recommendation.planned_orders",
         "operational_recommendation.rationale",
         "operational_recommendation.raw_quantity",
         "operational_recommendation.requires_human_review",
