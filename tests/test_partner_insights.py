@@ -83,7 +83,7 @@ def test_excess_signal_for_low_or_zero_turnover():
     for sales in [0, 20]:
         row = first(source(sales=sales, stock=300, sent=sales))
         assert any(s['code'] == 'PARTNER_EXCESS_RISK' for s in row['signals'])
-        assert row['action'] == 'monitorar_estoque'
+        assert row['action'] == 'monitorar_excesso_parceiro'  # Etapa 15.5: excesso estável tem ação própria
 
 
 def test_divergence_has_precedence_and_thresholds_are_configurable():

@@ -30,7 +30,8 @@ from caderno_inteligente.action_labels import label_commercial_row, label_operat
 from caderno_inteligente.events import build_event_analysis, load_event_settings  # noqa: E402
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators, registered_demand_warning  # noqa: E402
-from caderno_inteligente.supply_plan import build_supply_plans, load_supply_settings  # noqa: E402
+from caderno_inteligente.supply_plan import attach_partner_buildup, build_supply_plans, load_supply_settings  # noqa: E402
+from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402
 from caderno_inteligente.capacity_plan import build_capacity_plan  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
@@ -136,6 +137,8 @@ def _build_pipeline():
         quality["warnings"].append(warning)
     # Etapa 15.3: plano datado por SKU (projeção diária, ordens planejadas, ajustes de OP) alimenta regras e ações.
     plans = build_supply_plans(dataset, indicators, forecasts, supply_settings)
+    # Etapa 15.5: pares parceiro–SKU com estoque acumulando chegam ao SKU (sinal e evidência na OP a rever).
+    attach_partner_buildup(plans, build_partner_insights(dataset, load_commercial_thresholds(ROOT / "config/commercial_thresholds.json"))["items"])
     # Etapa 15.4: as ordens planejadas disputam a capacidade livre de cada linha, semana a semana.
     capacity = build_capacity_plan(plans, indicators, dataset["Capacidade_Semanal"], dataset["Carteira_Pedidos"], supply_settings["reference_date"],
                                    load_engine_config(ENGINE_CONFIG_FILE)["evaluation"]["peak_months"])
@@ -881,7 +884,6 @@ app.include_router(create_forecast_lab_router(
 
 # Additive run comparison: snapshots preserve forecast, recommendation and partner coverage as computed.
 from backend.run_comparisons import create_run_comparison_router  # noqa: E402
-from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402
 from caderno_inteligente.run_comparison import build_comparison_payload  # noqa: E402
 
 COMMERCIAL_THRESHOLDS_FILE = ROOT / "config/commercial_thresholds.json"

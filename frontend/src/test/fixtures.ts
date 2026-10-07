@@ -243,7 +243,7 @@ const metadata = { challenge_labels: { repor: 'Repor', priorizar_parceiro: 'Prio
 export const partnerSummary: PartnerSummary = {
   code: PARTNER, name: 'Parceiro sintético', type: 'Key account', region: 'Sudeste', channel: 'Varejo', state: 'SP', city: 'Cidade', observed_skus: 1,
   linked_skus: 2, total_catalog_skus: 4, coverage: 0.25, latest_sell_out_month: '2026-08', backlog_quantity: 120,
-  action_counts: { avaliar_reposicao: 1, monitorar_estoque: 0, investigar_divergencia: 0, solicitar_atualizacao: 0, dados_insuficientes: 1 },
+  action_counts: { avaliar_reposicao: 1, monitorar_estoque: 0, investigar_divergencia: 0, solicitar_atualizacao: 0, dados_insuficientes: 1, conter_reposicao: 0, monitorar_excesso_parceiro: 0 },
   quality_counts: { sufficient: 1, stale: 0, insufficient: 1 },
   challenge_action: challenge('priorizar_parceiro', 'Priorizar parceiro', 'partner', '2 pares com oportunidade de reposição, incluindo SKU entre os 10 primeiros.', 'avaliar_reposicao'),
 };
@@ -257,6 +257,7 @@ export const commercialRow: CommercialRow = {
   orders: [{ order: 'PED-T1', quantity: 120, promised_date: '2026-10-01', status: 'Confirmado' }],
   signals: [{ code: 'INSUFFICIENT_PARTNER_DATA', label: 'Dados insuficientes para recomendar' }], action: 'dados_insuficientes',
   action_label: 'Sem recomendação por dados insuficientes', requires_human_review: true, recommendation_reason: 'Sem estoque estimado.',
+  buildup_window_months: 6, sell_through_window: null, stock_start: null, stock_growth: null, stock_identity_consistent: null,
   periods: [{ month: '2026-08', sell_in_quantity: 30, sell_out_quantity: 0, estimated_stock: null, data_nature: 'Real' }],
   challenge_action: challenge('repor', 'Repor', 'commercial', 'Cobertura estimada baixa para o giro observado; avaliar reposição.', 'avaliar_reposicao'),
 };

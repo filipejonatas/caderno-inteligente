@@ -382,7 +382,6 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0009",
-      "pending_until": "15.5",
       "expected": {
         "ranked": true,
         "signals": {"includes": ["PROJECTED_EXCESS", "PARTNER_STOCK_BUILDUP"]},
@@ -399,7 +398,6 @@
       "origin": "base",
       "partner": "KA-02",
       "sku": "CI-0009",
-      "pending_until": "15.5",
       "expected": {
         "signals": {"includes": ["PARTNER_STOCK_BUILDUP"], "excludes": ["SELLIN_SELLOUT_DIVERGENCE"]},
         "action": "conter_reposicao",
@@ -415,7 +413,6 @@
       "origin": "base",
       "partner": "KA-03",
       "sku": "CI-0001",
-      "pending_until": "15.5",
       "expected": {
         "signals": {"includes_any": ["PARTNER_STOCK_BUILDUP", "PARTNER_EXCESS_RISK"]},
         "requires_human_review": true
@@ -571,6 +568,13 @@
       "change": "A regra de ocupação média da família (CAPACITY_CONFLICT) foi substituída pela falta de capacidade após encaixar as ordens planejadas na capacidade livre semanal de cada linha (CAPACITY_SHORTFALL, peso 7 gravado na Etapa 15.0); o peso e o limiar antigos saíram da configuração. O VC-08 passou a esperar CAPACITY_SHORTFALL e o VC-29 deixou de ser pendente.",
       "reason": "Decisão D4 do plano da Etapa 15: a ocupação média marcava as 6 famílias acima de 90% sem dizer o que não cabia; a alocação semanal mostra quanto e quando falta (Linha Escolar: 8.720 un. sem programação, incluindo a Volta às Aulas).",
       "evidence": "docs/etapa-15-4-capacidade-semanal.md",
+      "changed_weights_or_models": true
+    },
+    {
+      "date": "2026-10-07",
+      "change": "Pares parceiro–SKU passaram a ter janela de acúmulo de 6 meses (sell-through, estoque inicial → final e conferência da conta de estoque). Novo sinal PARTNER_STOCK_BUILDUP (ação 'Não repor; acionar sell-out', rótulo Investigar) e excesso estável sem a trava de giro ≤ 30 un./mês (ação 'Monitorar estoque alto', rótulo Monitorar); a divergência sell-in × sell-out só vale quando a conta de estoque não fecha. O sinal chega ao SKU (regra PARTNER_STOCK_BUILDUP, peso 6 gravado na Etapa 15.0) e à OP a rever. O limiar low_monthly_sell_out saiu da configuração. VC-24 a VC-26 deixaram de ser pendentes.",
+      "reason": "O caso que abre o PDF (venda ao parceiro que parece bom resultado, mas o produto está parado) não era detectado: KA-02 · CI-0009 aparecia como divergência de dado, embora a conta de estoque feche em todos os meses, e a regra de excesso exigia giro ≤ 30 un./mês.",
+      "evidence": "docs/etapa-15-5-estoque-no-parceiro.md",
       "changed_weights_or_models": true
     }
   ]

@@ -100,6 +100,11 @@ def _iso(value: date | None) -> str | None:
     return None if value is None else value.isoformat()
 
 
+def _br(value: date | None) -> str:
+    """Data curta para textos de motivo (dd/mm); os campos estruturados continuam em ISO."""
+    return "—" if value is None else f"{value.day:02d}/{value.month:02d}"
+
+
 def _open(frame: pd.DataFrame) -> pd.DataFrame:
     if frame.empty or "Status" not in frame:
         return frame
@@ -234,7 +239,7 @@ def _excess_adjustments(stock, days, demand, ops, reference, lot, safety, horizo
         adjustments.append({
             "order": op["order"], "quantity": op["quantity"], "finish": _iso(op["finish"]), "status": op["status"],
             "adjustment": "cancelar" if new_quantity <= 0 else "reduzir", "suggested_quantity": new_quantity,
-            "reason": f"Depois da chegada em {_iso(arrival)}, o estoque projetado ({levels[arrival]:.0f} un.) passa de {excess_days} dias de demanda "
+            "reason": f"Depois da chegada em {_br(arrival)}, o estoque projetado ({levels[arrival]:.0f} un.) passa de {excess_days} dias de demanda "
                       f"mais o estoque de segurança ({keep:.0f} un.); reduzir {reduce_by:.0f} un. não cria falta nesse período.",
             "projected_after_arrival": round(levels[arrival], 1), "kept_for_window": round(keep, 1), "daily_demand": round(daily, 2),
             "cause": "excesso_projetado",
@@ -354,7 +359,7 @@ def build_sku_plan(indicator: dict[str, Any], forecast: dict[str, Any] | None, o
                 adjustments.append({
                     "order": op["order"], "quantity": op["quantity"], "finish": _iso(op["finish"]), "status": op["status"],
                     "adjustment": "antecipar", "suggested_quantity": op["quantity"], "suggested_finish": _iso(need_day),
-                    "reason": f"A falta começa em {_iso(need_day)}; a OP ainda não começou e, iniciada em {_iso(reference)}, pode concluir até {_iso(earliest_finish)}.",
+                    "reason": f"A falta começa em {_br(need_day)}; a OP ainda não começou e, iniciada em {_br(reference)}, pode concluir até {_br(earliest_finish)}.",
                     "cause": "falta_antes_da_op",
                 })
                 break
@@ -463,3 +468,29 @@ def decide(plan: dict[str, Any], issue_codes: set[str]) -> tuple[str, list[str]]
         return "sem_acao_necessaria", []
     unique = list(dict.fromkeys(candidates))
     return unique[0], unique[1:]
+
+
+def attach_partner_buildup(plans: dict[str, dict[str, Any]], partner_items: list[dict[str, Any]]) -> None:
+    """Etapa 15.5: leva ao SKU os pares parceiro–SKU com estoque acumulando (sem distribuir o estoque do CD).
+
+    O SKU ganha o sinal PARTNER_STOCK_BUILDUP e, se tem OP reduzida por excesso, a evidência do parceiro entra no motivo.
+    """
+    by_sku: dict[str, list[dict[str, Any]]] = {}
+    for item in partner_items:
+        if any(signal["code"] == "PARTNER_STOCK_BUILDUP" for signal in item.get("signals", [])):
+            by_sku.setdefault(str(item["sku"]), []).append({
+                "partner": item["partner"], "sell_through": None if item.get("sell_through_window") is None else round(item["sell_through_window"], 2),
+                "stock_start": item.get("stock_start"), "stock_end": item.get("estimated_stock"),
+                "coverage_days": None if item.get("coverage_days") is None else round(item["coverage_days"], 1),
+            })
+    for sku, plan in plans.items():
+        pairs = by_sku.get(sku, [])
+        plan["partner_buildup"] = pairs
+        if not pairs:
+            continue
+        plan["signals"].append("PARTNER_STOCK_BUILDUP")
+        note = "; ".join(f"{pair['partner']} vendeu {pair['sell_through']:.0%} do que recebeu e o estoque foi de {pair['stock_start']:g} para {pair['stock_end']:g} un."
+                         for pair in pairs if pair["sell_through"] is not None and pair["stock_start"] is not None and pair["stock_end"] is not None)
+        for adjustment in plan["op_adjustments"]:
+            if adjustment["adjustment"] in ("reduzir", "cancelar") and note:
+                adjustment["reason"] += f" Estoque acumulando no parceiro: {note}"

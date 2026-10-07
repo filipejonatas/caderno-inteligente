@@ -5,10 +5,10 @@ import { Badge, EmptyState, Hint, SectionCard } from '../components';
 import { ChallengeBadge } from './ChallengeAction';
 import type { ChallengeAction } from '../types-actions';
 import type { CommercialPage, CommercialRow } from '../types-commercial';
-import { displayDays, displayNumber, displayUnits, formatDate, localizeText } from '../pages/shared';
+import { displayDays, displayNumber, displayShare, displayUnits, formatDate, localizeText } from '../pages/shared';
 
 export const qualityLabels = { sufficient: 'Suficiente no recorte', stale: 'Antigo/descontínuo', insufficient: 'Insuficiente' };
-export const commercialActions = { avaliar_reposicao: 'Avaliar reposição', monitorar_estoque: 'Monitorar estoque do parceiro', investigar_divergencia: 'Investigar divergência', solicitar_atualizacao: 'Solicitar atualização dos dados', dados_insuficientes: 'Sem recomendação por dados insuficientes' };
+export const commercialActions = { avaliar_reposicao: 'Avaliar reposição', monitorar_estoque: 'Monitorar estoque do parceiro', investigar_divergencia: 'Investigar divergência', solicitar_atualizacao: 'Solicitar atualização dos dados', dados_insuficientes: 'Sem recomendação por dados insuficientes', conter_reposicao: 'Não repor; acionar sell-out com o parceiro', monitorar_excesso_parceiro: 'Monitorar estoque alto no parceiro' };
 export const monthLabel = (value: string | null) => value ? value.split('-').reverse().join('/') : 'Não disponível';
 
 const thresholdNames: Record<string, string> = {
@@ -17,7 +17,6 @@ const thresholdNames: Record<string, string> = {
   maximum_age_months: 'Idade máxima do dado (meses)',
   reposition_coverage_days: 'Cobertura que sugere reposição (dias)',
   excess_coverage_days: 'Cobertura que indica excesso (dias)',
-  low_monthly_sell_out: 'Giro mensal considerado baixo (unidades)',
   minimum_excess_stock: 'Estoque mínimo para apontar excesso (unidades)',
   divergence_ratio: 'Divergência sell-in × sell-out (proporção)',
   minimum_divergence_quantity: 'Divergência mínima (unidades)',
@@ -45,7 +44,9 @@ export const opportunityOrderLabels: Record<OpportunityOrder, string> = { urgenc
 export const sortOpportunities = (rows: CommercialRow[], order: OpportunityOrder) => [...rows].sort(opportunityOrders[order]);
 
 /** Detalhe do parceiro: o que pede ação vem antes, depois as insuficiências de dados, depois os demais SKUs. */
-const actionable: CommercialRow['action'][] = ['avaliar_reposicao', 'investigar_divergencia', 'solicitar_atualizacao'];
+const actionable: CommercialRow['action'][] = ['conter_reposicao', 'avaliar_reposicao', 'investigar_divergencia', 'solicitar_atualizacao'];
+const isBuildup = (row: CommercialRow) => row.signals.some((signal) => signal.code === 'PARTNER_STOCK_BUILDUP');
+const BuildupBadge = ({ row }: { row: CommercialRow }) => isBuildup(row) ? <Badge tone="critical">Estoque acumulando</Badge> : null;
 const rank = (row: CommercialRow) => actionable.includes(row.action) ? 0 : row.action === 'dados_insuficientes' || row.data_quality === 'insufficient' ? 1 : 2;
 export const sortPartnerRows = (rows: CommercialRow[]) => [...rows].sort((left, right) => rank(left) - rank(right) || ascending(left.coverage_days) - ascending(right.coverage_days) || stable(left, right));
 
@@ -57,8 +58,9 @@ function Evidence({ row }: { row: CommercialRow }) {
       <div><dt>Enviado (sell-in)</dt><dd>{displayUnits(row.sell_in_recent)}{row.sell_in_months.length === 0 && <small>Não observado</small>}</dd></div>
       <div><dt>Vendido (sell-out)</dt><dd>{displayUnits(row.sell_out_recent)}{row.sell_out_months.length === 0 ? <small>Não observado</small> : <small>{row.sell_out_months.map(monthLabel).join(', ')}</small>}</dd></div>
       <div><dt>Estoque estimado</dt><dd>{displayUnits(row.estimated_stock)}<small>{monthLabel(row.stock_month)} · estimado</small></dd></div>
+      {isBuildup(row) && <div><dt>Vendido ÷ enviado</dt><dd>{displayShare(row.sell_through_window)}<small>{row.buildup_window_months} meses · estoque {displayNumber(row.stock_start)} → {displayNumber(row.estimated_stock)}</small></dd></div>}
     </dl>
-    <div className="table-shell" tabIndex={0} role="region" aria-label={`Origem mensal de ${row.partner} e ${row.sku}`}><table className="data-table"><caption>Origem: Sell_In e Sell_Out · {row.partner} · {row.sku}</caption><thead><tr><th>Mês</th><th>Enviado</th><th>Vendido</th></tr></thead><tbody>{row.periods.map(period => <tr key={period.month}><td>{monthLabel(period.month)}</td><td>{displayNumber(period.sell_in_quantity)}</td><td>{displayNumber(period.sell_out_quantity)}</td></tr>)}</tbody></table></div>
+    <div className="table-shell" tabIndex={0} role="region" aria-label={`Origem mensal de ${row.partner} e ${row.sku}`}><table className="data-table"><caption>Origem: Sell_In e Sell_Out · {row.partner} · {row.sku}</caption><thead><tr><th>Mês</th><th>Enviado</th><th>Vendido</th><th>Estoque estimado</th></tr></thead><tbody>{row.periods.map(period => <tr key={period.month}><td>{monthLabel(period.month)}</td><td>{displayNumber(period.sell_in_quantity)}</td><td>{displayNumber(period.sell_out_quantity)}</td><td>{displayNumber(period.estimated_stock)}</td></tr>)}</tbody></table></div>
     {row.challenge_action && <p><strong>Rótulo {row.challenge_action.label}:</strong> {row.challenge_action.evidence.filter((item) => item.value !== null).map((item) => `${item.label}: ${typeof item.value === 'number' ? displayNumber(item.value) : item.value}`).join('; ') || row.challenge_action.reason}.</p>}
     {row.orders.length > 0 && <ul className="plain-list">{row.orders.map(order => <li key={order.order}>Pedido {order.order}: {displayUnits(order.quantity)}, prometido para {order.promised_date ? formatDate(order.promised_date) : 'data ausente'} ({order.status}).</li>)}</ul>}
   </div>;
@@ -88,6 +90,7 @@ export function OpportunityCard({ row, uniform, hideLabel, expanded, onToggle }:
     {(!uniform || row.data_quality !== 'sufficient' || (!hideLabel && row.challenge_action)) && <div className="opp-flags">
       {!uniform && <strong className="commercial-action">{row.action_label}</strong>}
       {row.data_quality !== 'sufficient' && <Badge tone="medium">{qualityLabels[row.data_quality]}</Badge>}
+      <BuildupBadge row={row} />
       {!hideLabel && <ChallengeBadge action={row.challenge_action} />}
     </div>}
     <Stats row={row} />
@@ -119,7 +122,7 @@ export function CommercialMatrix({ response }: { response: CommercialPage<Commer
         return [
           <tr key={key} className={expanded ? 'is-expanded' : ''}>
             <td data-label="Parceiro / SKU"><Link to={`/parceiros/${encodeURIComponent(row.partner)}`}>{row.partner_name}</Link><br /><Link to={`/skus/${encodeURIComponent(row.sku)}`}>{row.sku}</Link><small>{row.product}</small>{!shared && <ChallengeBadge action={row.challenge_action} />}</td>
-            {!uniform && <td className="cell-stack" data-label="Ação comercial"><strong className="commercial-action">{row.action_label}</strong>{row.data_quality !== 'sufficient' && <Badge tone="medium">{qualityLabels[row.data_quality]}</Badge>}</td>}
+            {!uniform && <td className="cell-stack" data-label="Ação comercial"><strong className="commercial-action">{row.action_label}</strong>{row.data_quality !== 'sufficient' && <Badge tone="medium">{qualityLabels[row.data_quality]}</Badge>}<BuildupBadge row={row} /></td>}
             <td data-label="Estoque estimado">{displayNumber(row.estimated_stock)}</td>
             <td data-label="Cobertura de estoque">{displayDays(row.coverage_days)}</td>
             <td data-label="Vende por mês">{displayNumber(row.average_monthly_sell_out)}</td>

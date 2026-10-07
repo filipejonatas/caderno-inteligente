@@ -52,7 +52,7 @@ DEFINITIONS = {
 PRECEDENCE = {
     "operational": ["investigar (dado insuficiente)", "priorizar produção (antecipar OP ou falta inevitável)", "priorizar produção ou produzir (ordem planejada)",
                     "investigar (rever OP)", "monitorar (excesso)", "sem ação necessária"],
-    "commercial": ["investigar (dado antigo, insuficiente ou divergente)", "repor", "recomendar recompra", "monitorar"],
+    "commercial": ["investigar (dado antigo, insuficiente ou divergente)", "investigar (estoque acumulando no parceiro)", "repor", "recomendar recompra", "monitorar"],
     "partner": ["priorizar parceiro (várias reposições com SKU de alta prioridade)"],
     "channel": ["ampliar mix", "reativar", "monitorar saída de linha", "investigar queda", "monitorar crescimento", "sem ação necessária"],
 }
@@ -201,6 +201,18 @@ def label_commercial_row(row: dict[str, Any], settings: dict[str, Any]) -> dict[
             evidence.append(_ev("Idade do último sell-out (meses)", row.get("age_months"), "Sell_Out"))
         return _result("investigar", "commercial", action, signals, evidence, why)
     evidence = [_ev("Giro médio de sell-out (un./mês)", row.get("average_monthly_sell_out"), "Sell_Out"), _ev("Estoque estimado no parceiro (un.)", row.get("estimated_stock"), "Sell_Out, estimado")]
+    if action == "conter_reposicao":
+        through, start = row.get("sell_through_window"), row.get("stock_start")
+        evidence = [_ev(f"Vendido ÷ enviado em {row.get('buildup_window_months')} meses", None if through is None else f"{through:.0%}", "Sell_Out ÷ Sell_In"),
+                    _ev("Estoque estimado inicial → final (un.)", f"{start:g} → {row.get('estimated_stock'):g}" if start is not None and row.get("estimated_stock") is not None else None, "Sell_Out, estimado"),
+                    _ev("Cobertura estimada (dias)", None if row.get("coverage_days") is None else round(row["coverage_days"], 1), "Sell_Out"),
+                    _ev("Conta de estoque fecha", {True: "sim", False: "não"}.get(row.get("stock_identity_consistent")), "estoque anterior + sell-in − sell-out")]
+        return _result("investigar", "commercial", action, [signal["code"] for signal in row.get("signals", [])], evidence,
+                       f"Estoque acumulando em {pair}: o parceiro recebe mais do que vende. Não repor; investigar o giro com o parceiro e combinar ação de sell-out.")
+    if action == "monitorar_excesso_parceiro":
+        evidence.insert(0, _ev("Cobertura estimada (dias)", None if row.get("coverage_days") is None else round(row["coverage_days"], 1), "Sell_Out"))
+        return _result("monitorar", "commercial", action, [signal["code"] for signal in row.get("signals", [])], evidence,
+                       f"Estoque alto e estável em {pair}; não ampliar a reposição.")
     if action == "avaliar_reposicao":
         evidence.insert(0, _ev("Cobertura estimada (dias)", None if row.get("coverage_days") is None else round(row["coverage_days"], 1), "Sell_Out"))
         return _result("repor", "commercial", action, [signal["code"] for signal in row.get("signals", [])], evidence, f"Cobertura estimada baixa para o giro observado em {pair}; avaliar reposição.")

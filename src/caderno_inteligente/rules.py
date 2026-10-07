@@ -42,6 +42,9 @@ def _plan_issues(row: pd.Series, plan: dict[str, Any]) -> list[dict[str, Any]]:
                              {"family": row["family"], "unscheduled_quantity": capacity.get("unscheduled_quantity"),
                               "orders": [{"due_date": order["due_date"], "quantity": order["quantity"], "unscheduled": order["unscheduled"]} for order in short]},
                              ["Capacidade_Semanal.Capacidade disponível", "ordens planejadas (Etapa 15.3)"]))
+    if "PARTNER_STOCK_BUILDUP" in plan["signals"]:
+        issues.append(_issue(row, "PARTNER_STOCK_BUILDUP", "Parceiro com estoque acumulando: recebe mais do que vende.", "média",
+                             {"pairs": plan.get("partner_buildup", [])}, ["Sell_In.Quantidade enviada", "Sell_Out.Quantidade vendida", "Sell_Out.Estoque estimado cliente"]))
     if "PROJECTED_EXCESS" in plan["signals"]:
         reductions = [item for item in plan["op_adjustments"] if item.get("cause") == "excesso_projetado"]
         issues.append(_issue(row, "PROJECTED_EXCESS", "Depois da chegada da OP, o estoque projetado passa do limite de excesso.", "média",

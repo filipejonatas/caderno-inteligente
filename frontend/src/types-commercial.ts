@@ -1,6 +1,7 @@
 import type { ChallengeAction } from './types-actions';
 
-export type CommercialAction = 'avaliar_reposicao' | 'monitorar_estoque' | 'investigar_divergencia' | 'solicitar_atualizacao' | 'dados_insuficientes';
+export type CommercialAction = 'avaliar_reposicao' | 'monitorar_estoque' | 'investigar_divergencia' | 'solicitar_atualizacao' | 'dados_insuficientes'
+  | 'conter_reposicao' | 'monitorar_excesso_parceiro';
 export type CommercialQuality = 'sufficient' | 'stale' | 'insufficient';
 export interface PartnerSummary {
   code: string; name: string; type: string; region: string | null; channel: string | null;
@@ -21,6 +22,9 @@ export interface CommercialRow {
   signals: Array<{ code: string; label: string }>;
   action: CommercialAction; action_label: string; requires_human_review: boolean; recommendation_reason: string;
   challenge_action?: ChallengeAction;
+  /** Etapa 15.5: janela de acúmulo no parceiro. */
+  buildup_window_months?: number; sell_through_window?: number | null; stock_start?: number | null; stock_growth?: number | null;
+  stock_identity_consistent?: boolean | null;
   periods: Array<{ month: string; sell_in_quantity: number | null; sell_out_quantity: number | null; estimated_stock: number | null; data_nature: string | null }>;
 }
 export interface CommercialMetadata {

@@ -83,23 +83,39 @@ def test_new_rule_weights_exist_and_only_the_later_rules_are_still_silent():
     emitted = set(issues["code"])
     assert {"PROJECTED_SHORTFALL", "OP_FOR_DISCONTINUED", "PROJECTED_EXCESS", "CAPACITY_SHORTFALL"} <= emitted  # Etapas 15.3 e 15.4
     assert "CAPACITY_CONFLICT" not in emitted  # substituída na 15.4 (D4)
-    assert "PARTNER_STOCK_BUILDUP" not in emitted  # entra na 15.5
+    assert "PARTNER_STOCK_BUILDUP" in emitted  # Etapa 15.5
 
 
 def test_stage_15_cases_are_pending_until_their_substep_except_the_regression_guard():
     cases = {case["id"]: case for case in load_validation_config(VALIDATION)["cases"]}
     stage = [cases[f"VC-{number}"] for number in range(20, 31)]
     assert {case["pending_until"] for case in stage if "pending_until" in case} <= SUBSTEPS
-    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1, VC-30 na 15.2, VC-20 a VC-23 na 15.3 e VC-29 na 15.4.
-    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-20", "VC-21", "VC-22", "VC-23", "VC-27", "VC-28", "VC-29", "VC-30"]
+    # Liberados ao longo da Etapa 15 (VC-27 desde a 15.0); na 15.5 nenhum caso fica pendente.
+    assert {case["id"] for case in stage if "pending_until" not in case} == {f"VC-{number}" for number in range(20, 31)}
 
 
-def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
+def _with_pending(monkeypatch):
+    """A Etapa 15 terminou sem pendentes; o comportamento continua testado com um caso marcado em memória."""
+    import backend.validation as validation_router
+
+    original = validation_router.load_validation_config
+
+    def patched(path):
+        config = original(path)
+        config["cases"] = [{**case, "pending_until": "15.x"} if case["id"] == "VC-24" else case for case in config["cases"]]
+        return config
+
+    monkeypatch.setattr(validation_router, "load_validation_config", patched)
+
+
+def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed(monkeypatch):
+    real = TestClient(app).get("/api/validation/summary").json()["frozen_cases"]
+    assert real["pending"] == 0 and real["passed"] == real["total"] == 30
+    _with_pending(monkeypatch)
     body = TestClient(app).get("/api/validation/summary").json()["frozen_cases"]
     items = {item["id"]: item for item in body["items"]}
-    assert body["pending"] == 3
-    assert items["VC-24"]["result"] == "pendente" and items["VC-24"]["checks"] == [] and items["VC-24"]["pending_until"] == "15.5"
-    assert items["VC-27"]["result"] == "passou"
+    assert body["pending"] == 1
+    assert items["VC-24"]["result"] == "pendente" and items["VC-24"]["checks"] == [] and items["VC-24"]["pending_until"] == "15.x"
     assert body["failed"] == 0 and body["not_found"] == 0
 
 
@@ -135,7 +151,8 @@ def test_decision_snapshot_is_read_only_and_deterministic():
     assert {path: path.stat().st_mtime_ns for path in guarded if path.exists()} == before
 
 
-def test_pending_cases_are_not_reported_as_known_failures():
+def test_pending_cases_are_not_reported_as_known_failures(monkeypatch):
+    _with_pending(monkeypatch)
     body = TestClient(app).get("/api/validation/summary").json()
     pending = {item["id"] for item in body["frozen_cases"]["items"] if item["result"] == "pendente"}
     assert pending and not any(case in failure["description"] for failure in body["known_failures"] for case in pending)

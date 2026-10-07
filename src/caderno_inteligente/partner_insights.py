@@ -10,7 +10,7 @@ import pandas as pd
 DEFAULT_THRESHOLDS = {
     "recent_months": 3, "minimum_sell_out_months": 3, "maximum_age_months": 1,
     "reposition_coverage_days": 30, "excess_coverage_days": 90,
-    "low_monthly_sell_out": 30, "minimum_excess_stock": 100,
+    "minimum_excess_stock": 100,
     "divergence_ratio": .5, "minimum_divergence_quantity": 50,
     # Etapa 15: estoque acumulando no parceiro; gravados na 15.0, antes do código que os usa (15.5).
     "buildup_months": 6, "buildup_max_sell_through": .9, "buildup_min_stock_growth": .3, "stock_identity_tolerance": 1,
@@ -21,6 +21,9 @@ ACTION_LABELS = {
     "investigar_divergencia": "Investigar divergência",
     "solicitar_atualizacao": "Solicitar atualização dos dados",
     "dados_insuficientes": "Sem recomendação por dados insuficientes",
+    # Etapa 15.5: estoque parado no parceiro.
+    "conter_reposicao": "Não repor; acionar sell-out com o parceiro",
+    "monitorar_excesso_parceiro": "Monitorar estoque alto no parceiro",
 }
 SIGNAL_LABELS = {
     "REPOSITION_OPPORTUNITY": "Possível oportunidade de reposição",
@@ -28,6 +31,7 @@ SIGNAL_LABELS = {
     "SELLIN_SELLOUT_DIVERGENCE": "Divergência entre sell-in e sell-out",
     "STALE_PARTNER_DATA": "Dado antigo ou descontínuo",
     "INSUFFICIENT_PARTNER_DATA": "Dados insuficientes para recomendar",
+    "PARTNER_STOCK_BUILDUP": "Estoque acumulando no parceiro",
 }
 LIMITATION = (
     "Recomendação comercial demonstrativa, sujeita à revisão humana. Estoque do parceiro é estimado; "
@@ -57,6 +61,10 @@ FIELD_NATURE.update({
     "backlog_order_count": {"nature": "contagem de pedidos registrados não encerrados", "origin": "Carteira_Pedidos.Pedido e Status"},
     "signals": {"nature": "calculado por regras comerciais demonstrativas", "origin": "config/commercial_thresholds.json e evidências do par"},
     "action": {"nature": "sugestão determinística para revisão humana, não autorização", "origin": "sinais comerciais e precedência documentada"},
+    "sell_through_window": {"nature": "calculado: sell-out ÷ sell-in na janela de acúmulo", "origin": "Sell_In e Sell_Out, mesmo parceiro/SKU"},
+    "stock_start": {"nature": "estimado na fonte", "origin": "Sell_Out.Estoque estimado cliente no mês anterior à janela de acúmulo"},
+    "stock_growth": {"nature": "calculado: (estoque final − inicial) ÷ inicial", "origin": "Sell_Out.Estoque estimado cliente"},
+    "stock_identity_consistent": {"nature": "calculado: estoque(t) = estoque(t−1) + sell-in(t) − sell-out(t), dentro da tolerância", "origin": "Sell_In e Sell_Out"},
 })
 
 
@@ -115,6 +123,39 @@ def _monthly(frame: pd.DataFrame, rename: dict) -> pd.DataFrame:
     return result
 
 
+def _buildup(history: pd.DataFrame, reference, cfg: dict) -> dict:
+    """Janela de acúmulo (Etapa 15.5): sell-through, estoque inicial → final e se a conta de estoque fecha."""
+    months = cfg["buildup_months"]
+    empty = {"buildup_window_months": months, "sell_in_window": None, "sell_out_window": None, "sell_through_window": None,
+             "stock_start": None, "stock_growth": None, "stock_identity_consistent": None, "stock_identity_max_residual": None}
+    if reference is None or history.empty:
+        return empty
+    window = history[history["month"] > reference - months]
+    sell_in = window["sell_in_quantity"].dropna()
+    sell_out = window["sell_out_quantity"].dropna()
+    total_in = float(sell_in.sum()) if not sell_in.empty else None
+    total_out = float(sell_out.sum()) if not sell_out.empty else None
+    stocks = history.dropna(subset=["estimated_stock"]).set_index("month")["estimated_stock"]
+    before = stocks[stocks.index <= reference - months]
+    start = float(before.iloc[-1]) if not before.empty else (float(stocks[stocks.index > reference - months].iloc[0]) if not stocks.empty else None)
+    end = float(stocks.iloc[-1]) if not stocks.empty else None
+    residuals = []
+    indexed = history.set_index("month")
+    for month in indexed.index:
+        previous = month - 1
+        row = indexed.loc[month]
+        if previous in indexed.index and all(pd.notna(value) for value in (row["estimated_stock"], row["sell_in_quantity"], row["sell_out_quantity"], indexed.loc[previous, "estimated_stock"])):
+            residuals.append(abs(float(row["estimated_stock"]) - (float(indexed.loc[previous, "estimated_stock"]) + float(row["sell_in_quantity"]) - float(row["sell_out_quantity"]))))
+    largest = max(residuals) if residuals else None
+    return {
+        "buildup_window_months": months, "sell_in_window": total_in, "sell_out_window": total_out,
+        "sell_through_window": None if not total_in or total_out is None else total_out / total_in,
+        "stock_start": start, "stock_growth": None if not start or end is None else (end - start) / start,
+        "stock_identity_consistent": None if largest is None else largest <= cfg["stock_identity_tolerance"],
+        "stock_identity_max_residual": largest,
+    }
+
+
 def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | None = None) -> dict:
     """Read-only, reproducible reference is the latest month of sell-in/out, not wall clock."""
     cfg = {**DEFAULT_THRESHOLDS, **(thresholds or {})}
@@ -167,17 +208,25 @@ def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | Non
         comparable_out = None if comparable.empty else float(comparable["sell_out_quantity"].sum())
         difference = None if comparable.empty else comparable_in - comparable_out
         ratio = None if comparable_out in (None, 0) else abs(difference) / comparable_out
+        buildup = _buildup(history, reference, cfg)
+        consistent = buildup["stock_identity_consistent"]
         signals = []
         if not enough:
             signals.append("INSUFFICIENT_PARTNER_DATA")
         if stale:
             signals.append("STALE_PARTNER_DATA")
-        if len(comparable) >= cfg["minimum_sell_out_months"] and abs(difference) >= cfg["minimum_divergence_quantity"] and (comparable_out == 0 or ratio >= cfg["divergence_ratio"]):
+        # Etapa 15.5: se a conta de estoque fecha, a diferença sell-in − sell-out é estoque acumulado, não erro de dado.
+        if (consistent is not True and len(comparable) >= cfg["minimum_sell_out_months"] and abs(difference) >= cfg["minimum_divergence_quantity"]
+                and (comparable_out == 0 or ratio >= cfg["divergence_ratio"])):
             signals.append("SELLIN_SELLOUT_DIVERGENCE")
         if enough and not stale:
             if coverage is not None and coverage <= cfg["reposition_coverage_days"] and avg > 0:
                 signals.append("REPOSITION_OPPORTUNITY")
-            if stock >= cfg["minimum_excess_stock"] and avg <= cfg["low_monthly_sell_out"] and (avg == 0 or coverage >= cfg["excess_coverage_days"]):
+            high_stock = stock >= cfg["minimum_excess_stock"] and (avg == 0 or (coverage is not None and coverage >= cfg["excess_coverage_days"]))
+            through, growth = buildup["sell_through_window"], buildup["stock_growth"]
+            if high_stock and through is not None and through <= cfg["buildup_max_sell_through"] and growth is not None and growth >= cfg["buildup_min_stock_growth"]:
+                signals.append("PARTNER_STOCK_BUILDUP")
+            elif high_stock:
                 signals.append("PARTNER_EXCESS_RISK")
         if stale:
             action = "solicitar_atualizacao"
@@ -185,8 +234,12 @@ def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | Non
             action = "dados_insuficientes"
         elif "SELLIN_SELLOUT_DIVERGENCE" in signals:
             action = "investigar_divergencia"
+        elif "PARTNER_STOCK_BUILDUP" in signals:
+            action = "conter_reposicao"
         elif "REPOSITION_OPPORTUNITY" in signals:
             action = "avaliar_reposicao"
+        elif "PARTNER_EXCESS_RISK" in signals:
+            action = "monitorar_excesso_parceiro"
         else:
             action = "monitorar_estoque"
         if action == "solicitar_atualizacao":
@@ -195,10 +248,15 @@ def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | Non
             rationale = f"Amostra recente de {len(recent_out)} meses (mínimo {cfg['minimum_sell_out_months']}); exige estoque estimado e natureza declarada. Dados ausentes impedem recomendação de reposição."
         elif action == "investigar_divergencia":
             rationale = f"Diferença de {difference:g} unidades nos mesmos {len(comparable)} meses supera os limites demonstrativos de quantidade e proporção. Conferir períodos e registros; não interpretar a diferença como venda futura."
+        elif action == "conter_reposicao":
+            rationale = (f"Nos últimos {cfg['buildup_months']} meses o parceiro vendeu {buildup['sell_through_window']:.0%} do que recebeu e o estoque estimado foi de "
+                         f"{buildup['stock_start']:g} para {stock:g} unidades ({coverage:.0f} dias de giro). A conta de estoque fecha: é produto parado, "
+                         "não erro de registro. Não repor e combinar ação de sell-out com o parceiro.")
         elif action == "avaliar_reposicao":
             rationale = f"Giro médio observado de {avg:g} unidades/mês e cobertura estimada de {coverage:.1f} dias, até o limite de {cfg['reposition_coverage_days']:g} dias. Avaliar comercialmente; não há quantidade autorizada."
-        elif "PARTNER_EXCESS_RISK" in signals:
-            rationale = f"Estoque estimado de {stock:g} unidades e giro médio de {avg:g} unidades/mês sustentam sinal demonstrativo de excesso. Monitorar e validar o estoque com o parceiro."
+        elif action == "monitorar_excesso_parceiro":
+            rationale = (f"Estoque estimado de {stock:g} unidades para um giro de {avg:g} unidades/mês ({'sem giro' if not avg else f'{coverage:.0f} dias'}), "
+                         "sem acúmulo recente. Monitorar e não ampliar a reposição.")
         else:
             rationale = "Dados suficientes no recorte, sem exceção que justifique outra sugestão. Monitoramento de rotina não afirma excesso de estoque."
         quality = "stale" if stale else "sufficient" if enough else "insufficient"
@@ -212,6 +270,7 @@ def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | Non
             "sell_in_months": [str(m) for m in recent_in["month"]],
             "sell_out_recent": None if recent_out.empty else float(recent_out["sell_out_quantity"].sum()),
             "sell_out_months": [str(m) for m in recent_out["month"]],
+            **buildup,
             "comparable_months": [str(m) for m in comparable["month"]], "comparable_sell_in": comparable_in,
             "comparable_sell_out": comparable_out, "comparable_difference": difference, "divergence_ratio": ratio,
             "estimated_stock": stock, "stock_month": None if latest_month is None else str(latest_month),

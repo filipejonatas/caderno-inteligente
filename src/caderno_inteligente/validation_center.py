@@ -482,6 +482,7 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
                 "estimated_stock": item["estimated_stock"],
                 "coverage_days": item["coverage_days"],
                 "requires_human_review": item["requires_human_review"],
+                "challenge_code": label_commercial_row(item, challenge_settings)["code"],
             }
     elif case["kind"] == "challenge_action":
         case_input = case["input"]
