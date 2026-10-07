@@ -200,13 +200,13 @@
       "origin": "base",
       "sku": "CI-0014",
       "expected": {
-        "signals": {"includes": ["CAPACITY_CONFLICT"]},
+        "signals": {"includes": ["CAPACITY_SHORTFALL"], "excludes": ["CAPACITY_CONFLICT"]},
         "secondary_actions": {"includes": ["produzir"]},
         "capacity_status": "requires_review",
         "confidence": {"not": "alta"},
         "requires_human_review": true
       },
-      "limitation": "Capacidade é agregada por família; não comprova viabilidade por SKU e semana."
+      "limitation": "Capacidade é agregada por família e semana; desde a Etapa 15.4 o sinal é a falta de capacidade após encaixar as ordens planejadas, não a ocupação média."
     },
     {
       "id": "VC-09",
@@ -453,7 +453,6 @@
       "kind": "capacity_family",
       "origin": "base",
       "family": "Escolar",
-      "pending_until": "15.4",
       "expected": {
         "peak_status": {"in": ["pre_producao", "insuficiente", "a_confirmar"]},
         "peak_need_units": {"positive": true},
@@ -566,6 +565,13 @@
       "reason": "Pela precedência do plano, falta inevitável vem antes de produzir e de rever OP, e ordem planejada vem antes de monitorar excesso. O usuário confirmou manter essa precedência depois de ver os resultados; as alternativas (excesso antes de ordem futura; rever OP antes da falta em descontinuados) foram apresentadas e recusadas.",
       "evidence": "docs/etapa-15-3-projecao-e-acao.md",
       "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "A regra de ocupação média da família (CAPACITY_CONFLICT) foi substituída pela falta de capacidade após encaixar as ordens planejadas na capacidade livre semanal de cada linha (CAPACITY_SHORTFALL, peso 7 gravado na Etapa 15.0); o peso e o limiar antigos saíram da configuração. O VC-08 passou a esperar CAPACITY_SHORTFALL e o VC-29 deixou de ser pendente.",
+      "reason": "Decisão D4 do plano da Etapa 15: a ocupação média marcava as 6 famílias acima de 90% sem dizer o que não cabia; a alocação semanal mostra quanto e quando falta (Linha Escolar: 8.720 un. sem programação, incluindo a Volta às Aulas).",
+      "evidence": "docs/etapa-15-4-capacidade-semanal.md",
+      "changed_weights_or_models": true
     }
   ]
 }

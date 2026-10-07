@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 import pandas as pd
 
-DEFAULT_THRESHOLDS = {"excess_coverage_days": 90, "capacity_occupation_threshold": 0.90, "registered_demand_divergence": 0.20}
+DEFAULT_THRESHOLDS = {"excess_coverage_days": 90, "registered_demand_divergence": 0.20}
 DEMAND_ORIGIN = "demanda de referência (previsão oficial dos 3 próximos meses; ver demand_source)"
 
 
@@ -35,6 +35,13 @@ def _plan_issues(row: pd.Series, plan: dict[str, Any]) -> list[dict[str, Any]]:
         issues.append(_issue(row, "OP_FOR_DISCONTINUED", "Há OP aberta para produto em descontinuação.", "alta",
                              {"orders": [item["order"] for item in plan["op_adjustments"] if item.get("cause") == "produto_em_descontinuacao"]},
                              ["Produtos.Status", "Ordens_Producao.Quantidade", "Carteira_Pedidos.Quantidade"]))
+    if "CAPACITY_SHORTFALL" in plan["signals"]:
+        capacity = plan.get("capacity") or {}
+        short = [order for order in capacity.get("orders", []) if order["status"] == "insuficiente"]
+        issues.append(_issue(row, "CAPACITY_SHORTFALL", "Ordem planejada não cabe na capacidade livre da linha até a data de necessidade.", "alta",
+                             {"family": row["family"], "unscheduled_quantity": capacity.get("unscheduled_quantity"),
+                              "orders": [{"due_date": order["due_date"], "quantity": order["quantity"], "unscheduled": order["unscheduled"]} for order in short]},
+                             ["Capacidade_Semanal.Capacidade disponível", "ordens planejadas (Etapa 15.3)"]))
     if "PROJECTED_EXCESS" in plan["signals"]:
         reductions = [item for item in plan["op_adjustments"] if item.get("cause") == "excesso_projetado"]
         issues.append(_issue(row, "PROJECTED_EXCESS", "Depois da chegada da OP, o estoque projetado passa do limite de excesso.", "média",
@@ -67,8 +74,6 @@ def evaluate_rules(indicators: pd.DataFrame, thresholds: dict[str, float] | None
             issues.append(_issue(row, "PRODUCTION_AFTER_PROMISE", "A primeira conclusão de produção é posterior à primeira data prometida do SKU.", "alta", {"first_promised_date": row["first_promised_date"].date().isoformat(), "first_production_completion": row["first_production_completion"].date().isoformat(), "delay_days": delay}, ["Carteira_Pedidos.Data prometida", "Ordens_Producao.Conclusão prevista"]))
         if row["coverage_days_calculated"] > thresholds["excess_coverage_days"]:
             issues.append(_issue(row, "EXCESS_COVERAGE", "Cobertura de estoque acima do limite de excesso configurado.", "média", {"coverage_days": row["coverage_days_calculated"], "threshold_days": thresholds["excess_coverage_days"], **demand}, ["Estoque_Atual.Estoque atual", demand_origin, "config.rule_thresholds.excess_coverage_days"]))
-        if row["capacity_occupation_average"] > thresholds["capacity_occupation_threshold"]:
-            issues.append(_issue(row, "CAPACITY_CONFLICT", "A ocupação média da família excede o limite configurado; requer avaliação operacional.", "alta", {"family": row["family"], "average_occupation": row["capacity_occupation_average"], "threshold": thresholds["capacity_occupation_threshold"], "available_capacity_average": row["capacity_available_average"]}, ["Capacidade_Semanal.Ocupação", "Capacidade_Semanal.Capacidade disponível", "config.rule_thresholds.capacity_occupation_threshold"]))
         if not row["has_sell_out"]:
             issues.append(_issue(row, "LOW_SELLOUT_VISIBILITY", "Não há sell-out observado para o SKU; a análise possui menor visibilidade de canal.", "média", {"sell_out_partner_count": int(row["sell_out_partner_count"]), "sell_out_visibility": row["sell_out_visibility"]}, ["Sell_Out.Cliente", "Sell_Out.SKU"]))
     columns = ["sku", "product", "family", "code", "description", "severity", "values_used", "data_origin"]

@@ -11,12 +11,13 @@ from typing import Any, Iterable
 
 from .supply_plan import ACTION_LABELS, decide
 
+CAPACITY_CODES = {"CAPACITY_SHORTFALL", "CAPACITY_CONFLICT"}  # CONFLICT: entradas antigas/sintéticas; SHORTFALL: Etapa 15.4
 PLAN_ASSUMPTIONS = [
     "Projeção diária a partir da data de planejamento: carteira na data prometida, previsão do mês além da carteira rateada pelos dias e OPs na conclusão prevista.",
     "Estoque de segurança em unidades = demanda diária de referência × dias de segurança.",
     "Ordem planejada: chega na primeira data possível (planejamento + lead time) em que o estoque fica abaixo da segurança e cobre as semanas-alvo seguintes, descontadas as OPs que já chegam nesse período; quantidade arredondada ao lote mínimo.",
     "A quantidade sugerida soma só as ordens com liberação dentro da janela de decisão; as demais aparecem como ordens planejadas.",
-    "Capacidade por família é só contexto e não limita automaticamente a quantidade sugerida.",
+    "Capacidade: as ordens planejadas são encaixadas na capacidade livre da linha (Etapa 15.4); a quantidade sugerida não é cortada, e o que não cabe aparece como sem programação.",
 ]
 PLAN_LIMITATIONS = [
     "A base não vincula pedidos a OPs; a carteira tem prioridade sobre a demanda prevista na leitura de atrasos.",
@@ -91,7 +92,7 @@ def build_operational_recommendation(
     raw = max(0.0, demand_to_cover + safety_stock - current_stock - open_production)
     minimum_lot = _number(indicator.get("minimum_lot"))
     suggested = math.ceil(raw / minimum_lot) * minimum_lot if minimum_lot > 0 and raw > 0 else math.ceil(raw)
-    capacity_conflict = "CAPACITY_CONFLICT" in issues
+    capacity_conflict = bool(CAPACITY_CODES & issues)
 
     if suggested > 0 and capacity_conflict:
         action = "produzir_validar_capacidade"
@@ -156,10 +157,10 @@ def _confidence(indicator: dict[str, Any], forecast: dict[str, Any], issues: set
     if not bool(indicator.get("has_sell_out")):
         confidence = "baixa"
         reasons.append("Sell-out não observado; a confiança da recomendação foi reduzida.")
-    if "CAPACITY_CONFLICT" in issues:
+    if CAPACITY_CODES & issues:
         if confidence == "alta":
             confidence = "média"
-        reasons.append("A família apresenta pressão de capacidade e exige validação operacional.")
+        reasons.append("Há ordem planejada que não cabe na capacidade livre da linha; exige validação operacional.")
     return confidence, reasons
 
 
@@ -180,6 +181,11 @@ def _rationale(action: str, plan: dict[str, Any]) -> list[str]:
         first = planned[0]
         lines.append(f"Ordem planejada de {first['quantity']:.0f} un. para chegar em {_ptbr(first['due_date'])}, liberando até {_ptbr(first['release_date'])}"
                      + (f"; mais {len(planned) - 1} ordem(ns) até {_ptbr(plan['horizon_end'])}." if len(planned) > 1 else "."))
+    capacity = plan.get("capacity") or {}
+    short = [order for order in capacity.get("orders", []) if order["status"] == "insuficiente"]
+    if short:
+        listed = ", ".join(f"{order['unscheduled']:.0f} un. para {_ptbr(order['due_date'])}" for order in short[:3])
+        lines.append(f"Capacidade: a linha {capacity.get('family') or ''} não comporta {listed} até a data de necessidade; antecipar, terceirizar ou repriorizar.")
     if action == "monitorar_excesso":
         lines.append("Cobertura atual acima do limite de excesso, sem OP aberta a rever: acompanhar sem produzir agora.")
     if action == "sem_acao_necessaria":
@@ -189,7 +195,7 @@ def _rationale(action: str, plan: dict[str, Any]) -> list[str]:
 
 def _plan_recommendation(indicator: dict[str, Any], forecast: dict[str, Any], issues: set[str], plan: dict[str, Any]) -> dict[str, Any]:
     action, secondary = decide(plan, issues)
-    if action == "produzir" and "CAPACITY_CONFLICT" in issues:
+    if action == "produzir" and CAPACITY_CODES & issues:
         action = "produzir_validar_capacidade"
     label = ACTION_LABELS[action]
     urgent = [order for order in plan["planned_orders"] if order["urgent"]]
@@ -211,7 +217,8 @@ def _plan_recommendation(indicator: dict[str, Any], forecast: dict[str, Any], is
         "safety_stock_quantity": plan["safety_stock_quantity"],
         "current_stock": _number(indicator.get("current_stock")),
         "open_production_quantity": _number(indicator.get("production_order_quantity")),
-        "capacity_status": "requires_review" if "CAPACITY_CONFLICT" in issues else "family_context_available",
+        "capacity_status": "requires_review" if CAPACITY_CODES & issues else "family_context_available",
+        "capacity": plan.get("capacity"),
         "confidence": confidence,
         "confidence_reason": " ".join(reasons),
         "rationale": _rationale(action, plan),

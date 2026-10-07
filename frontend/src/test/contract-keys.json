@@ -963,6 +963,34 @@
         "text_limits.user_name",
         "write_enabled"
       ]
+    },
+    "capacityPlan": {
+      "path": "/api/capacity-plan",
+      "keys": [
+        "assumptions",
+        "families",
+        "families[].affected_orders",
+        "families[].affected_orders[].client",
+        "families[].affected_orders[].order",
+        "families[].available_until_calendar_end",
+        "families[].calendar_end",
+        "families[].family",
+        "families[].first_shortfall_due",
+        "families[].line",
+        "families[].peak_months",
+        "families[].peak_status",
+        "families[].planned_in_calendar",
+        "families[].skus_short",
+        "families[].status",
+        "families[].unscheduled_quantity",
+        "families[].weeks",
+        "families[].weeks[].allocated",
+        "families[].weeks[].available",
+        "families[].weeks[].remaining",
+        "families[].weeks[].week_start",
+        "reference_date",
+        "requires_human_review"
+      ]
     }
   }
 }

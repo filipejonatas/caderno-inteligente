@@ -51,6 +51,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'overview', path: '/', label: 'Início', description: 'O que olhar primeiro' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
   { id: 'revenue', path: '/faturamento', label: 'Faturamento previsto', description: 'Estimativa em reais para três meses' },
+  { id: 'capacity', path: '/capacidade', label: 'Capacidade', description: 'Onde a produção planejada não cabe' },
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
   { id: 'b2b', path: '/parceiros', label: 'Oportunidades', description: 'Onde repor, por parceiro e SKU' },
@@ -66,7 +67,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
 /** Menu principal: 7 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
 export const menuGroups: Array<{ id: string; label: string; to: string; paths: string[] }> = [
   { id: 'home', label: 'Início', to: '/', paths: ['/'] },
-  { id: 'production', label: 'Planejamento', to: '/fila', paths: ['/fila', '/cenarios', '/prioridades', '/previsoes', '/skus'] },
+  { id: 'production', label: 'Planejamento', to: '/fila', paths: ['/fila', '/capacidade', '/cenarios', '/prioridades', '/previsoes', '/skus'] },
   { id: 'finance', label: 'Financeiro', to: '/faturamento', paths: ['/faturamento'] },
   { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'] },
   { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'] },

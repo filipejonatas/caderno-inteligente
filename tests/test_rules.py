@@ -16,9 +16,10 @@ def test_returns_required_auditable_fields():
     assert issues["values_used"].map(lambda value: isinstance(value, dict) and bool(value)).all()
     assert issues["data_origin"].map(lambda value: isinstance(value, list) and bool(value)).all()
 
-def test_applies_all_seven_required_rules():
+def test_applies_all_indicator_rules():
+    # Sem plano datado: as 6 regras dos indicadores. Capacidade, falta e excesso projetados vêm do plano (Etapas 15.3 e 15.4).
     codes = set(_issues()["code"])
-    assert codes == {"RUP_LEAD_TIME", "RUP_SAFETY_STOCK", "ORDER_WITHOUT_PRODUCTION", "PRODUCTION_AFTER_PROMISE", "EXCESS_COVERAGE", "CAPACITY_CONFLICT", "LOW_SELLOUT_VISIBILITY"}
+    assert codes == {"RUP_LEAD_TIME", "RUP_SAFETY_STOCK", "ORDER_WITHOUT_PRODUCTION", "PRODUCTION_AFTER_PROMISE", "EXCESS_COVERAGE", "LOW_SELLOUT_VISIBILITY"}
 
 def test_sellout_absence_becomes_visibility_issue_not_zero_sale():
     issues = _issues()
@@ -28,4 +29,4 @@ def test_sellout_absence_becomes_visibility_issue_not_zero_sale():
 
 def test_thresholds_are_loaded_from_configuration():
     thresholds = load_rule_thresholds()
-    assert thresholds == {"excess_coverage_days": 90, "capacity_occupation_threshold": 0.9, "registered_demand_divergence": 0.2}
+    assert thresholds == {"excess_coverage_days": 90, "registered_demand_divergence": 0.2}

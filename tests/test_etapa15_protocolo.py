@@ -81,22 +81,23 @@ def test_new_rule_weights_exist_and_only_the_later_rules_are_still_silent():
     assert NEW_CODES <= set(load_weights(ROOT / "config/prioritization_weights.json"))
     _, _, issues, _ = data()
     emitted = set(issues["code"])
-    assert {"PROJECTED_SHORTFALL", "OP_FOR_DISCONTINUED", "PROJECTED_EXCESS"} <= emitted  # Etapa 15.3
-    assert {"CAPACITY_SHORTFALL", "PARTNER_STOCK_BUILDUP"}.isdisjoint(emitted)  # entram na 15.4 e na 15.5
+    assert {"PROJECTED_SHORTFALL", "OP_FOR_DISCONTINUED", "PROJECTED_EXCESS", "CAPACITY_SHORTFALL"} <= emitted  # Etapas 15.3 e 15.4
+    assert "CAPACITY_CONFLICT" not in emitted  # substituída na 15.4 (D4)
+    assert "PARTNER_STOCK_BUILDUP" not in emitted  # entra na 15.5
 
 
 def test_stage_15_cases_are_pending_until_their_substep_except_the_regression_guard():
     cases = {case["id"]: case for case in load_validation_config(VALIDATION)["cases"]}
     stage = [cases[f"VC-{number}"] for number in range(20, 31)]
     assert {case["pending_until"] for case in stage if "pending_until" in case} <= SUBSTEPS
-    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1, VC-30 na 15.2 e VC-20 a VC-23 na 15.3.
-    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-20", "VC-21", "VC-22", "VC-23", "VC-27", "VC-28", "VC-30"]
+    # VC-27 é guarda de regressão desde a 15.0; VC-28 foi liberado na 15.1, VC-30 na 15.2, VC-20 a VC-23 na 15.3 e VC-29 na 15.4.
+    assert [case["id"] for case in stage if "pending_until" not in case] == ["VC-20", "VC-21", "VC-22", "VC-23", "VC-27", "VC-28", "VC-29", "VC-30"]
 
 
 def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
     body = TestClient(app).get("/api/validation/summary").json()["frozen_cases"]
     items = {item["id"]: item for item in body["items"]}
-    assert body["pending"] == 4
+    assert body["pending"] == 3
     assert items["VC-24"]["result"] == "pendente" and items["VC-24"]["checks"] == [] and items["VC-24"]["pending_until"] == "15.5"
     assert items["VC-27"]["result"] == "passou"
     assert body["failed"] == 0 and body["not_found"] == 0
@@ -105,7 +106,7 @@ def test_pending_cases_are_listed_but_not_counted_as_passed_or_failed():
 def test_pending_marker_skips_execution_even_for_unknown_kinds():
     config = load_validation_config(VALIDATION)
     only = copy.deepcopy(config)
-    only["cases"] = [{**case, "pending_until": "15.x"} if case["id"] == "VC-28" else case for case in only["cases"] if case["id"] in {"VC-28", "VC-29"}]
+    only["cases"] = [{**case, "pending_until": "15.x"} for case in only["cases"] if case["id"] in {"VC-28", "VC-29"}]
     empty = {"indicators": pd.DataFrame(columns=["SKU"]), "issues": pd.DataFrame(columns=["sku", "code"]),
              "ranking": pd.DataFrame(columns=["sku", "priority"]), "forecasts": pd.DataFrame(columns=["sku"]),
              "partner_items": [], "thresholds": {}}

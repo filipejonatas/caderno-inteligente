@@ -7,6 +7,7 @@ import type { RunComparison } from './types-runs';
 import type { ValidationSummary } from './types-validation';
 import type { SystemInfo } from './hooks/useSystemInfo';
 import type {
+  CapacityPlan,
   AppConfig,
   B2BVisibility,
   CaseItem,
@@ -92,6 +93,7 @@ export const api = {
   channelFindings: (signal?: AbortSignal) => request<{ findings: ChannelFinding[] }>('/data-quality/channels', { signal }),
   events: (signal?: AbortSignal) => request<EventAnalysis>('/events', { signal }),
   revenueForecast: (signal?: AbortSignal) => request<RevenueForecast>('/revenue-forecast', { signal }),
+  capacityPlan: (signal?: AbortSignal) => request<CapacityPlan>('/capacity-plan', { signal }),
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
   system: (signal?: AbortSignal) => request<SystemInfo>('/system', { signal }),
   validationSummary: (signal?: AbortSignal) => request<ValidationSummary>('/validation/summary', { signal }),

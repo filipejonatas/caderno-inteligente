@@ -144,6 +144,15 @@
       "blocks": 7,
       "columns": 4,
       "alerts": 1
+    },
+    "/capacidade": {
+      "fixed": 120,
+      "perRow": 8,
+      "perEvidence": 90,
+      "numbers": 10,
+      "blocks": 5,
+      "columns": 5,
+      "alerts": 0
     }
   }
 }

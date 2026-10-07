@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 import math
+
+import pandas as pd
 import os
 import sys
 from pathlib import Path
@@ -29,6 +31,7 @@ from caderno_inteligente.events import build_event_analysis, load_event_settings
 from caderno_inteligente.revenue import build_revenue_forecasts  # noqa: E402
 from caderno_inteligente.indicators import build_sku_indicators, registered_demand_warning  # noqa: E402
 from caderno_inteligente.supply_plan import build_supply_plans, load_supply_settings  # noqa: E402
+from caderno_inteligente.capacity_plan import build_capacity_plan  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
@@ -114,7 +117,7 @@ def _pipeline_signature() -> tuple[tuple[int, int], ...]:
 
 
 _pipeline_lock = Lock()
-_pipeline_cache: tuple[tuple[tuple[int, int], ...], tuple, dict] | None = None
+_pipeline_cache: tuple[tuple[tuple[int, int], ...], tuple, dict, dict] | None = None
 _cache_hits = 0
 
 
@@ -133,6 +136,13 @@ def _build_pipeline():
         quality["warnings"].append(warning)
     # Etapa 15.3: plano datado por SKU (projeção diária, ordens planejadas, ajustes de OP) alimenta regras e ações.
     plans = build_supply_plans(dataset, indicators, forecasts, supply_settings)
+    # Etapa 15.4: as ordens planejadas disputam a capacidade livre de cada linha, semana a semana.
+    capacity = build_capacity_plan(plans, indicators, dataset["Capacidade_Semanal"], dataset["Carteira_Pedidos"], supply_settings["reference_date"],
+                                   load_engine_config(ENGINE_CONFIG_FILE)["evaluation"]["peak_months"])
+    for sku, plan in plans.items():
+        plan["capacity"] = capacity["skus"].get(sku)
+        if plan["capacity"] and plan["capacity"]["status"] == "insuficiente":
+            plan["signals"].append("CAPACITY_SHORTFALL")
     issues = evaluate_rules(indicators, thresholds, plans)
     ranking = prioritize(issues, load_weights(), indicators)
     logger.info(
@@ -141,7 +151,7 @@ def _build_pipeline():
         len(indicators),
         len(issues),
     )
-    return (dataset, quality, indicators, issues, ranking, forecasts), plans
+    return (dataset, quality, indicators, issues, ranking, forecasts), plans, capacity
 
 
 def _cached():
@@ -151,8 +161,8 @@ def _cached():
         if _pipeline_cache and _pipeline_cache[0] == signature:
             _cache_hits += 1
             return _pipeline_cache
-        result, plans = _build_pipeline()
-        _pipeline_cache = (signature, result, plans)
+        result, plans, capacity = _build_pipeline()
+        _pipeline_cache = (signature, result, plans, capacity)
         return _pipeline_cache
 
 
@@ -164,6 +174,11 @@ def pipeline():
 def supply_plans() -> dict[str, dict]:
     """Plano de suprimento datado por SKU (Etapa 15.3), do mesmo cache do pipeline."""
     return _cached()[2]
+
+
+def capacity_plan() -> dict:
+    """Capacidade semanal finita (Etapa 15.4), do mesmo cache do pipeline."""
+    return _cached()[3]
 
 
 _revenue_cache: tuple[tuple, dict] | None = None
@@ -509,11 +524,11 @@ def detail(sku: str):
         "event_alerts": None if event_item is None else event_item["alerts"],
         "event_scenario": None if event_item is None else {"applicable": event_item["scenario_applicable"], "note": event_item["scenario_note"], "scenario": event_item["scenario"]},
         "operational_recommendation": recommendation,
-        "limitation": "A base não vincula pedidos a OPs por semana; capacidade é contexto familiar, não promessa de viabilidade individual.",
+        "limitation": "A base não vincula pedidos a OPs por semana; a capacidade é agregada por linha e semana e o encaixe das ordens planejadas é uma simulação, não reserva nem viabilidade individual garantida.",
     }
 
 
-SCENARIO_THRESHOLD_BOUNDS = {"excess_coverage_days": (1, 3650), "capacity_occupation_threshold": (0, 2)}
+SCENARIO_THRESHOLD_BOUNDS = {"excess_coverage_days": (1, 3650)}
 
 
 class Scenario(BaseModel):
@@ -632,6 +647,22 @@ def b2b_visibility():
     }
 
 
+@app.get("/api/capacity-plan")
+def capacity_plan_summary():
+    """Capacidade semanal finita (Etapa 15.4): famílias, semanas, faltas e premissas. Nada é reservado nem liberado."""
+    plan = capacity_plan()
+    return {
+        "reference_date": plan["reference_date"],
+        "families": plan["families"],
+        "skus": {sku: {key: value[key] for key in ("family", "status", "status_now", "status_label", "unscheduled_quantity", "executable_quantity_now")}
+                 for sku, value in plan["skus"].items()},
+        "status_labels": plan["status_labels"],
+        "assumptions": plan["assumptions"],
+        "field_nature": plan["field_nature"],
+        "requires_human_review": True,
+    }
+
+
 @app.get("/api/capacity/{family}")
 def capacity_timeline(family: str):
     dataset, *_ = pipeline()
@@ -639,12 +670,15 @@ def capacity_timeline(family: str):
     result = frame[frame["Família"] == family].sort_values("Semana inicial")
     if result.empty:
         raise HTTPException(404, "Família não encontrada")
+    allocation = {week["week_start"]: week for item in capacity_plan()["families"] if item["family"] == family for week in item["weeks"]}
+    weeks = result[["Semana inicial", "Linha", "Capacidade máxima", "Capacidade comprometida", "Capacidade disponível", "Ocupação"]].to_dict("records")
+    for week in weeks:
+        planned = allocation.get(pd.Timestamp(week["Semana inicial"]).date().isoformat(), {})
+        week["allocated"], week["remaining"] = planned.get("allocated"), planned.get("remaining")
     return {
         "family": family,
-        "limitation": "Capacidade é agregada por família; não há vínculo pedido–OP por semana.",
-        "weeks": result[
-            ["Semana inicial", "Linha", "Capacidade máxima", "Capacidade comprometida", "Capacidade disponível", "Ocupação"]
-        ].to_dict("records"),
+        "limitation": "Capacidade é agregada por família; não há vínculo pedido–OP por semana. 'allocated' são as ordens planejadas encaixadas (Etapa 15.4).",
+        "weeks": weeks,
     }
 
 
@@ -825,6 +859,7 @@ app.include_router(create_validation_router(
     persistence=_persistence,
     recommendations=_all_operational_recommendations,
     supply_plans=supply_plans,
+    capacity_plan=capacity_plan,
     sku_detail=detail,
     source=SOURCE,
     config_file=ROOT / "config/validation_center.json",

@@ -1,5 +1,5 @@
 // Synthetic fixtures typed against the frontend contracts. Never application data: codes start with TEST/KA-T.
-import type { AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
+import type { CapacityPlan, AppConfig, B2BVisibility, CaseItem, DataQuality, FeedbackItem, ForecastRecommendationSummary, Overview, Priority, Run, SkuDetail } from '../types';
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from '../types-commercial';
 import type { ChallengeAction } from '../types-actions';
 import type { ChannelFinding, ChannelSkuRow, ChannelSummary, DirectChannelDetail, DirectChannelsOverview } from '../types-channels';
@@ -51,7 +51,7 @@ export const quality: DataQuality = {
 };
 
 export const config: AppConfig = {
-  weights: { RUP_LEAD_TIME: 8, RUP_SAFETY_STOCK: 10, EXCESS_COVERAGE: 3, CAPACITY_CONFLICT: 5 },
+  weights: { RUP_LEAD_TIME: 8, RUP_SAFETY_STOCK: 10, EXCESS_COVERAGE: 3, CAPACITY_SHORTFALL: 7 },
   thresholds: { excess_coverage_days: 90, capacity_occupation_threshold: 0.9 },
   actions: ['aceita', 'alterada', 'rejeitada', 'investigar'],
   partner_data_effects: ['nao_utilizado', 'confirmou', 'aumentou_confianca', 'alterou_decisao'],
@@ -366,4 +366,23 @@ export const runComparison: RunComparison = {
 export const system: SystemInfo = {
   environment: 'development', demo_mode: false, write_enabled: true, notice: null,
   text_limits: { note: 2000, user_name: 80, owner: 80, case_action: 200, analysis_minutes: 1440 },
+};
+
+export const capacityPlan: CapacityPlan = {
+  reference_date: '2026-09-14',
+  families: [
+    { family: 'Escolar', line: 'Linha Escolar', calendar_start: '2026-09-14', calendar_end: '2026-10-04', available_until_calendar_end: 1680, planned_in_calendar: 1600,
+      planned_after_calendar: 400, unscheduled_quantity: 800, first_shortfall_due: '2026-10-05', status: 'insuficiente', peak_months: [11, 1, 2], peak_need_units: 1200,
+      peak_status: 'insuficiente', skus_short: [SKU_OK], affected_orders: [{ order: 'PED-1', sku: SKU_OK, client: 'KA-01', quantity: 400 }],
+      weeks: [{ week_start: '2026-09-14', maximum: 1000, available: 960, allocated: 960, remaining: 0, occupation_base: 0.92 },
+        { week_start: '2026-09-21', maximum: 1000, available: 720, allocated: 640, remaining: 80, occupation_base: 0.94 }] },
+    { family: 'Refis', line: 'Linha Refis', calendar_start: '2026-09-14', calendar_end: '2026-10-04', available_until_calendar_end: 8400, planned_in_calendar: 500,
+      planned_after_calendar: 0, unscheduled_quantity: 0, first_shortfall_due: null, status: 'ok', peak_months: [11, 1, 2], peak_need_units: 0, peak_status: null,
+      skus_short: [], affected_orders: [], weeks: [{ week_start: '2026-09-14', maximum: 10000, available: 8400, allocated: 500, remaining: 7900, occupation_base: 0.76 }] },
+  ],
+  skus: { [SKU_OK]: { family: 'Escolar', status: 'insuficiente', status_now: 'insuficiente', status_label: 'Não cabe até a data de necessidade', unscheduled_quantity: 800, executable_quantity_now: 200 } },
+  status_labels: { ok: 'Cabe na semana planejada', insuficiente: 'Não cabe até a data de necessidade' },
+  assumptions: ['Premissa sintética.'],
+  field_nature: { allocated: { nature: 'calculado', origin: 'sintético' } },
+  requires_human_review: true,
 };

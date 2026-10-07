@@ -24,6 +24,7 @@ const ROUTES: Array<[string, RegExp]> = [
   ['overview', /^\/api\/overview$/],
   ['forecasts', /^\/api\/forecasts$/],
   ['revenueForecast', /^\/api\/revenue-forecast$/],
+  ['capacityPlan', /^\/api\/capacity-plan$/],
   ['events', /^\/api\/events$/],
   ['directChannel', /^\/api\/direct-channels\/[^/]+$/],
   ['directChannels', /^\/api\/direct-channels$/],
@@ -41,7 +42,7 @@ const ROUTES: Array<[string, RegExp]> = [
 
 const DEFAULTS: Record<string, Value> = {
   validation: fx.validationSummary, forecastLab: fx.forecastLab, runComparison: fx.runComparison, partnerSkus: fx.partnerRows, partnerDetail: fx.partnerDetail,
-  partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts, revenueForecast: fx.revenueForecast, events: fx.eventAnalysis,
+  partners: fx.partnersPage, commercial: fx.partnerRows, priorities: fx.priorities, overview: fx.overview, forecasts: fx.forecasts, revenueForecast: fx.revenueForecast, capacityPlan: fx.capacityPlan, events: fx.eventAnalysis,
   directChannels: fx.directChannels, directChannel: fx.directChannelDetail, channelFindings: { findings: fx.channelFindings },
   runs: fx.runs, system: fx.system, cases: fx.cases, feedback: fx.feedback, config: fx.config, quality: fx.quality, b2b: fx.b2b,
   skuDetail: (url: URL) => decodeURIComponent(url.pathname.split('/').pop() ?? '') === fx.SKU_SHORT ? fx.skuDetailShort : fx.skuDetailOk,

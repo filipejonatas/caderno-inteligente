@@ -30,6 +30,11 @@ export const reasonNames: Record<string, string> = {
   ORDER_WITHOUT_PRODUCTION: 'Pedido sem produção',
   PRODUCTION_AFTER_PROMISE: 'Produção após a promessa',
   CAPACITY_CONFLICT: 'Capacidade pressionada',
+  CAPACITY_SHORTFALL: 'Não cabe na capacidade',
+  PROJECTED_SHORTFALL: 'Falta antes da reposição',
+  OP_FOR_DISCONTINUED: 'OP de produto saindo de linha',
+  PROJECTED_EXCESS: 'Excesso depois da OP',
+  PARTNER_STOCK_BUILDUP: 'Estoque acumulando no parceiro',
   EXCESS_COVERAGE: 'Excesso de cobertura',
   LOW_SELLOUT_VISIBILITY: 'Baixa visibilidade de sell-out',
 };

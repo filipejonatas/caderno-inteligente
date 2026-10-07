@@ -13,6 +13,7 @@ export type PageId =
   | 'partners'
   | 'channels'
   | 'scenarios'
+  | 'capacity'
   | 'runs'
   | 'feedback'
   | 'validation'
@@ -265,6 +266,36 @@ export type OperationalAction = 'investigar_dados' | 'atraso_inevitavel' | 'ante
 export interface PlannedOrder { due_date: string; release_date: string; quantity: number; urgent: boolean; late?: boolean }
 export interface OpAdjustment { order: string; quantity: number; finish: string | null; adjustment: 'antecipar' | 'reduzir' | 'cancelar'; suggested_quantity: number; suggested_finish?: string; reason: string }
 export interface AffectedOrder { order: string; client: string; quantity: number; promised_date: string; expected_date: string | null; delay_days: number | null }
+
+/** Etapa 15.4: capacidade semanal finita por família. */
+export type CapacityStatus = 'ok' | 'pre_producao' | 'a_confirmar' | 'insuficiente';
+export interface CapacityFamily {
+  family: string;
+  line: string;
+  calendar_start: string | null;
+  calendar_end: string | null;
+  available_until_calendar_end: number;
+  planned_in_calendar: number;
+  planned_after_calendar: number;
+  unscheduled_quantity: number;
+  first_shortfall_due: string | null;
+  status: CapacityStatus;
+  peak_months: number[];
+  peak_need_units: number;
+  peak_status: CapacityStatus | null;
+  skus_short: string[];
+  affected_orders: Array<{ order: string; sku: string; client: string; quantity: number }>;
+  weeks: Array<{ week_start: string; maximum: number; available: number; allocated: number; remaining: number; occupation_base: number }>;
+}
+export interface CapacityPlan {
+  reference_date: string;
+  families: CapacityFamily[];
+  skus: Record<string, { family: string; status: string; status_now: string; status_label: string; unscheduled_quantity: number; executable_quantity_now: number }>;
+  status_labels: Record<string, string>;
+  assumptions: string[];
+  field_nature: Record<string, { nature: string; origin: string }>;
+  requires_human_review: boolean;
+}
 
 export interface OperationalRecommendation {
   action: OperationalAction;

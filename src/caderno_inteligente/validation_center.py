@@ -349,6 +349,8 @@ def _check(field: str, spec: Any, obtained: Any) -> dict[str, Any]:
         values = set(obtained or [])
         return {"field": field, "expected": "inclui ao menos um de " + ", ".join(spec["includes_any"]), "obtained": sorted(values),
                 "passed": any(code in values for code in spec["includes_any"])}
+    if isinstance(spec, dict) and "in" in spec:
+        return {"field": field, "expected": "um de " + ", ".join(map(str, spec["in"])), "obtained": obtained, "passed": obtained in spec["in"]}
     if isinstance(spec, dict) and "between" in spec:
         low, high = spec["between"]
         return {"field": field, "expected": f"entre {low} e {high}", "obtained": obtained, "passed": obtained is not None and low <= obtained <= high}
@@ -459,7 +461,7 @@ _COMMERCIAL_INPUT = (
 
 def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
                    forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, challenge_settings: dict[str, Any],
-                   plans: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+                   plans: dict[str, dict[str, Any]] | None = None, capacity: dict[str, Any] | None = None) -> dict[str, Any]:
     result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "family", "limitation", "pending_until")}
     if case.get("pending_until"):
         # Caso gravado antes do código que o atende (protocolo da Etapa 15): fica visível, mas só é executado quando a
@@ -484,6 +486,11 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
     elif case["kind"] == "challenge_action":
         case_input = case["input"]
         obtained = _challenge_output(case_input, challenge_settings)
+    elif case["kind"] == "capacity_family":
+        family = next((item for item in (capacity or {}).get("families", []) if item["family"] == case.get("family")), None)
+        if family is not None:
+            case_input = {"family": family["family"], "line": family["line"], "calendar_end": family["calendar_end"], "peak_months": family["peak_months"]}
+            obtained = {key: family[key] for key in ("peak_status", "peak_need_units", "available_until_calendar_end", "unscheduled_quantity", "status", "skus_short")}
     elif case["kind"] == "forecast_aggregate":
         aggregate = _forecast_aggregate_output(case["expected"], forecasts, indicators)
         if aggregate and all(value is not None for value in aggregate.values()):
@@ -528,10 +535,11 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
 
 def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
                           forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, source_sha256: str,
-                          challenge_settings: dict[str, Any] | None = None, plans: dict[str, dict[str, Any]] | None = None) -> dict[str, Any]:
+                          challenge_settings: dict[str, Any] | None = None, plans: dict[str, dict[str, Any]] | None = None,
+                          capacity: dict[str, Any] | None = None) -> dict[str, Any]:
     """`plans` (Etapa 15.3): plano datado por SKU; os casos da base usam a mesma recomendação do produto."""
     settings = challenge_settings or CHALLENGE_DEFAULTS
-    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings, plans) for case in config["cases"]]
+    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings, plans, capacity) for case in config["cases"]]
     counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado", "pendente")}
     matches = source_sha256 == config["frozen_source_sha256"]
     return {
@@ -582,10 +590,10 @@ def safe_behavior_checks(forecasts: pd.DataFrame, recommendations: list[dict], p
         f"Status {short_forecast['status']}, ação {short_recommendation['action']}, quantidade {short_recommendation['suggested_quantity']}.")
 
     plain = build_operational_recommendation(_base_indicator(), ok_forecast, [])
-    pressured = build_operational_recommendation(_base_indicator(), ok_forecast, ["CAPACITY_CONFLICT"])
-    add("aggregated_capacity", "Capacidade agregada exige revisão e não é tratada como garantia",
+    pressured = build_operational_recommendation(_base_indicator(), ok_forecast, ["CAPACITY_SHORTFALL"])
+    add("aggregated_capacity", "Falta de capacidade exige revisão e não é tratada como garantia",
         pressured["capacity_status"] == "requires_review" and pressured["action"] == "produzir_validar_capacidade" and pressured["confidence"] != "alta",
-        f"Com pressão familiar: ação {pressured['action']}, confiança {pressured['confidence']} (sem pressão: {plain['confidence']}).")
+        f"Com ordem que não cabe na linha: ação {pressured['action']}, confiança {pressured['confidence']} (sem falta: {plain['confidence']}).")
 
     review = [item for item in recommendations if not item.get("requires_human_review")]
     add("human_review", "Toda recomendação operacional exige revisão humana", not review,
