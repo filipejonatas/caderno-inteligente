@@ -159,6 +159,17 @@ As ordens planejadas disputam a `Capacidade disponível` de `Capacidade_Semanal`
 
 Premissas: unidades homogêneas por família; consumo na semana de início; compromissos base não validados com a empresa; sem calendário depois de 28/12/2026; antecipar e reduzir OP não mexem na capacidade.
 
+### 4.2 Produção planejada por mês (`production_plan.py`)
+
+Soma as ordens planejadas do plano de suprimento pelo mês de liberação (`release_date`), no total e por família:
+
+- **agora** (`urgent`): liberação até o fim da janela de decisão; somam exatamente a quantidade sugerida da fila;
+- **depois** (`later`): as demais ordens até o fim do horizonte da previsão.
+
+**Mês completo:** um mês de liberação M só é exibido quando `último dia de M + maior lead time entre os SKUs ≤ fim do horizonte`. Depois disso, as ordens que atenderiam necessidades além do horizonte não foram planejadas, e o mês pareceria menor do que é. Na base atual (horizonte em 28/02/2027, maior lead time de 27 dias), janeiro é completo (31/01 + 27 = 27/02) e fevereiro fica de fora. O total do horizonte continua contando as ordens dos meses omitidos.
+
+SKU sem previsão não tem plano: fica fora da soma e é listado. As OPs já abertas não entram (usam a data de conclusão, não a de liberação), e a soma não desconta a capacidade das linhas (seção 4.1).
+
 ## 5. Visão comercial parceiro–SKU (`partner_insights.py`)
 
 Usa apenas chaves reais parceiro–SKU–mês. O estoque considerado é o estoque estimado do último sell-out do próprio parceiro, nunca o estoque do CD. Cobertura no parceiro = `estoque estimado / (média mensal de sell-out / 30)`; giro zero ou ausente gera cobertura `null`.

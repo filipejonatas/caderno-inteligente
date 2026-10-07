@@ -79,7 +79,7 @@ O menu agrupa as rotas em 7 entradas: Início; Planejamento (`/fila`, `/cenarios
 |---|---|---|
 | `/guia` | Guia de uso | Nenhum (funciona com a API fora do ar) |
 | `/` | Início | `overview`, `priorities`, `data-quality`, `config` |
-| `/fila` | Fila operacional — filtros `busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos` na URL; junta posição e ação pelo SKU no cliente | `priorities`, `forecasts`, `config`, `events` |
+| `/fila` | Fila operacional — filtros `busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos` na URL; junta posição e ação pelo SKU no cliente; gráfico de produção planejada por mês, que segue o filtro de família | `priorities`, `forecasts`, `config`, `events`, `production-plan` |
 | `/faturamento` | Faturamento previsto — filtros `busca`, `familia` | `revenue-forecast` |
 | `/prioridades`, `/previsoes` | Redirecionam para `/fila` (mesmos parâmetros) | Nenhum |
 | `/skus/:sku` | Detalhe do SKU (compartilhável), abas em `?tab=`; o contexto comercial só carrega na aba Parceiros | `priorities/{sku}`, `commercial-recommendations?sku=` (aba Parceiros) |

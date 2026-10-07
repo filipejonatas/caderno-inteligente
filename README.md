@@ -15,6 +15,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 |---|---|
 | O que exige atenção agora e por quê? | Início e Planejamento › Fila operacional: ranking por soma transparente de pesos de onze regras; o motivo diz quando a falta começa |
 | Preciso produzir? Quanto? Quando? | Fila operacional (ação, quantidade a liberar nas próximas 4 semanas) e Detalhe do SKU › Evidências › "Plano de suprimento": pedidos afetados, OPs a antecipar, reduzir ou cancelar, ordens planejadas com data de liberação e projeção semanal |
+| Quanto vou produzir em cada mês? | Fila operacional: gráfico de produção planejada por mês de liberação (liberar agora × depois), no total ou na família filtrada; plano sugerido, não ordem liberada |
 | Onde a produção não cabe? | Planejamento › Capacidade (botão "Ver capacidade" na fila): ordens planejadas encaixadas na capacidade livre de cada linha e semana, com o que fica sem programação e os pedidos afetados |
 | Algum parceiro tem risco ou oportunidade? | Comercial: oportunidades ordenadas por menor cobertura de estoque, com a matriz parceiro–SKU com sell-in, sell-out, estoque estimado, estoque acumulando ("não repor") e sugestão comercial |
 | Quanto vamos faturar nos próximos meses? | Financeiro › Faturamento previsto: faturamento estimado (previsão em unidades × preço vigente), sempre rotulado como estimativa, com erro do teste e, no SKU, o cálculo |
@@ -76,7 +77,7 @@ O menu tem 7 entradas (Início, Planejamento, Financeiro, Comercial, Acompanhame
 |---|---|
 | `/guia` | Ajuda: trilhas por papel (PCP, Comercial, Gestão), glossário e perguntas frequentes. Funciona com a API fora do ar |
 | `/` | Início: primeiro da fila e o porquê, 3 números e fila de atenção |
-| `/fila` | Planejamento › Fila operacional: posição, SKU, ação, quantidade, motivo principal e exceções; por padrão, só os que pedem atenção; filtros na URL (`busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos`) |
+| `/fila` | Planejamento › Fila operacional: gráfico de produção planejada por mês; posição, SKU, ação, quantidade, motivo principal e exceções; por padrão, só os que pedem atenção; filtros na URL (`busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos`) |
 | `/prioridades` e `/previsoes` | Redirecionam para `/fila` e mantêm os mesmos parâmetros |
 | `/faturamento` | Financeiro › Faturamento previsto: estimativa em reais (sempre rotulada como estimativa), famílias, SKUs e filtros `busca` e `familia` |
 | `/capacidade` | Planejamento › Capacidade: situação de cada linha, o que não cabe até a necessidade, picos e semanas; aberta pelo botão "Ver capacidade" da fila |

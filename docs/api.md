@@ -17,6 +17,7 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/direct-channels` · `/api/direct-channels/{canal}` | Canais diretos (E-commerce, Marketplace, Loja própria): faturamento observado, tendência, carteira e sugestão por SKU | — |
 | GET | `/api/data-quality/channels` | Achados entre abas que afetam a leitura dos canais | — |
 | GET | `/api/capacity-plan` | Capacidade semanal finita (Etapa 15.4): ordens planejadas encaixadas por linha e semana, faltas, picos, pedidos afetados e premissas | — |
+| GET | `/api/production-plan` | Produção planejada: ordens planejadas somadas por mês de liberação (agora × depois), no total e por família | — |
 | GET | `/api/capacity/{family}` | Capacidade semanal da família, com `allocated` e `remaining` das ordens planejadas | — |
 | GET | `/api/data-quality` | Validação da planilha e cobertura de sell-out | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro (V1) | — |
@@ -85,6 +86,15 @@ Estimativa de faturamento dos 3 meses previstos: `previsão em unidades × preç
 - SKU sem preço ou sem previsão retorna valores `null` e entra em `skus_excluded`; nunca R$ 0.
 
 `GET /api/priorities/{sku}` inclui o mesmo item em `revenue_forecast` (`null` se a estimativa falhar, sem afetar o restante).
+
+## `GET /api/production-plan`
+
+Ordens planejadas do plano de suprimento somadas pelo **mês de liberação**, separando as que liberam dentro da janela de decisão (`urgent`, a quantidade sugerida da fila) das demais (`later`). Camada derivada e somente leitura: não recalcula a projeção e não altera ação, quantidade, score nem ranking. Alimenta o gráfico da Fila operacional.
+
+- `total` e `families[]` (com `family`): `months[]` (`month`, `urgent`, `later`), `urgent_total` (= soma de `suggested_quantity`) e `horizon_total` (= soma de `planned_quantity_horizon`, inclusive os meses omitidos);
+- `omitted_months`: meses de liberação fora de `months` porque o horizonte da previsão não cobre o maior lead time (regra em [calculations.md](calculations.md), seção 4.2);
+- `excluded_skus[]` (`sku`, `reason = sem_previsao`): SKUs sem previsão, fora da soma e nunca contados como zero;
+- `reference_date`, `horizon_end`, `urgent_window_end`, `max_lead_time_days`, `field_nature`, `limitations` e `requires_human_review = true`.
 
 ## `GET /api/events`
 

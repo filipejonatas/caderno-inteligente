@@ -1,6 +1,6 @@
 # Spec — Gráfico de produção planejada na Fila operacional
 
-Status: **aprovada em 2026-10-07** (decisões D1 a D4 abaixo). Implementação pendente.
+Status: **aprovada e implementada em 2026-10-07** (decisões D1 a D4 abaixo; desvios na seção 7).
 
 ## 1. Objetivo
 
@@ -113,3 +113,15 @@ Commits: backend (T1–T3), frontend (T4–T6), docs (T7).
 - Cortar o plano pela capacidade (continua em `/capacidade`).
 - Histórico de produção realizada (a base não tem).
 - Exportação CSV.
+
+## 7. Desvios na implementação
+
+| Item da spec | O que foi feito e por quê |
+|---|---|
+| `build_production_plan(plans, indicators, settings)` | A assinatura é `(plans, indicators, forecasts)`: para saber se o SKU tem previsão (R8) é preciso o `status` da previsão; as datas e o lead time já vêm do próprio plano |
+| Campo `complete` em `months[]` | Não existe: `months[]` só traz meses completos e os demais vão para `omitted_months`, então o campo seria sempre `true`. Entrou `max_lead_time_days`, que explica a regra |
+| D1 (5 blocos em `/fila`) | **Não foi preciso.** O gráfico coube nos 4 blocos atuais. O limite que pesou foi o de números (8): os meses omitidos aparecem só pelo nome ("fev"), como no eixo, sem o ano |
+| Link para `/capacidade` no gráfico | Não entrou: o cabeçalho da fila já tem o botão "Ver capacidade" |
+| Valores por mês em tooltip | Estão no `aria-label` do gráfico e no "?" ao lado do total; `<title>` por barra contaria como texto da tela no orçamento de volume |
+
+Resultado na planilha atual: set/26 21.100 agora; out/26 1.800 agora e 25.000 depois; nov/26 26.600; dez/26 32.500; jan/27 26.000; fevereiro omitido. Total agora 22.900 un.; no horizonte, 139.300 un.
