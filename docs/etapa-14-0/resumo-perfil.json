@@ -1,0 +1,20 @@
+{
+  "source_sha256": "03fa0ed400aa3f8e14de8f8232cd12727a54c85089a36672f009cae37b78803f",
+  "skus": 50,
+  "history_months": {
+    "24": 50
+  },
+  "skus_below_rolling_min_train": 0,
+  "skus_below_6_months": 0,
+  "skus_with_any_zero_month": 0,
+  "skus_intermittent": 0,
+  "intermittent_threshold": 0.3,
+  "zero_share_max": 0.0,
+  "cv_median": 0.1249,
+  "current_model_counts": {
+    "moving_average_3": 34,
+    "seasonal_naive_12": 16
+  },
+  "current_wape_median": 0.0643,
+  "current_wape_mean": 0.0704
+}

@@ -1,0 +1,1256 @@
+{
+ "description": "Previsão oficial (forecasting.py, motor v1) antes da Etapa 14. Referência de regressão: com engine = v1 nada disso pode mudar.",
+ "source_sha256": "03fa0ed400aa3f8e14de8f8232cd12727a54c85089a36672f009cae37b78803f",
+ "forecasts": [
+  {
+   "sku": "CI-0001",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    211.7,
+    215.2,
+    218.3
+   ],
+   "forecast_next_month": 211.7,
+   "forecast_total_3m": 645.2,
+   "trend": "estável",
+   "trend_change_ratio": 0.0,
+   "backtest_wape": 0.0508,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0002",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    203.0,
+    217.0,
+    252.0
+   ],
+   "forecast_next_month": 203.0,
+   "forecast_total_3m": 672.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.062,
+   "backtest_wape": 0.0509,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0003",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    269.7,
+    263.2,
+    270.3
+   ],
+   "forecast_next_month": 269.7,
+   "forecast_total_3m": 803.2,
+   "trend": "estável",
+   "trend_change_ratio": -0.0449,
+   "backtest_wape": 0.0561,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0004",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    500.7,
+    500.9,
+    497.9
+   ],
+   "forecast_next_month": 500.7,
+   "forecast_total_3m": 1499.5,
+   "trend": "crescente",
+   "trend_change_ratio": 0.1336,
+   "backtest_wape": 0.0984,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0005",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    567.3,
+    564.4,
+    573.3
+   ],
+   "forecast_next_month": 567.3,
+   "forecast_total_3m": 1705.0,
+   "trend": "crescente",
+   "trend_change_ratio": 0.1095,
+   "backtest_wape": 0.0909,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0006",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    435.7,
+    443.6,
+    439.1
+   ],
+   "forecast_next_month": 435.7,
+   "forecast_total_3m": 1318.4,
+   "trend": "estável",
+   "trend_change_ratio": 0.0464,
+   "backtest_wape": 0.0625,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0007",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    492.0,
+    454.0,
+    680.0
+   ],
+   "forecast_next_month": 492.0,
+   "forecast_total_3m": 1626.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0607,
+   "backtest_wape": 0.061,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0008",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    478.0,
+    492.0,
+    727.0
+   ],
+   "forecast_next_month": 478.0,
+   "forecast_total_3m": 1697.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.066,
+   "backtest_wape": 0.0588,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0009",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    290.3,
+    281.8,
+    273.7
+   ],
+   "forecast_next_month": 290.3,
+   "forecast_total_3m": 845.8,
+   "trend": "decrescente",
+   "trend_change_ratio": -0.1085,
+   "backtest_wape": 0.1166,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0010",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    638.0,
+    704.0,
+    961.0
+   ],
+   "forecast_next_month": 638.0,
+   "forecast_total_3m": 2303.0,
+   "trend": "crescente",
+   "trend_change_ratio": 0.1304,
+   "backtest_wape": 0.1079,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0011",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    729.0,
+    700.0,
+    890.0
+   ],
+   "forecast_next_month": 729.0,
+   "forecast_total_3m": 2319.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0085,
+   "backtest_wape": 0.0419,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0012",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    684.0,
+    688.0,
+    943.0
+   ],
+   "forecast_next_month": 684.0,
+   "forecast_total_3m": 2315.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0534,
+   "backtest_wape": 0.01,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0013",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    802.0,
+    852.0,
+    1140.0
+   ],
+   "forecast_next_month": 802.0,
+   "forecast_total_3m": 2794.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.081,
+   "backtest_wape": 0.0754,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0014",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    1246.3,
+    1295.1,
+    1269.1
+   ],
+   "forecast_next_month": 1246.3,
+   "forecast_total_3m": 3810.5,
+   "trend": "estável",
+   "trend_change_ratio": -0.0217,
+   "backtest_wape": 0.0735,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0015",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    454.3,
+    438.8,
+    454.4
+   ],
+   "forecast_next_month": 454.3,
+   "forecast_total_3m": 1347.5,
+   "trend": "decrescente",
+   "trend_change_ratio": -0.1257,
+   "backtest_wape": 0.1318,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0016",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    160.7,
+    166.9,
+    165.9
+   ],
+   "forecast_next_month": 160.7,
+   "forecast_total_3m": 493.5,
+   "trend": "estável",
+   "trend_change_ratio": -0.0379,
+   "backtest_wape": 0.0662,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0017",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    211.3,
+    211.1,
+    213.8
+   ],
+   "forecast_next_month": 211.3,
+   "forecast_total_3m": 636.2,
+   "trend": "estável",
+   "trend_change_ratio": -0.0031,
+   "backtest_wape": 0.0314,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0018",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    286.0,
+    285.7,
+    287.9
+   ],
+   "forecast_next_month": 286.0,
+   "forecast_total_3m": 859.6,
+   "trend": "estável",
+   "trend_change_ratio": 0.0698,
+   "backtest_wape": 0.0718,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0019",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    326.0,
+    279.0,
+    429.0
+   ],
+   "forecast_next_month": 326.0,
+   "forecast_total_3m": 1034.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.075,
+   "backtest_wape": 0.0774,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0020",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    380.3,
+    373.8,
+    382.0
+   ],
+   "forecast_next_month": 380.3,
+   "forecast_total_3m": 1136.1,
+   "trend": "estável",
+   "trend_change_ratio": 0.0044,
+   "backtest_wape": 0.0581,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0021",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    411.0,
+    407.3,
+    412.4
+   ],
+   "forecast_next_month": 411.0,
+   "forecast_total_3m": 1230.7,
+   "trend": "estável",
+   "trend_change_ratio": -0.0314,
+   "backtest_wape": 0.0406,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0022",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    489.0,
+    440.0,
+    664.0
+   ],
+   "forecast_next_month": 489.0,
+   "forecast_total_3m": 1593.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0443,
+   "backtest_wape": 0.0417,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0023",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    554.0,
+    537.7,
+    553.9
+   ],
+   "forecast_next_month": 554.0,
+   "forecast_total_3m": 1645.6,
+   "trend": "estável",
+   "trend_change_ratio": 0.0681,
+   "backtest_wape": 0.1036,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0024",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    606.0,
+    621.0,
+    611.3
+   ],
+   "forecast_next_month": 606.0,
+   "forecast_total_3m": 1838.3,
+   "trend": "estável",
+   "trend_change_ratio": -0.0194,
+   "backtest_wape": 0.0601,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0025",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    652.0,
+    651.3,
+    638.4
+   ],
+   "forecast_next_month": 652.0,
+   "forecast_total_3m": 1941.7,
+   "trend": "estável",
+   "trend_change_ratio": 0.0694,
+   "backtest_wape": 0.0597,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0026",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    1030.7,
+    1036.2,
+    1061.3
+   ],
+   "forecast_next_month": 1030.7,
+   "forecast_total_3m": 3128.2,
+   "trend": "estável",
+   "trend_change_ratio": 0.0307,
+   "backtest_wape": 0.0606,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0027",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    719.0,
+    715.0,
+    1049.0
+   ],
+   "forecast_next_month": 719.0,
+   "forecast_total_3m": 2483.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0303,
+   "backtest_wape": 0.103,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0028",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    785.0,
+    852.0,
+    1180.0
+   ],
+   "forecast_next_month": 785.0,
+   "forecast_total_3m": 2817.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0041,
+   "backtest_wape": 0.0173,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0029",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    886.3,
+    885.4,
+    878.6
+   ],
+   "forecast_next_month": 886.3,
+   "forecast_total_3m": 2650.3,
+   "trend": "estável",
+   "trend_change_ratio": 0.0743,
+   "backtest_wape": 0.0748,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0030",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    928.0,
+    1000.0,
+    1104.0
+   ],
+   "forecast_next_month": 928.0,
+   "forecast_total_3m": 3032.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.007,
+   "backtest_wape": 0.0561,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0031",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    65.3,
+    64.4,
+    64.3
+   ],
+   "forecast_next_month": 65.3,
+   "forecast_total_3m": 194.0,
+   "trend": "decrescente",
+   "trend_change_ratio": -0.1867,
+   "backtest_wape": 0.1997,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0032",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    233.7,
+    233.2,
+    235.0
+   ],
+   "forecast_next_month": 233.7,
+   "forecast_total_3m": 701.9,
+   "trend": "estável",
+   "trend_change_ratio": 0.0801,
+   "backtest_wape": 0.0751,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0033",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    269.7,
+    263.6,
+    263.1
+   ],
+   "forecast_next_month": 269.7,
+   "forecast_total_3m": 796.4,
+   "trend": "estável",
+   "trend_change_ratio": 0.0062,
+   "backtest_wape": 0.0435,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0034",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    326.0,
+    335.0,
+    440.0
+   ],
+   "forecast_next_month": 326.0,
+   "forecast_total_3m": 1101.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0277,
+   "backtest_wape": 0.0712,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0035",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    376.7,
+    377.2,
+    364.0
+   ],
+   "forecast_next_month": 376.7,
+   "forecast_total_3m": 1117.9,
+   "trend": "estável",
+   "trend_change_ratio": 0.0424,
+   "backtest_wape": 0.0863,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0036",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    430.7,
+    439.6,
+    424.7
+   ],
+   "forecast_next_month": 430.7,
+   "forecast_total_3m": 1295.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0365,
+   "backtest_wape": 0.09,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0037",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    516.7,
+    534.2,
+    529.3
+   ],
+   "forecast_next_month": 516.7,
+   "forecast_total_3m": 1580.2,
+   "trend": "estável",
+   "trend_change_ratio": -0.0208,
+   "backtest_wape": 0.0594,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0038",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    561.0,
+    473.0,
+    656.0
+   ],
+   "forecast_next_month": 561.0,
+   "forecast_total_3m": 1690.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0324,
+   "backtest_wape": 0.0411,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0039",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    635.0,
+    633.3,
+    622.8
+   ],
+   "forecast_next_month": 635.0,
+   "forecast_total_3m": 1891.1,
+   "trend": "estável",
+   "trend_change_ratio": 0.027,
+   "backtest_wape": 0.0422,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0040",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    316.0,
+    303.3,
+    301.4
+   ],
+   "forecast_next_month": 316.0,
+   "forecast_total_3m": 920.7,
+   "trend": "decrescente",
+   "trend_change_ratio": -0.1157,
+   "backtest_wape": 0.1324,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0041",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    754.7,
+    739.6,
+    750.7
+   ],
+   "forecast_next_month": 754.7,
+   "forecast_total_3m": 2245.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0589,
+   "backtest_wape": 0.0603,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0042",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    811.7,
+    834.6,
+    829.7
+   ],
+   "forecast_next_month": 811.7,
+   "forecast_total_3m": 2476.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0366,
+   "backtest_wape": 0.068,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0043",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    780.7,
+    766.9,
+    763.5
+   ],
+   "forecast_next_month": 780.7,
+   "forecast_total_3m": 2311.1,
+   "trend": "estável",
+   "trend_change_ratio": -0.0026,
+   "backtest_wape": 0.0345,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0044",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    917.0,
+    960.0,
+    953.7
+   ],
+   "forecast_next_month": 917.0,
+   "forecast_total_3m": 2830.7,
+   "trend": "estável",
+   "trend_change_ratio": 0.048,
+   "backtest_wape": 0.1313,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0045",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    951.0,
+    854.0,
+    1370.0
+   ],
+   "forecast_next_month": 951.0,
+   "forecast_total_3m": 3175.0,
+   "trend": "crescente",
+   "trend_change_ratio": 0.1551,
+   "backtest_wape": 0.0756,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0046",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    155.0,
+    152.3,
+    150.1
+   ],
+   "forecast_next_month": 155.0,
+   "forecast_total_3m": 457.4,
+   "trend": "estável",
+   "trend_change_ratio": -0.0085,
+   "backtest_wape": 0.0529,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0047",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    199.3,
+    197.1,
+    196.1
+   ],
+   "forecast_next_month": 199.3,
+   "forecast_total_3m": 592.5,
+   "trend": "estável",
+   "trend_change_ratio": -0.0401,
+   "backtest_wape": 0.036,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0048",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    274.3,
+    265.4,
+    265.3
+   ],
+   "forecast_next_month": 274.3,
+   "forecast_total_3m": 805.0,
+   "trend": "estável",
+   "trend_change_ratio": 0.0,
+   "backtest_wape": 0.0731,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0049",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "seasonal_naive_12",
+   "model_label": "Sazonal ingênuo de 12 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    308.0,
+    350.0,
+    452.0
+   ],
+   "forecast_next_month": 308.0,
+   "forecast_total_3m": 1110.0,
+   "trend": "estável",
+   "trend_change_ratio": -0.0732,
+   "backtest_wape": 0.0694,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  },
+  {
+   "sku": "CI-0050",
+   "reference_month": "2026-08-01",
+   "history_months": 24,
+   "model": "moving_average_3",
+   "model_label": "Média móvel de 3 meses",
+   "forecast_months": [
+    "2026-09-01",
+    "2026-10-01",
+    "2026-11-01"
+   ],
+   "forecast_values": [
+    372.3,
+    373.1,
+    383.1
+   ],
+   "forecast_next_month": 372.3,
+   "forecast_total_3m": 1128.5,
+   "trend": "estável",
+   "trend_change_ratio": 0.0201,
+   "backtest_wape": 0.071,
+   "forecast_confidence": "alta",
+   "status": "ok",
+   "limitation": "Previsão estatística baseada em faturamento mensal; não incorpora causalidade, campanhas futuras ou alocação por parceiro."
+  }
+ ]
+}
