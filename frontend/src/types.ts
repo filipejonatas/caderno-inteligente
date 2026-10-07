@@ -155,6 +155,23 @@ export interface SheetQuality {
   missing_values: Record<string, number>;
 }
 
+export interface DemandDivergenceItem {
+  sku: string;
+  registered_daily_demand: number;
+  reference_daily_demand: number;
+  ratio: number;
+  demand_source: string;
+  coverage_days_registered: number | null;
+  coverage_days_calculated: number | null;
+}
+
+export interface DemandDivergenceWarning {
+  code: 'REGISTERED_DEMAND_DIVERGENCE';
+  threshold: number;
+  count: number;
+  items: DemandDivergenceItem[];
+}
+
 export interface DataQuality {
   errors: Array<Record<string, unknown>>;
   warnings: Array<Record<string, unknown>>;
@@ -193,6 +210,11 @@ export interface SkuIndicator {
   family: string;
   current_stock: number;
   coverage_days_calculated: number;
+  /** Etapa 15.2: cobertura pelo campo cadastrado (Venda média/dia), mantida para comparação. */
+  coverage_days_registered?: number | null;
+  reference_daily_demand?: number | null;
+  demand_source?: 'previsao_3m' | 'vendas_3m' | 'cadastro' | null;
+  data_quality_warnings?: string[];
   lead_time_days: number;
   minimum_lot: number;
   average_sales_per_day: number;

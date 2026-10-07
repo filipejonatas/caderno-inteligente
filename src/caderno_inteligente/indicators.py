@@ -1,5 +1,17 @@
 from __future__ import annotations
+from typing import Any
+
 import pandas as pd
+
+# Etapa 15.2: a cobertura passa a usar a demanda de referência (previsão oficial dos 3 próximos meses), não o campo
+# cadastrado `Produtos.Venda média/dia`, que fica abaixo do vendido em boa parte dos SKUs.
+DEMAND_SETTINGS = {"days_per_month": 30.4, "registered_demand_divergence": 0.20}
+DEMAND_SOURCES = {
+    "previsao_3m": "média da previsão oficial dos 3 próximos meses",
+    "vendas_3m": "média de Vendas_24m nos 3 últimos meses",
+    "cadastro": "Produtos.Venda média/dia (cadastro)",
+}
+REFERENCE_MONTHS = 3
 
 
 def _sum_by_sku(frame: pd.DataFrame, source_column: str, output_column: str) -> pd.DataFrame:
@@ -34,6 +46,62 @@ def _critical_date(row: pd.Series) -> tuple[pd.Timestamp | None, str | None]:
     return None, None
 
 
+def _forecast_daily(forecasts: pd.DataFrame | None, days: float) -> dict[str, float]:
+    if forecasts is None or forecasts.empty:
+        return {}
+    result = {}
+    for row in forecasts.to_dict("records"):
+        values = list(row.get("forecast_values") or [])[:REFERENCE_MONTHS]
+        if row.get("status") == "ok" and len(values) == REFERENCE_MONTHS and sum(values) > 0:
+            result[str(row["sku"])] = sum(values) / REFERENCE_MONTHS / days
+    return result
+
+
+def _sales_daily(sales: pd.DataFrame | None, days: float) -> dict[str, float]:
+    if sales is None or sales.empty:
+        return {}
+    months = pd.to_datetime(sales["Mês"]).dt.to_period("M")
+    recent = months >= months.max() - (REFERENCE_MONTHS - 1)
+    totals = sales.loc[recent].groupby("SKU")["Quantidade faturada"].sum()
+    return {str(sku): float(total) / REFERENCE_MONTHS / days for sku, total in totals.items() if total > 0}
+
+
+def reference_demand(base: pd.DataFrame, data: dict[str, pd.DataFrame], forecasts: pd.DataFrame | None, settings: dict[str, Any]) -> pd.DataFrame:
+    """Demanda diária de referência por SKU: previsão oficial → vendas recentes → cadastro, com a fonte declarada."""
+    days = float(settings["days_per_month"])
+    forecast, sales = _forecast_daily(forecasts, days), _sales_daily(data.get("Vendas_24m"), days)
+    values, sources = [], []
+    for sku, registered in zip(base["SKU"], base["average_sales_per_day"]):
+        for source, value in (("previsao_3m", forecast.get(sku)), ("vendas_3m", sales.get(sku)), ("cadastro", registered)):
+            if value is not None and pd.notna(value) and value > 0:
+                values.append(float(value))
+                sources.append(source)
+                break
+        else:
+            values.append(None)
+            sources.append(None)
+    return pd.DataFrame({"reference_daily_demand": values, "demand_source": sources}, index=base.index)
+
+
+def registered_demand_warning(indicators: pd.DataFrame, threshold: float) -> dict[str, Any] | None:
+    """Aviso de qualidade: SKUs cuja venda média cadastrada difere da demanda de referência acima do limite."""
+    rows = indicators[indicators["data_quality_warnings"].map(lambda codes: "REGISTERED_DEMAND_DIVERGENCE" in codes)]
+    if rows.empty:
+        return None
+    items = [{
+        "sku": row["SKU"], "registered_daily_demand": round(float(row["average_sales_per_day"]), 2),
+        "reference_daily_demand": round(float(row["reference_daily_demand"]), 2),
+        "ratio": round(float(row["registered_vs_reference_ratio"]), 3), "demand_source": row["demand_source"],
+        "coverage_days_registered": None if pd.isna(row["coverage_days_registered"]) else round(float(row["coverage_days_registered"]), 1),
+        "coverage_days_calculated": None if pd.isna(row["coverage_days_calculated"]) else round(float(row["coverage_days_calculated"]), 1),
+    } for _, row in rows.sort_values("registered_vs_reference_ratio", ascending=False).iterrows()]
+    return {
+        "code": "REGISTERED_DEMAND_DIVERGENCE", "sheet": "Produtos", "column": "Venda média/dia", "threshold": threshold,
+        "count": len(items), "items": items,
+        "description": "A venda média cadastrada difere da demanda de referência (previsão oficial) em mais que o limite; a cobertura usa a demanda de referência.",
+    }
+
+
 def _missing_data(row: pd.Series) -> list[str]:
     fields = (
         "first_promised_date",
@@ -45,8 +113,13 @@ def _missing_data(row: pd.Series) -> list[str]:
     return [field for field in fields if pd.isna(row[field])]
 
 
-def build_sku_indicators(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    """Produz uma visão por SKU para consumo das etapas seguintes, sem classificar prioridade."""
+def build_sku_indicators(data: dict[str, pd.DataFrame], forecasts: pd.DataFrame | None = None, settings: dict[str, Any] | None = None) -> pd.DataFrame:
+    """Produz uma visão por SKU para consumo das etapas seguintes, sem classificar prioridade.
+
+    Com `forecasts`, a cobertura usa a demanda de referência (Etapa 15.2); sem ela, as vendas recentes e, por último, o
+    cadastro. `coverage_days_registered` guarda a conta antiga para comparação.
+    """
+    settings = {**DEMAND_SETTINGS, **(settings or {})}
     products = data["Produtos"].copy()
     stock = data["Estoque_Atual"][["SKU", "Estoque atual", "Cobertura dias", "Estoque segurança dias"]].copy()
     base = products[["SKU", "Produto", "Família", "Curva ABC", "Status", "Lead time (dias)", "Lote mínimo", "Venda média/dia"]].merge(stock, on="SKU", validate="one_to_one")
@@ -55,8 +128,16 @@ def build_sku_indicators(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         "Venda média/dia": "average_sales_per_day", "Estoque atual": "current_stock", "Cobertura dias": "coverage_days_source",
         "Estoque segurança dias": "safety_stock_days",
     })
-    base["coverage_days_calculated"] = base["current_stock"] / base["average_sales_per_day"]
+    base = base.join(reference_demand(base, data, forecasts, settings))
+    base["coverage_days_registered"] = base["current_stock"] / base["average_sales_per_day"]
+    base["coverage_days_calculated"] = base["current_stock"] / base["reference_daily_demand"]
     base["coverage_days_difference"] = base["coverage_days_source"] - base["coverage_days_calculated"]
+    base["registered_vs_reference_ratio"] = base["reference_daily_demand"] / base["average_sales_per_day"]
+    limit = float(settings["registered_demand_divergence"])
+    base["data_quality_warnings"] = [
+        ["REGISTERED_DEMAND_DIVERGENCE"] if pd.notna(ratio) and abs(ratio - 1) > limit else []
+        for ratio in base["registered_vs_reference_ratio"]
+    ]
 
     orders = data["Ordens_Producao"]
     order_totals = _sum_by_sku(orders, "Quantidade", "production_order_quantity")

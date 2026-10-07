@@ -28,7 +28,7 @@ def build_operational_recommendation(
     issues = set(issue_codes)
     assumptions = [
         "A previsão do próximo mês e a carteira não são somadas; utiliza-se o maior valor para reduzir dupla contagem.",
-        "Estoque de segurança em unidades usa venda média diária multiplicada pelos dias de segurança.",
+        "Estoque de segurança em unidades usa a demanda diária de referência (previsão oficial dos 3 próximos meses) multiplicada pelos dias de segurança.",
         "Capacidade por família é somente contexto e não limita automaticamente a quantidade sugerida.",
     ]
     limitations = [
@@ -64,7 +64,8 @@ def build_operational_recommendation(
     backlog = _number(indicator.get("backlog_order_quantity"))
     current_stock = _number(indicator.get("current_stock"))
     open_production = _number(indicator.get("production_order_quantity"))
-    safety_stock = _number(indicator.get("average_sales_per_day")) * _number(indicator.get("safety_stock_days"))
+    daily_demand = _number(indicator.get("reference_daily_demand"), _number(indicator.get("average_sales_per_day")))
+    safety_stock = daily_demand * _number(indicator.get("safety_stock_days"))
     demand_to_cover = max(next_month, backlog)
     raw = max(0.0, demand_to_cover + safety_stock - current_stock - open_production)
     minimum_lot = _number(indicator.get("minimum_lot"))

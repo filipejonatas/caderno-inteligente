@@ -97,14 +97,14 @@
       "title": "Excesso de estoque",
       "kind": "operational",
       "origin": "base",
-      "sku": "CI-0044",
+      "sku": "CI-0040",
       "expected": {
         "signals": {"includes": ["EXCESS_COVERAGE"], "excludes": ["RUP_LEAD_TIME", "RUP_SAFETY_STOCK"]},
         "action": "monitorar_excesso",
         "suggested_quantity": {"equals": 0},
         "requires_human_review": true
       },
-      "limitation": "O limite de 90 dias é configurável e demonstrativo; não foi aprovado pela empresa."
+      "limitation": "O limite de 90 dias é configurável e demonstrativo; não foi aprovado pela empresa. Desde a Etapa 15.2 o caso usa o CI-0040 (cobertura de ~200 dias com demanda em queda); o CI-0044, caso original, tem ~85 dias pela demanda prevista."
     },
     {
       "id": "VC-04",
@@ -471,7 +471,6 @@
       "kind": "operational",
       "origin": "base",
       "sku": "CI-0014",
-      "pending_until": "15.2",
       "expected": {
         "coverage_days_calculated": {"max": 54},
         "data_quality_warnings": {"includes": ["REGISTERED_DEMAND_DIVERGENCE"]},
@@ -543,6 +542,20 @@
       "reason": "Na avaliação fixada antes do código (Etapa 15.0), o v2 atendeu aos quatro critérios: WAPE de 10,1% para 8,0%, viés de +0,7% nos meses de pico, viés agregado sem piora e 45 SKUs melhores que a baseline contra 40 do v1. O v1 subestimava novembro em cerca de 15%.",
       "evidence": "docs/etapa-15-1-previsao-v2.md",
       "changed_weights_or_models": true
+    },
+    {
+      "date": "2026-10-07",
+      "change": "A cobertura de estoque das regras de ruptura e excesso e o estoque de segurança da quantidade sugerida passaram a usar a demanda diária de referência (média da previsão oficial dos 3 próximos meses) em vez de Produtos.Venda média/dia; a divergência entre as duas vira aviso de qualidade. O VC-30 deixou de ser pendente.",
+      "reason": "O campo cadastrado fica abaixo do vendido em boa parte dos SKUs (CI-0014: 27,1 un./dia cadastradas contra ~49 previstas), o que superestimava a cobertura e escondia risco de ruptura; nos SKUs em queda (CI-0009) escondia excesso.",
+      "evidence": "docs/etapa-15-2-cobertura-pela-demanda.md",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-07",
+      "change": "O VC-03 (excesso de estoque) passou do CI-0044 para o CI-0040, com as mesmas expectativas.",
+      "reason": "Com a cobertura pela demanda prevista dos 3 próximos meses (inclui o pico de novembro), o CI-0044 tem 84,8 dias, abaixo do limite de 90: deixou de ser excesso pela regra, sem erro de cálculo. A alternativa de medir pela média de vendas dos 3 últimos meses (98,8 dias) foi apresentada ao usuário, que manteve o desenho do plano. O CI-0040 tem ~200 dias com demanda −32% a/a.",
+      "evidence": "docs/etapa-15-2-cobertura-pela-demanda.md",
+      "changed_weights_or_models": false
     }
   ]
 }

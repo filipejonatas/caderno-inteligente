@@ -109,7 +109,7 @@ export const glossary: Record<GlossaryTerm, { name: string; text: string }> = {
   sellin: { name: 'Vendido ao parceiro (sell-in)', text: 'Quantidade enviada pela fábrica ao parceiro.' },
   sellout: { name: 'Vendido pelo parceiro (sell-out)', text: 'Quantidade que o parceiro vendeu ao consumidor. Quando não foi informada, o dado está ausente: não é venda zero.' },
   leadtime: { name: 'Prazo de produção (lead time)', text: 'Dias entre pedir e receber a produção do SKU.' },
-  cobertura: { name: 'Cobertura em dias', text: 'Por quantos dias o estoque dura no ritmo atual de venda.' },
+  cobertura: { name: 'Cobertura em dias', text: 'Por quantos dias o estoque dura no ritmo de venda previsto para os 3 próximos meses.' },
   ausente: { name: 'Dado ausente', text: 'Informação que não existe na planilha. Nunca é tratada como zero.' },
   confianca_dados: { name: 'Confiança nos dados do SKU', text: 'Qualidade da evidência usada no ranking (por exemplo, se há sell-out observado). Baixa pede validação humana.' },
   confianca_previsao: { name: 'Confiança na previsão', text: 'Calculada pelo erro do modelo nos testes com meses já vendidos. Não é garantia de atendimento.' },

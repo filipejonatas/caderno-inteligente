@@ -388,6 +388,8 @@ def _operational_output(indicator: dict[str, Any], forecast: dict[str, Any], cod
         "capacity_status": recommendation["capacity_status"],
         "confidence": recommendation["confidence"],
         "requires_human_review": recommendation["requires_human_review"],
+        "coverage_days_calculated": indicator.get("coverage_days_calculated"),
+        "data_quality_warnings": list(indicator.get("data_quality_warnings") or []),
     }
 
 

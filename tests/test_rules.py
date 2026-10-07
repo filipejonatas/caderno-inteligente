@@ -28,4 +28,4 @@ def test_sellout_absence_becomes_visibility_issue_not_zero_sale():
 
 def test_thresholds_are_loaded_from_configuration():
     thresholds = load_rule_thresholds()
-    assert thresholds == {"excess_coverage_days": 90, "capacity_occupation_threshold": 0.9}
+    assert thresholds == {"excess_coverage_days": 90, "capacity_occupation_threshold": 0.9, "registered_demand_divergence": 0.2}

@@ -17,7 +17,7 @@ const guideGlossary = [
   { term: 'Teste em meses já vendidos (backtest)', description: 'Previsões feitas a partir de datas passadas e comparadas com o vendido.' },
   { term: 'Sell-in e sell-out', description: 'Vendido ao parceiro e vendido pelo parceiro ao consumidor.' },
   { term: 'Prazo de produção (lead time)', description: 'Dias entre pedir e receber a produção.' },
-  { term: 'Cobertura', description: 'Dias que o estoque dura no ritmo atual de venda.' },
+  { term: 'Cobertura', description: 'Dias que o estoque dura no ritmo de venda previsto.' },
   { term: 'Dado ausente', description: 'Não existe na planilha; nunca vale zero.' },
   { term: 'Ordem de produção (OP)', description: 'Este sistema nunca cria nem libera uma OP.' },
   ...Object.entries(CHALLENGE_NAMES).map(([code, name]) => ({ term: `Rótulo: ${name}`, description: CHALLENGE_DEFINITIONS[code] })),

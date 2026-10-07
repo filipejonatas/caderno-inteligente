@@ -154,7 +154,7 @@ export default function SkuDetailPage({ refreshToken }: { refreshToken: number }
         <div><dt>Estoque atual</dt><dd>{displayUnits(indicator.current_stock)}</dd></div>
         <div><dt>Carteira de pedidos</dt><dd>{displayUnits(indicator.backlog_order_quantity)}</dd></div>
         <div><dt>Produção aberta</dt><dd>{displayUnits(indicator.production_order_quantity)}</dd></div>
-        <div><dt>Cobertura do estoque <Hint term="cobertura" /></dt><dd>{displayDays(indicator.coverage_days_calculated)}</dd></div>
+        <div><dt>Cobertura do estoque <Hint term="cobertura" /></dt><dd>{displayDays(indicator.coverage_days_calculated)}{indicator.data_quality_warnings?.includes('REGISTERED_DEMAND_DIVERGENCE') && <small> · cadastro: {displayDays(indicator.coverage_days_registered)}</small>}</dd></div>
         <div><dt>Prazo de produção <Hint term="leadtime" /></dt><dd>{displayDays(indicator.lead_time_days)}</dd></div>
         <div><dt>Vendido pelos parceiros (sell-out)</dt><dd>{displayUnits(indicator.sell_out_quantity)}</dd></div>
         <div><dt>Parceiros com sell-out</dt><dd>{displayNumber(indicator.sell_out_partner_count)}</dd></div>

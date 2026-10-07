@@ -1,7 +1,10 @@
-import { Badge, Hint, MetricCard, PageIntro, SectionCard } from '../components';
+import { Badge, Hint, MetricCard, PageIntro, SectionCard, Tooltip } from '../components';
 import { ChannelFindings } from '../components/ChannelViews';
+import type { DemandDivergenceWarning } from '../types';
 import type { PageProps } from './shared';
 import { displayShare } from './shared';
+
+const ratioText = (ratio: number) => `×${ratio.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
 
 export default function QualityPage({ data }: PageProps<'quality'>) {
   const sheets = Object.entries(data.quality.sheets);
@@ -9,11 +12,13 @@ export default function QualityPage({ data }: PageProps<'quality'>) {
   const toReview = sheets.filter(([, sheet]) => sheet.duplicate_keys || sheet.missing_columns.length);
   const noErrors = !data.quality.errors.length && !orphanCount;
   const coverage = data.quality.sell_out_coverage;
+  const demand = data.quality.warnings.find((item) => item.code === 'REGISTERED_DEMAND_DIVERGENCE') as DemandDivergenceWarning | undefined;
   return <>
     <PageIntro title="Posso confiar na planilha?" description={noErrors ? `Sem erros bloqueantes e sem registros sem vínculo. O principal limite é a cobertura de sell-out: ${displayShare(coverage.coverage)}.` : 'Há itens para revisar antes de decidir.'} />
     <div className="metrics-grid quality-metrics">
       <MetricCard label="Situação da base" value={noErrors ? 'Sem erros' : `${data.quality.errors.length + orphanCount} a revisar`} detail={`${sheets.length - toReview.length} de ${sheets.length} abas íntegras`} tone={noErrors ? 'green' : 'amber'} icon="quality" />
       <MetricCard label={<>Cobertura de sell-out <Hint term="ausente" /></>} value={displayShare(coverage.coverage)} detail={`${coverage.observed_pairs} de ${coverage.possible_pairs} combinações parceiro–SKU com venda informada`} tone="slate" icon="b2b" />
+      {demand && <MetricCard label={<>Venda média cadastrada <Tooltip label="SKUs com maior diferença">A cobertura usa a demanda prevista, não o cadastro. Maiores diferenças (prevista ÷ cadastrada): {demand.items.slice(0, 5).map((item) => `${item.sku} ${ratioText(item.ratio)}`).join('; ')}.</Tooltip></>} value={`${demand.count} SKUs`} detail="distantes da demanda prevista" tone="amber" icon="quality" />}
     </div>
     <ChannelFindings />
     {toReview.length > 0 && <SectionCard title="Abas para revisar">

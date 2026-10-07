@@ -40,7 +40,11 @@ export const overview: Overview = {
 };
 
 export const quality: DataQuality = {
-  errors: [], warnings: [],
+  errors: [],
+  warnings: [{ code: 'REGISTERED_DEMAND_DIVERGENCE', sheet: 'Produtos', column: 'Venda média/dia', threshold: 0.2, count: 2, description: 'Cadastro distante da demanda prevista.', items: [
+    { sku: 'TEST-001', registered_daily_demand: 5, reference_daily_demand: 9, ratio: 1.8, demand_source: 'previsao_3m', coverage_days_registered: 10, coverage_days_calculated: 5.6 },
+    { sku: 'TEST-002', registered_daily_demand: 10, reference_daily_demand: 5, ratio: 0.5, demand_source: 'previsao_3m', coverage_days_registered: 10, coverage_days_calculated: 20 },
+  ] }],
   sheets: { Produtos: { records: 4, duplicate_keys: 0, missing_columns: [], missing_values: {} } },
   foreign_keys: [{ child_sheet: 'Estoque_Atual', orphan_count: 0 }],
   sell_out_coverage: { observed_pairs: 1, possible_pairs: 4, coverage: 0.25, missing_data_is_not_zero: true },
@@ -100,6 +104,7 @@ function indicator(sku: string) {
     operational_gap_quantity: 350, first_promised_date: '2026-09-15', first_production_completion: null, sell_in_quantity: 300, sell_out_quantity: null,
     sell_in_minus_sell_out_quantity: null, sell_out_partner_count: 0, has_sell_out: false, forecast_quantity: null, analysis_scope: 'SKU global' as const,
     missing_data: ['sell_out_quantity', 'first_production_completion'],
+    coverage_days_registered: 9, reference_daily_demand: 10, demand_source: 'previsao_3m' as const, data_quality_warnings: ['REGISTERED_DEMAND_DIVERGENCE'],
   };
 }
 

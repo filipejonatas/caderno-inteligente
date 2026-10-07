@@ -1,4 +1,5 @@
 {
   "excess_coverage_days": 90,
-  "capacity_occupation_threshold": 0.9
+  "capacity_occupation_threshold": 0.9,
+  "registered_demand_divergence": 0.2
 }
