@@ -1,32 +1,18 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Alert, Badge, EmptyState, Hint, SectionCard, Tooltip, confidenceTone } from '../components';
 import { displayCurrency, displayPercent, displayPrice, displayUnits, formatMonth } from '../pages/shared';
+import { MonthlyBars } from './MonthlyBars';
+import type { MonthBar } from './MonthlyBars';
 import type { ObservedRevenue, RevenueForecast, RevenueItem } from '../types-revenue';
 
-const CHART = { width: 560, height: 112, top: 6, bottom: 20, gap: 4 };
-
-/** Barras: faturamento observado (cheias) e estimado (tracejadas). Os rótulos e o cálculo ao lado evitam depender só da cor. */
+/** Barras: faturamento observado (cheias) e estimado (tracejadas). */
 export function RevenueTrend({ observed, months, values, label }: { observed: ObservedRevenue; months: string[]; values: number[]; label: string }) {
-  const bars = [
-    ...observed.months.map((month, index) => ({ month, value: observed.values[index], estimated: false })),
-    ...months.map((month, index) => ({ month, value: values[index] ?? null, estimated: true })),
+  const bars: MonthBar[] = [
+    ...observed.months.map((month, index) => ({ month, solid: observed.values[index] ?? null, dashed: null })),
+    ...months.map((month, index) => ({ month, solid: null, dashed: values[index] ?? null })),
   ];
-  const max = Math.max(1, ...bars.map((bar) => bar.value ?? 0));
-  const slot = CHART.width / Math.max(1, bars.length);
-  const plot = CHART.height - CHART.top - CHART.bottom;
-  return <figure className="revenue-trend">
-    <svg viewBox={`0 0 ${CHART.width} ${CHART.height}`} role="img" aria-label={label} preserveAspectRatio="xMidYMid meet">
-      {bars.map((bar, index) => {
-        const height = bar.value === null ? 0 : Math.max(1, (bar.value / max) * plot);
-        const x = index * slot + CHART.gap / 2;
-        return <g key={`${bar.estimated}-${bar.month}`}>
-          {bar.value !== null && <rect className={bar.estimated ? 'revenue-bar revenue-bar-estimated' : 'revenue-bar'} x={x} y={CHART.top + plot - height} width={slot - CHART.gap} height={height} rx="2"></rect>}
-          <text className="revenue-axis" x={x + (slot - CHART.gap) / 2} y={CHART.height - 6} textAnchor="middle">{formatMonth(bar.month).split('/')[0]}</text>
-        </g>;
-      })}
-    </svg>
-    <figcaption><span><i className="revenue-key" /> Observado</span>{months.length > 0 && <span><i className="revenue-key revenue-key-estimated" /> Estimativa</span>}</figcaption>
-  </figure>;
+  const keys = [{ label: 'Observado', dashed: false }, ...(months.length > 0 ? [{ label: 'Estimativa', dashed: true }] : [])];
+  return <MonthlyBars bars={bars} keys={keys} label={label} />;
 }
 
 const SIGNED = (ratio: number | null) => ratio === null ? 'Não disponível' : `${ratio >= 0 ? '+' : '−'}${displayPercent(Math.abs(ratio))}`;
