@@ -31,7 +31,7 @@
 
 ## 2026-09-30 — Consolidação da interface
 
-- React/Vite passa a ser a interface principal; Streamlit permanece como ferramenta interna de diagnóstico durante a transição.
+- React/Vite passa a ser a interface principal; o app Streamlit da V1 foi usado só na transição e removido em 2026-10-07.
 - O frontend deve comunicar carregamento, erro, vazio e sucesso explicitamente.
 - A navegação móvel usa drawer e não mantém largura fixa de sidebar.
 - O detalhe do SKU apresenta evidências, origem e limitações sem transformar o ranking em recomendação autônoma.
