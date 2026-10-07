@@ -63,6 +63,8 @@ Configuração em `config/forecast_engine.json` (validada no carregamento, como 
 
 ## 6. Etapa 14.2 — Backtest rolante e avaliação aninhada (1 dia)
 
+> **Status: implementada** (ver [etapa-14-2-backtest-rolante.md](etapa-14-2-backtest-rolante.md)). Ajustes em relação ao desenho abaixo: a parcimônia é uma regra de campeão parcial (do mais simples ao mais complexo), então o empate vai para o mais simples, sem desempate alfabético; um candidato só compete se tiver previsão em todas as janelas usadas; o mínimo é 1 janela (config `minimum_windows`). **Resultado preliminar:** os três critérios de promoção são atendidos na célula padrão (ganho de WAPE 21,6%), mas o ganho cai para 11% quando se usa uma origem externa de 15 meses; a 14.5 deve avaliar a grade de sensibilidade documentada, não só a célula padrão.
+
 Novo módulo `src/caderno_inteligente/rolling_backtest.py`.
 
 ### Seleção por janelas rolantes

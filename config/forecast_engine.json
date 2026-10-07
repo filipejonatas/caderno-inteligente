@@ -5,7 +5,11 @@
     "windows": 3,
     "step_months": 3,
     "horizon_months": 3,
-    "minimum_train_months": 6
+    "minimum_train_months": 6,
+    "minimum_windows": 1
+  },
+  "nested": {
+    "outer_windows": 2
   },
   "parsimony_margin": 0.05,
   "promotion": {

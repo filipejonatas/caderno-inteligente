@@ -20,7 +20,8 @@ REQUIRED_CANDIDATES = ("moving_average_3", "seasonal_naive_12")  # os modelos at
 DEFAULTS: dict[str, Any] = {
     "engine": "v1",
     "candidates": list(CANDIDATES),
-    "rolling": {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6},
+    "rolling": {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1},
+    "nested": {"outer_windows": 2},
     "parsimony_margin": 0.05,
     "promotion": {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0},
 }
@@ -74,11 +75,17 @@ def validate_engine_config(values: dict[str, Any]) -> dict[str, Any]:
         raise ValueError(f"candidates precisa manter os modelos atuais: {', '.join(missing)}")
 
     rolling = _section(values, "rolling")
-    for key in ("windows", "step_months", "horizon_months", "minimum_train_months"):
+    for key in ("windows", "step_months", "horizon_months", "minimum_train_months", "minimum_windows"):
         rolling[key] = _integer(rolling[key], f"rolling.{key}", 1)
     if rolling["minimum_train_months"] < 6:
         raise ValueError("rolling.minimum_train_months não pode ser menor que o histórico mínimo de 6 meses")
+    if rolling["minimum_windows"] > rolling["windows"]:
+        raise ValueError("rolling.minimum_windows não pode ser maior que rolling.windows")
     values["rolling"] = rolling
+
+    nested = _section(values, "nested")
+    nested["outer_windows"] = _integer(nested["outer_windows"], "nested.outer_windows", 1)
+    values["nested"] = nested
 
     margin = _number(values["parsimony_margin"], "parsimony_margin")
     if not 0 <= margin < 1:

@@ -22,7 +22,8 @@ def test_versioned_config_loads_with_the_plan_defaults():
 
     assert config["engine"] == "v1"
     assert config["candidates"] == list(CANDIDATES)
-    assert config["rolling"] == {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6}
+    assert config["rolling"] == {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1}
+    assert config["nested"] == {"outer_windows": 2}
     assert config["parsimony_margin"] == 0.05
     assert config["promotion"] == {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0}
 
@@ -50,6 +51,10 @@ def test_partial_file_falls_back_to_defaults_per_section(tmp_path):
         ({"rolling": {"windows": 2.5}}, "inteiro"),
         ({"rolling": {"minimum_train_months": 5}}, "histórico mínimo"),
         ({"rolling": {"windows": 3, "extra": 1}}, "desconhecidos em rolling"),
+        ({"rolling": {"minimum_windows": 0}}, "inteiro"),
+        ({"rolling": {"windows": 2, "minimum_windows": 3}}, "minimum_windows"),
+        ({"nested": {"outer_windows": 0}}, "inteiro"),
+        ({"nested": {"outer_windows": 2, "extra": 1}}, "desconhecidos em nested"),
         ({"parsimony_margin": 1}, "parsimony_margin"),
         ({"parsimony_margin": True}, "inválido"),
         ({"promotion": {"min_relative_wape_gain": -0.1}}, "promoção"),
