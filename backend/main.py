@@ -33,6 +33,7 @@ from caderno_inteligente.indicators import build_sku_indicators, registered_dema
 from caderno_inteligente.supply_plan import attach_partner_buildup, build_supply_plans, load_supply_settings  # noqa: E402
 from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402
 from caderno_inteligente.capacity_plan import build_capacity_plan  # noqa: E402
+from caderno_inteligente.production_plan import build_production_plan  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
@@ -199,6 +200,22 @@ def revenue_forecast() -> dict:
         forecasts, dataset["Produtos"], dataset["Vendas_24m"], dataset.get("Precos_Produtos"), dataset.get("Forecast_Comercial"),
     )
     _revenue_cache = (built, result)
+    return result
+
+
+_production_cache: tuple[tuple, dict] | None = None
+
+
+def production_plan() -> dict:
+    """Ordens planejadas somadas por mês de liberação; reaproveita o plano de suprimento em cache."""
+    global _production_cache
+    cached_pipeline = _cached()
+    cached = _production_cache
+    if cached is not None and cached[0] is cached_pipeline:
+        return cached[1]
+    built, plans = cached_pipeline[1], cached_pipeline[2]
+    result = build_production_plan(plans, built[2], built[5])
+    _production_cache = (cached_pipeline, result)
     return result
 
 
@@ -421,6 +438,12 @@ def priorities(
 def revenue_forecast_summary():
     """Faturamento estimado (previsão em unidades × preço vigente), rotulado como estimativa; não altera previsão nem ranking."""
     return revenue_forecast()
+
+
+@app.get("/api/production-plan")
+def production_plan_summary():
+    """Produção planejada por mês de liberação (urgente × depois), no total e por família. Plano sugerido, não ordem liberada."""
+    return production_plan()
 
 
 @app.get("/api/events")

@@ -5,7 +5,7 @@ import { endpoints, keyPaths } from './contract';
 // Same fixtures used by the page tests; tests/test_frontend_contracts.py checks the real API against the same key list.
 const FIXTURES: Record<string, unknown> = {
   overview: fx.overview, priorities: fx.priorities, quality: fx.quality, config: fx.config, runs: fx.runs, b2b: fx.b2b,
-  forecasts: fx.forecasts, revenueForecast: fx.revenueForecast, capacityPlan: fx.capacityPlan, events: fx.eventAnalysis,
+  forecasts: fx.forecasts, revenueForecast: fx.revenueForecast, capacityPlan: fx.capacityPlan, productionPlan: fx.productionPlan, events: fx.eventAnalysis,
   directChannels: fx.directChannels, directChannel: fx.directChannelDetail, channelFindings: { findings: fx.channelFindings }, skuDetail: fx.skuDetailOk, partners: fx.partnersPage, partnerDetail: fx.partnerDetail,
   partnerSkus: fx.partnerRows, commercial: fx.partnerRows, validation: fx.validationSummary, forecastLab: fx.forecastLab, runComparison: fx.runComparison, system: fx.system,
 };

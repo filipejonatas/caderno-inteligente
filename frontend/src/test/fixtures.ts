@@ -5,6 +5,7 @@ import type { ChallengeAction } from '../types-actions';
 import type { ChannelFinding, ChannelSkuRow, ChannelSummary, DirectChannelDetail, DirectChannelsOverview } from '../types-channels';
 import type { EventAlert, EventAnalysis, EventItem, EventScenario } from '../types-events';
 import type { ForecastLab, SensitivityCell } from '../types-forecast-lab';
+import type { ProductionPlan } from '../types-production';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
@@ -393,5 +394,17 @@ export const capacityPlan: CapacityPlan = {
   status_labels: { ok: 'Cabe na semana planejada', insuficiente: 'Não cabe até a data de necessidade' },
   assumptions: ['Premissa sintética.'],
   field_nature: { allocated: { nature: 'calculado', origin: 'sintético' } },
+  requires_human_review: true,
+};
+
+// Coerente com `forecasts`: TEST-001 (Família A) tem 200 un. sugeridas agora e 600 no horizonte; TEST-002 não tem previsão.
+export const productionPlan: ProductionPlan = {
+  reference_date: '2026-09-14', horizon_end: '2027-02-28', urgent_window_end: '2026-10-12', max_lead_time_days: 20,
+  total: { months: [{ month: '2026-09', urgent: 200, later: 0 }, { month: '2026-10', urgent: 0, later: 300 }, { month: '2026-11', urgent: 0, later: 0 }, { month: '2026-12', urgent: 0, later: 100 }], urgent_total: 200, horizon_total: 600 },
+  families: [{ family: 'Família A', months: [{ month: '2026-09', urgent: 200, later: 0 }, { month: '2026-10', urgent: 0, later: 300 }, { month: '2026-11', urgent: 0, later: 0 }, { month: '2026-12', urgent: 0, later: 100 }], urgent_total: 200, horizon_total: 600 }],
+  excluded_skus: [{ sku: SKU_SHORT, reason: 'sem_previsao' }],
+  omitted_months: ['2027-01', '2027-02'],
+  field_nature: { urgent: { nature: 'estimado', origin: 'ordens planejadas com liberação dentro da janela de decisão' }, later: { nature: 'estimado', origin: 'ordens planejadas com liberação depois da janela de decisão' } },
+  limitations: ['Plano sugerido, não ordem liberada: cada ordem exige revisão humana antes de virar OP.'],
   requires_human_review: true,
 };
