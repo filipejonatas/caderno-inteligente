@@ -176,8 +176,6 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Roteiro de demonstração — 5 minutos](docs/roteiro-demonstracao.md)
 - [Semana 4 — Validação da V2](docs/semana-4-validacao-v2.md)
 - [Semana 3 — Modelo preditivo](docs/semana-3-modelo-preditivo.md)
-- [Plano da V2](docs/plano-v2-prototipo-top.md)
-- [Plano de aderência ao desafio](docs/plano-aderencia-desafio.md)
 
 **Referência técnica**
 
@@ -202,7 +200,7 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Etapa 12 — Visão dos canais diretos (plano de aderência ao desafio)](docs/etapa-12-canais-diretos.md)
 - [Etapa 13 — Rótulos de ação do desafio (plano de aderência ao desafio)](docs/etapa-13-rotulos-de-acao.md)
 
-**Etapa 15 — Correção do motor de decisão** ([plano](docs/plano-etapa-15-correcao-motor-decisao.md), [antes × depois](docs/etapa-15/antes-depois.md))
+**Etapa 15 — Correção do motor de decisão** ([antes × depois](docs/etapa-15/antes-depois.md))
 
 - [15.0 — Linha de base e protocolo](docs/etapa-15-0-linha-de-base.md)
 - [15.1 — Previsão v2 com meses de pico](docs/etapa-15-1-previsao-v2.md)

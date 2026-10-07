@@ -2,7 +2,7 @@
 
 Aplica as decisões aprovadas em [analise-enxugamento.md](analise-enxugamento.md) (todas marcadas "Aprovado", mais o orçamento da seção 4 e os padrões da seção 6). **Só apresentação e navegação:** nenhum cálculo, score, ranking, regra, previsão, recomendação, processamento do Excel ou contrato da API mudou. Nenhum campo foi removido da API (a interface apenas deixou de exibir vários) e nenhum campo novo foi criado (ver [api.md](api.md)).
 
-Medição "antes" (06/10/2026, análise) e "depois" (mesma planilha, SHA-256 `03fa0ed4…803f`, mesma API, mesmo script de Chrome headless, 1440×900, página inteira, **tudo expandido**: `<details>` e abas abertos, "Ver mais" e "Ver evidências" clicados). Capturas: antes em [`analise-enxugamento/`](analise-enxugamento/), depois em [`etapa-enxugamento/`](etapa-enxugamento/) (mesmos nomes, mais `previsoes-todos-1440.png` e `auditoria-1440.png`).
+Medição "antes" (06/10/2026, análise) e "depois" (mesma planilha, SHA-256 `03fa0ed4…803f`, mesma API, mesmo script de Chrome headless, 1440×900, página inteira, **tudo expandido**: `<details>` e abas abertos, "Ver mais" e "Ver evidências" clicados). As capturas de tela foram removidas do repositório em 2026-10-07.
 
 ## 1. Volume antes × depois
 

@@ -483,7 +483,7 @@
       "date": "2026-10-01",
       "change": "A métrica de ruptura passou a contar SKUs únicos (rupture_sku_count) em vez de somar ocorrências de duas regras.",
       "reason": "A soma apresentava o mesmo SKU duas vezes como se fossem SKUs distintos.",
-      "evidence": "docs/plano-hackathon-para-ia.md — Entrega 1",
+      "evidence": "docs/api.md — rupture_sku_count",
       "changed_weights_or_models": false
     },
     {
@@ -518,14 +518,14 @@
       "date": "2026-10-07",
       "change": "Foram adicionados 11 casos congelados da Etapa 15 (VC-20 a VC-30): dez ficam pendentes até a subetapa que os atende e o VC-27 é uma guarda de regressão ativa. A central passou a aceitar o resultado pendente, que não conta como aprovado nem como reprovado.",
       "reason": "Protocolo da Etapa 15: casos, limiares e origens de avaliação gravados antes do código que corrige G1–G5, para que não sejam ajustados depois de ver os resultados.",
-      "evidence": "docs/plano-etapa-15-correcao-motor-decisao.md e docs/etapa-15-0-linha-de-base.md",
+      "evidence": "docs/etapa-15-0-linha-de-base.md",
       "changed_weights_or_models": false
     },
     {
       "date": "2026-10-07",
       "change": "Registrado que o VC-04 (CI-0041 com prioridade alta e Sem ação necessária) será revisto na Etapa 15.3.",
       "reason": "Há 914 un. prometidas para 13 e 14/09 sem cobertura até a chegada da OP-7840 em 08/10; Sem ação contradiz o risco que põe o SKU no topo da fila. O VC-20 passa a ser o caso de referência.",
-      "evidence": "docs/plano-etapa-15-correcao-motor-decisao.md, seção 7",
+      "evidence": "docs/etapa-15-0-linha-de-base.md, seção 3",
       "changed_weights_or_models": false
     },
     {
