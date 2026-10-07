@@ -22,9 +22,11 @@ const mediaQueryUrl = await compile('../src/hooks/useMediaQuery.ts');
 const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl, './hooks/useMediaQuery': mediaQueryUrl });
 const exportUrl = await compile('../src/validation-export.ts');
 const stub = dataUrl('export const api = {}; export function useApiResource() { return {}; } export function usePageLoadStatus() {}');
+// O laboratório de previsão busca os próprios dados; no render estático ele aparece no estado "calculando".
+const forecastLabUrl = await compile('../src/components/ForecastLab.tsx', { '../api': stub, '../hooks/useApiResource': stub, '../components': componentsUrl, '../pages/shared': sharedUrl });
 const { ValidationContent, AuditoriaContent } = await import(await compile('../src/pages/ValidationPage.tsx', {
   '../api': stub, '../hooks/useApiResource': stub, '../hooks/usePageLoadStatus': stub,
-  '../components': componentsUrl, './shared': sharedUrl, '../validation-export': exportUrl,
+  '../components': componentsUrl, '../components/ForecastLab': forecastLabUrl, './shared': sharedUrl, '../validation-export': exportUrl,
 }));
 const { validationCsv } = await import(exportUrl);
 

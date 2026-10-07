@@ -1,6 +1,7 @@
 import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } from './types-commercial';
 import type { ChannelFinding, DirectChannelDetail, DirectChannelsOverview } from './types-channels';
 import type { EventAnalysis } from './types-events';
+import type { ForecastLab } from './types-forecast-lab';
 import type { RevenueForecast } from './types-revenue';
 import type { RunComparison } from './types-runs';
 import type { ValidationSummary } from './types-validation';
@@ -94,6 +95,7 @@ export const api = {
   skuDetail: (sku: string, signal?: AbortSignal) => request<SkuDetail>(`/priorities/${encodeURIComponent(sku)}`, { signal }),
   system: (signal?: AbortSignal) => request<SystemInfo>('/system', { signal }),
   validationSummary: (signal?: AbortSignal) => request<ValidationSummary>('/validation/summary', { signal }),
+  forecastLab: (signal?: AbortSignal) => request<ForecastLab>('/forecast-lab', { signal }),
   runComparison: (base: number, target: number, signal?: AbortSignal) => request<RunComparison>(`/run-comparisons?${new URLSearchParams({ base: String(base), target: String(target) })}`, { signal }),
   createRun: () => request<{ id: number }>('/runs', { method: 'POST' }),
   createCase: (body: Record<string, unknown>) =>

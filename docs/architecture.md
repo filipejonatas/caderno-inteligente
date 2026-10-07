@@ -92,7 +92,7 @@ O menu agrupa as rotas em 7 entradas: Início; Planejamento (`/fila`, `/cenarios
 | `/cenarios` | Simulação de cenários | `config`, `POST scenarios` |
 | `/execucoes` | Execuções; comparação em `?base=&alvo=` | `runs`, `run-comparisons` |
 | `/decisoes` | Histórico de decisões (feedback do PCP) | `feedback`, `priorities`, `config` |
-| `/validacao` | Central de validação (resumo, falhas e 2 abas) | `validation/summary` |
+| `/validacao` | Central de validação (resumo, falhas e 2 abas; a aba de modelos inclui o laboratório de previsão) | `validation/summary`, `forecast-lab` |
 | `/auditoria` | Auditoria: casos de teste, verificações, limitações, ajustes e método comercial | `validation/summary`, `partners?limit=1` |
 | `*` | Página não encontrada | Nenhum |
 

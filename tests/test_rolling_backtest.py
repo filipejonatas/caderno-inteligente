@@ -348,3 +348,62 @@ def test_nested_table_on_the_real_base_is_complete_and_leaves_official_numbers_a
         assert math.isfinite(aggregate["weighted_bias"])
     assert sum(table["rolling_vs_v1"].values()) == 50
     assert build_demand_forecasts(sales).to_json() == before
+
+
+# --- Memória do cálculo e grade de sensibilidade (14.3) -------------------------------------------------------------
+
+def test_cached_run_is_identical_to_the_direct_candidate_call():
+    rng = np.random.default_rng(21)
+    history = _series(np.abs(rng.normal(100, 30, 21)).round(1))
+    targets = pd.period_range(history.index[-1] + 1, periods=3, freq="M")
+    for code in CANDIDATES:
+        direct = rb.run_candidate(code, history, targets)
+        assert rb._run(code, history, targets) == direct, code
+        assert rb._run(code, history, targets) == direct, code  # segunda chamada vem da memória
+
+
+def test_cached_run_falls_back_to_the_direct_call_for_non_contiguous_history():
+    gapped = _series(range(1, 19))
+    gapped = gapped.drop(gapped.index[5])  # buraco no meio: a memória não deve ser usada
+    targets = pd.period_range(gapped.index[-1] + 1, periods=3, freq="M")
+    assert rb._run("moving_average_3", gapped, targets) == rb.run_candidate("moving_average_3", gapped, targets)
+
+
+def test_sensitivity_grid_covers_every_combination_and_marks_the_default_once():
+    sales = pd.concat([_sales("CONST", [10] * 24), _sales("SEAS", PATTERN * 2), _sales("LINEAR", range(1, 25))])
+    cells = rb.sensitivity_grid(sales, CONFIG)
+
+    assert [(cell["outer_windows"], cell["minimum_windows"]) for cell in cells] == [(1, 1), (1, 2), (2, 1), (2, 2), (3, 1), (3, 2)]
+    assert [cell["is_default"] for cell in cells].count(True) == 1
+    default = next(cell for cell in cells if cell["is_default"])
+    assert (default["outer_windows"], default["minimum_windows"]) == (CONFIG["nested"]["outer_windows"], CONFIG["rolling"]["minimum_windows"])
+    assert [cell["outer_train_lengths"] for cell in cells[::2]] == [[21], [18, 21], [15, 18, 21]]
+    assert all(cell["skus"] == 3 for cell in cells)
+    # A célula padrão é exatamente a avaliação aninhada padrão.
+    table = rb.nested_evaluation_table(sales, CONFIG)
+    assert default["rolling_wape"] == table["aggregate"]["rolling"]["weighted_wape"]
+    assert default["relative_wape_gain"] == table["criteria"]["relative_wape_gain"]
+    assert default["all_met"] == table["criteria"]["all_met"]
+    assert default["rolling_better_skus"] + default["equal_skus"] + default["rolling_worse_skus"] == 3
+
+
+def test_sensitivity_grid_does_not_change_the_config_it_receives():
+    before = deepcopy(CONFIG)
+    rb.sensitivity_grid(_sales("X", PATTERN * 2), CONFIG)
+    assert CONFIG == before
+
+
+def test_sensitivity_summary_counts_cells_and_reports_the_gain_range():
+    cells = [
+        {"is_default": True, "all_met": True, "relative_wape_gain": 0.2},
+        {"is_default": False, "all_met": True, "relative_wape_gain": 0.1},
+        {"is_default": False, "all_met": False, "relative_wape_gain": -0.3},
+        {"is_default": False, "all_met": False, "relative_wape_gain": None},
+    ]
+    summary = rb.summarize_sensitivity(cells)
+
+    assert summary == {"cells": 4, "cells_all_met": 2, "robust": False, "default_all_met": True,
+                       "min_relative_wape_gain": -0.3, "max_relative_wape_gain": 0.2}
+    assert rb.summarize_sensitivity(cells[:2])["robust"] is True
+    empty = rb.summarize_sensitivity([])
+    assert empty["robust"] is False and empty["default_all_met"] is None and empty["min_relative_wape_gain"] is None

@@ -5,6 +5,7 @@ import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { Alert, Badge, ErrorState, Hint, LoadingState, MetricCard, PageIntro, SectionCard, Tooltip } from '../components';
+import { ForecastLabSection } from '../components/ForecastLab';
 import type { CaseCheck, FrozenCase, MeasuredValue, SafeBehaviorCheck, ValidationSummary } from '../types-validation';
 import { validationCsv } from '../validation-export';
 import { displayNumber, displayPercent, displayShare, formatDate } from './shared';
@@ -74,7 +75,7 @@ export default function ValidationPage({ refreshToken }: { refreshToken: number 
   usePageLoadStatus(loading, error, loadedAt);
   if (!data && error) return <ErrorState message={error} onRetry={() => void refresh()} />;
   if (!data) return <LoadingState />;
-  return <ValidationContent data={data} error={error} onRetry={() => void refresh()} />;
+  return <ValidationContent data={data} error={error} onRetry={() => void refresh()} refreshToken={refreshToken} />;
 }
 
 const tabs = [
@@ -83,7 +84,7 @@ const tabs = [
 ] as const;
 
 /** Pure rendering of a loaded summary; kept separate so it can be tested without the API. Os dois painéis ficam no HTML (impressão e exportação); só o ativo fica visível. */
-export function ValidationContent({ data, error = '', onRetry }: { data: ValidationSummary; error?: string; onRetry: () => void }) {
+export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 }: { data: ValidationSummary; error?: string; onRetry: () => void; refreshToken?: number }) {
   const [tab, setTab] = useState<(typeof tabs)[number]['id']>('processo');
   const { forecast_evaluation: forecast, frozen_cases: cases, analysis_time: time } = data;
   const selected = forecast.models.find((model) => model.role === 'selecionado');
@@ -150,6 +151,7 @@ export function ValidationContent({ data, error = '', onRetry }: { data: Validat
             <tbody>{notBeating.map((item) => <tr key={item.sku}><td><Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link></td><td>{displayPercent(item.selected_wape)}</td><td>{displayPercent(item.baseline_wape)}</td></tr>)}</tbody></table></div>
         </details>}
       </SectionCard>
+      <ForecastLabSection refreshToken={refreshToken} />
     </div>
   </div>;
 }

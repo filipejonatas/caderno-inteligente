@@ -809,6 +809,16 @@ app.include_router(create_validation_router(
     describe_error=_describe_error,
 ))
 
+# Additive Etapa 14.3 forecast lab: challenger engine side by side with the official one; official outputs are untouched.
+from backend.forecast_lab import create_forecast_lab_router  # noqa: E402
+
+app.include_router(create_forecast_lab_router(
+    pipeline=pipeline,
+    source=SOURCE,
+    engine_config_file=ROOT / "config/forecast_engine.json",
+    describe_error=_describe_error,
+))
+
 # Additive run comparison: snapshots preserve forecast, recommendation and partner coverage as computed.
 from backend.run_comparisons import create_run_comparison_router  # noqa: E402
 from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402

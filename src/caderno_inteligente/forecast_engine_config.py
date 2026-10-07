@@ -22,6 +22,7 @@ DEFAULTS: dict[str, Any] = {
     "candidates": list(CANDIDATES),
     "rolling": {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1},
     "nested": {"outer_windows": 2},
+    "sensitivity": {"outer_windows": [1, 2, 3], "minimum_windows": [1, 2]},
     "parsimony_margin": 0.05,
     "promotion": {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0},
 }
@@ -86,6 +87,19 @@ def validate_engine_config(values: dict[str, Any]) -> dict[str, Any]:
     nested = _section(values, "nested")
     nested["outer_windows"] = _integer(nested["outer_windows"], "nested.outer_windows", 1)
     values["nested"] = nested
+
+    sensitivity = _section(values, "sensitivity")
+    for key in ("outer_windows", "minimum_windows"):
+        grid = sensitivity[key]
+        if not isinstance(grid, list) or not grid:
+            raise ValueError(f"sensitivity.{key} deve ser uma lista não vazia")
+        grid = [_integer(item, f"sensitivity.{key}", 1) for item in grid]
+        if len(set(grid)) != len(grid):
+            raise ValueError(f"sensitivity.{key} não pode repetir valores")
+        sensitivity[key] = sorted(grid)
+    if max(sensitivity["minimum_windows"]) > rolling["windows"]:
+        raise ValueError("sensitivity.minimum_windows não pode passar de rolling.windows")
+    values["sensitivity"] = sensitivity
 
     margin = _number(values["parsimony_margin"], "parsimony_margin")
     if not 0 <= margin < 1:

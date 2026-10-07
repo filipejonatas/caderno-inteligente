@@ -13,6 +13,8 @@ Nada aqui altera `forecasting.py` nem é chamado pelo pipeline oficial.
 """
 from __future__ import annotations
 
+from copy import deepcopy
+from functools import lru_cache
 from typing import Any, Callable
 
 import pandas as pd
@@ -33,6 +35,30 @@ def naive_last(history: pd.Series, targets: pd.PeriodIndex) -> list[float] | Non
     if history.empty:
         return None
     return [max(0.0, float(history.iloc[-1]))] * len(targets)
+
+
+@lru_cache(maxsize=200_000)
+def _run_cached(code: str, values: tuple[float, ...], start: int, horizon: int) -> tuple[float, ...] | None:
+    history = pd.Series(values, index=pd.period_range(pd.Period(ordinal=start, freq="M"), periods=len(values), freq="M"))
+    predicted = run_candidate(code, history, pd.period_range(history.index[-1] + 1, periods=horizon, freq="M"))
+    return None if predicted is None else tuple(predicted)
+
+
+def _run(code: str, history: pd.Series, targets: pd.PeriodIndex) -> list[float] | None:
+    """`run_candidate` com memória: o mesmo treino reaparece em várias origens e células da grade de sensibilidade.
+
+    O resultado é idêntico ao da chamada direta; a memória só vale para série mensal contínua seguida pelos meses-alvo.
+    """
+    index = history.index
+    contiguous = (
+        isinstance(index, pd.PeriodIndex) and index.freqstr == "M" and len(index) > 0
+        and index[-1].ordinal - index[0].ordinal == len(index) - 1
+        and len(targets) > 0 and targets[0] == index[-1] + 1 and targets[-1].ordinal - targets[0].ordinal == len(targets) - 1
+    )
+    if not contiguous:
+        return run_candidate(code, history, targets)
+    cached = _run_cached(code, tuple(float(value) for value in history.tolist()), index[0].ordinal, len(targets))
+    return None if cached is None else list(cached)
 
 
 def rolling_origins(n: int, horizon: int, step: int, windows: int, minimum_train: int) -> list[int]:
@@ -109,7 +135,7 @@ def rolling_backtest(series: pd.Series, config: dict[str, Any] | None = None) ->
         real = [float(value) for value in test.tolist()]
         baseline_runs.append((real, naive_last(train, test.index)))
         for code in codes:
-            predicted = run_candidate(code, train, test.index) if code in runs else None
+            predicted = _run(code, train, test.index) if code in runs else None
             if predicted is None:
                 runs.pop(code, None)
                 reasons[code] = "o modelo não gerou previsão em alguma janela"
@@ -203,10 +229,10 @@ def build_rolling_forecasts(sales: pd.DataFrame, config: dict[str, Any] | None =
 
         selected = backtest["selected_model"]
         future = pd.period_range(series.index.max() + 1, periods=horizon, freq="M")
-        values = run_candidate(selected, series, future)
+        values = _run(selected, series, future)
         if values is None:
             selected = FALLBACK_MODEL
-            values = run_candidate(selected, series, future)
+            values = _run(selected, series, future)
         trend, change = _trend(series)
         values = [round(max(0.0, float(value)), 1) for value in values]
         records.append(
@@ -269,8 +295,8 @@ def default_procedures(config: dict[str, Any] | None = None) -> dict[str, Proced
 
 
 def _predict(code: str, train: pd.Series, targets: pd.PeriodIndex) -> list[float]:
-    predicted = naive_last(train, targets) if code == BASELINE_MODEL else run_candidate(code, train, targets)
-    return predicted if predicted is not None else run_candidate(FALLBACK_MODEL, train, targets)
+    predicted = naive_last(train, targets) if code == BASELINE_MODEL else _run(code, train, targets)
+    return predicted if predicted is not None else _run(FALLBACK_MODEL, train, targets)
 
 
 def nested_evaluation(series: pd.Series, procedures: dict[str, Procedure] | None = None, config: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -362,4 +388,60 @@ def promotion_criteria(evaluation: dict[str, Any], config: dict[str, Any]) -> di
         "skus_beating_baseline_v1": old["skus_beating_baseline"],
         "baseline_criterion_met": baseline_ok,
         "all_met": bool(wape_ok and bias_ok and baseline_ok),
+    }
+
+
+# ------------------------------------------------------------------------------------------ grade de sensibilidade
+
+def sensitivity_grid(sales: pd.DataFrame, config: dict[str, Any] | None = None) -> list[dict[str, Any]]:
+    """Refaz a avaliação aninhada para cada combinação (origens externas × mínimo de janelas) e confere os critérios.
+
+    O veredito da promoção não deve depender de uma única célula: esta grade mostra o quanto ele muda quando as duas
+    escolhas de desenho mudam. Informativa; não altera nada oficial.
+    """
+    config = load_engine_config() if config is None else config
+    cells: list[dict[str, Any]] = []
+    for outer in config["sensitivity"]["outer_windows"]:
+        for minimum in config["sensitivity"]["minimum_windows"]:
+            variant = deepcopy(config)
+            variant["nested"]["outer_windows"] = outer
+            variant["rolling"]["minimum_windows"] = minimum
+            table = nested_evaluation_table(sales, variant)
+            aggregate, criteria = table["aggregate"], table["criteria"]
+            cells.append(
+                {
+                    "outer_windows": outer,
+                    "minimum_windows": minimum,
+                    "is_default": outer == config["nested"]["outer_windows"] and minimum == config["rolling"]["minimum_windows"],
+                    "outer_train_lengths": table["rows"][0]["outer_train_lengths"] if table["rows"] else [],
+                    "skus": table["skus"],
+                    "v1_wape": aggregate["v1"]["weighted_wape"],
+                    "rolling_wape": aggregate["rolling"]["weighted_wape"],
+                    "baseline_wape": aggregate["baseline"]["weighted_wape"],
+                    "v1_bias": aggregate["v1"]["weighted_bias"],
+                    "rolling_bias": aggregate["rolling"]["weighted_bias"],
+                    "rolling_better_skus": table["rolling_vs_v1"]["rolling_better"],
+                    "equal_skus": table["rolling_vs_v1"]["equal"],
+                    "rolling_worse_skus": table["rolling_vs_v1"]["rolling_worse"],
+                    **{key: criteria[key] for key in (
+                        "relative_wape_gain", "wape_criterion_met", "bias_worsening_pp", "bias_criterion_met",
+                        "skus_beating_baseline_rolling", "skus_beating_baseline_v1", "baseline_criterion_met", "all_met",
+                    )},
+                }
+            )
+    return cells
+
+
+def summarize_sensitivity(cells: list[dict[str, Any]]) -> dict[str, Any]:
+    """Quantas combinações atendem aos critérios e em que faixa fica o ganho de WAPE."""
+    gains = [cell["relative_wape_gain"] for cell in cells if cell["relative_wape_gain"] is not None]
+    default = next((cell for cell in cells if cell["is_default"]), None)
+    met = sum(bool(cell["all_met"]) for cell in cells)
+    return {
+        "cells": len(cells),
+        "cells_all_met": met,
+        "robust": bool(cells) and met == len(cells),
+        "default_all_met": None if default is None else bool(default["all_met"]),
+        "min_relative_wape_gain": min(gains) if gains else None,
+        "max_relative_wape_gain": max(gains) if gains else None,
     }

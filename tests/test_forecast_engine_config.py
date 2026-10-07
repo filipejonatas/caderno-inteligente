@@ -24,6 +24,7 @@ def test_versioned_config_loads_with_the_plan_defaults():
     assert config["candidates"] == list(CANDIDATES)
     assert config["rolling"] == {"windows": 3, "step_months": 3, "horizon_months": 3, "minimum_train_months": 6, "minimum_windows": 1}
     assert config["nested"] == {"outer_windows": 2}
+    assert config["sensitivity"] == {"outer_windows": [1, 2, 3], "minimum_windows": [1, 2]}
     assert config["parsimony_margin"] == 0.05
     assert config["promotion"] == {"min_relative_wape_gain": 0.05, "max_bias_worsening_pp": 2.0}
 
@@ -55,6 +56,12 @@ def test_partial_file_falls_back_to_defaults_per_section(tmp_path):
         ({"rolling": {"windows": 2, "minimum_windows": 3}}, "minimum_windows"),
         ({"nested": {"outer_windows": 0}}, "inteiro"),
         ({"nested": {"outer_windows": 2, "extra": 1}}, "desconhecidos em nested"),
+        ({"sensitivity": {"outer_windows": []}}, "lista não vazia"),
+        ({"sensitivity": {"outer_windows": "2"}}, "lista não vazia"),
+        ({"sensitivity": {"outer_windows": [1, 1]}}, "repetir"),
+        ({"sensitivity": {"minimum_windows": [0]}}, "inteiro"),
+        ({"sensitivity": {"minimum_windows": [4]}}, "rolling.windows"),
+        ({"sensitivity": {"extra": [1]}}, "desconhecidos em sensitivity"),
         ({"parsimony_margin": 1}, "parsimony_margin"),
         ({"parsimony_margin": True}, "inválido"),
         ({"promotion": {"min_relative_wape_gain": -0.1}}, "promoção"),
@@ -75,3 +82,9 @@ def test_defaults_are_not_mutated_by_loading(tmp_path):
     before = deepcopy(DEFAULTS)
     load_engine_config(_write(tmp_path, parsimony_margin=0.1))
     assert DEFAULTS == before
+
+
+def test_sensitivity_grid_is_sorted_on_load(tmp_path):
+    path = tmp_path / "forecast_engine.json"
+    path.write_text(json.dumps({"sensitivity": {"outer_windows": [3, 1, 2]}}), encoding="utf-8")
+    assert load_engine_config(path)["sensitivity"]["outer_windows"] == [1, 2, 3]

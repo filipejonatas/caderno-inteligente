@@ -11,6 +11,10 @@
   "nested": {
     "outer_windows": 2
   },
+  "sensitivity": {
+    "outer_windows": [1, 2, 3],
+    "minimum_windows": [1, 2]
+  },
   "parsimony_margin": 0.05,
   "promotion": {
     "min_relative_wape_gain": 0.05,

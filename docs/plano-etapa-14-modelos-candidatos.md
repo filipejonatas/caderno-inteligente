@@ -91,6 +91,8 @@ Medir o WAPE do vencedor no mesmo teste em que foi escolhido é otimista. Para c
 
 ## 7. Etapa 14.3 — API e tela de Validação (0,5 a 1 dia)
 
+> **Status: implementada** (ver [etapa-14-3-laboratorio-previsao.md](etapa-14-3-laboratorio-previsao.md)). Ajustes em relação ao desenho abaixo: a rota é `GET /api/forecast-lab`; o bloco entrou na aba "Modelos de previsão" e inclui a **grade de sensibilidade** (config `sensitivity`), que mostra também a combinação que reprova; o volume das telas ficou dentro do orçamento sem alteração; o cálculo ganhou memória e cache (a primeira chamada leva alguns segundos).
+
 - Endpoint **aditivo** `GET /api/forecast-lab` (ou `/api/forecasts/challenger`): por SKU, campeão atual × desafiante, tabela de candidatos e veredito agregado. Não altera `/api/forecasts`.
 - Bloco novo **"Modelos candidatos"** em Bastidores › Validação (tabela por modelo: SKUs em que vence, WAPE agrupado, viés; linha da baseline). Sem coluna nova nas telas de operação, por causa do orçamento de volume; detalhe no "?" e no tooltip.
 - Rótulos novos em `MODEL_LABELS`; entradas de glossário curtas (cuidado: o limite de palavras do `/guia` já foi subido uma vez, 400 → 500, e não sobe de novo sem decisão explícita).

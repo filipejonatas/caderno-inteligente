@@ -385,6 +385,8 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .validation-details { margin-top: var(--space-3); }
 .validation-details summary { color: var(--pen); font-weight: 600; cursor: pointer; }
 .validation-details .table-shell { margin-top: var(--space-2); }
+.lab-heading { margin: var(--space-4) 0 var(--space-2); font-size: var(--text-body); }
+.lab-heading + .table-shell { margin-top: 0; }
 .validation-list { margin: var(--space-3) 0 0; padding-left: 18px; line-height: 1.6; }
 .validation-page h5, .validation-two-columns h4 { margin: var(--space-3) 0 var(--space-1); font-size: var(--text-body); }
 .validation-cases { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-3); }

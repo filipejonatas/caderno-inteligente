@@ -4,6 +4,7 @@ import type { CommercialPage, CommercialRow, PartnerDetail, PartnerSummary } fro
 import type { ChallengeAction } from '../types-actions';
 import type { ChannelFinding, ChannelSkuRow, ChannelSummary, DirectChannelDetail, DirectChannelsOverview } from '../types-channels';
 import type { EventAlert, EventAnalysis, EventItem, EventScenario } from '../types-events';
+import type { ForecastLab, SensitivityCell } from '../types-forecast-lab';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
@@ -271,6 +272,59 @@ export const validationSummary: ValidationSummary = {
   frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, synthetic: 0, items: [] },
   safe_behavior: [{ id: 'a', label: 'Verificação', status: 'aprovado', method: 'executado', evidence: 'ok' }],
   known_failures: [], known_limitations: ['Limitação.'], adjustments: [], requires_human_review: true,
+};
+
+function labCell(outer: number, minimum: number, overrides: Partial<SensitivityCell> = {}): SensitivityCell {
+  const lengths = [15, 18, 21].slice(3 - outer);
+  return {
+    outer_windows: outer, minimum_windows: minimum, is_default: false, outer_train_lengths: lengths, skus: 2,
+    v1_wape: 0.09, rolling_wape: 0.07, baseline_wape: 0.17, v1_bias: -0.043, rolling_bias: -0.019,
+    rolling_better_skus: 1, equal_skus: 1, rolling_worse_skus: 0, relative_wape_gain: 0.22, wape_criterion_met: true,
+    bias_worsening_pp: -2.4, bias_criterion_met: true, skus_beating_baseline_rolling: 2, skus_beating_baseline_v1: 1,
+    baseline_criterion_met: true, all_met: true, ...overrides,
+  };
+}
+
+export const forecastLab: ForecastLab = {
+  generated_at: '2026-10-07T12:00:00+00:00',
+  source: { sha256: 'abc123abc123abc123' },
+  engine: 'v1',
+  official_engine_label: 'Motor atual sintético.',
+  promotion_status: 'pendente',
+  promotion_note: 'Nada foi promovido: as previsões oficiais seguem o motor atual.',
+  baseline: { model: 'naive_last', label: 'Baseline' },
+  selection: {
+    skus: 2, skipped_skus: 0, changed_skus: 1,
+    models: [
+      { model: 'moving_average_3', label: 'Média móvel de 3 meses', description: 'Média dos últimos 3 meses.', complexity: 1, min_history_months: 3, official_selected_skus: 2, rolling_selected_skus: 1, evaluated_skus: 2, median_wape: 0.104 },
+      { model: 'ses', label: 'Suavização exponencial simples', description: 'Nível que pesa mais o recente.', complexity: 3, min_history_months: 6, official_selected_skus: 0, rolling_selected_skus: 1, evaluated_skus: 2, median_wape: 0.081 },
+    ],
+    changed: [{ sku: SKU_OK, official_model: 'moving_average_3', official_model_label: 'Média móvel de 3 meses', rolling_model: 'ses', rolling_model_label: 'Suavização exponencial simples', rolling_wape: 0.067 }],
+  },
+  nested: {
+    outer_windows: 2, outer_train_lengths: [18, 21], skus: 2,
+    aggregate: {
+      v1: { weighted_wape: 0.0899, weighted_bias: -0.0429, skus_beating_baseline: 1 },
+      rolling: { weighted_wape: 0.0705, weighted_bias: -0.019, skus_beating_baseline: 2 },
+      baseline: { weighted_wape: 0.1702, weighted_bias: 0.0854, skus_beating_baseline: 0 },
+    },
+    rolling_vs_v1: { rolling_better: 1, equal: 1, rolling_worse: 0 },
+    criteria: {
+      relative_wape_gain: 0.2162, min_relative_wape_gain: 0.05, wape_criterion_met: true, bias_worsening_pp: -2.3833, max_bias_worsening_pp: 2,
+      bias_criterion_met: true, skus_beating_baseline_rolling: 2, skus_beating_baseline_v1: 1, baseline_criterion_met: true, all_met: true,
+    },
+  },
+  sensitivity: {
+    cells: [
+      labCell(1, 1, { relative_wape_gain: 0.2264 }),
+      labCell(2, 1, { is_default: true, relative_wape_gain: 0.2162 }),
+      labCell(3, 2, { relative_wape_gain: -0.2673, wape_criterion_met: false, all_met: false, baseline_criterion_met: false }),
+    ],
+    summary: { cells: 3, cells_all_met: 2, robust: false, default_all_met: true, min_relative_wape_gain: -0.2673, max_relative_wape_gain: 0.2264 },
+  },
+  limitations: ['Laboratório sintético.'],
+  field_nature: { nested: { nature: 'calculado', origin: 'Vendas_24m sintético' } },
+  requires_human_review: true,
 };
 
 export const runComparison: RunComparison = {

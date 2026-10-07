@@ -24,6 +24,7 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/partners/{codigo}/skus` | Matriz parceiro–SKU com evidências mensais | — |
 | GET | `/api/commercial-recommendations` | Sugestões comerciais entre parceiros | — |
 | GET | `/api/validation/summary` | Central de validação da Semana 4 | — |
+| GET | `/api/forecast-lab` | Laboratório de previsão (Etapa 14.3): motor atual × motor rolante, avaliação aninhada e grade de sensibilidade; não altera nada oficial | — |
 | GET | `/api/runs` · `/api/runs/{id}` | Execuções registradas | — |
 | GET | `/api/run-comparisons?base=&target=` | Comparação entre duas execuções | — |
 | GET | `/api/config` | Pesos, limiares e listas válidas | — |
@@ -154,6 +155,17 @@ Valores ausentes são nulos; números observados iguais a zero continuam zero. C
 Parceiro inexistente retorna 404. Filtro enumerado inválido, paginação inválida ou dados/configuração comercial inválidos retornam 422. Atribuição de decisões por parceiro é explicitamente indisponível: `decisions.attribution_available=false`, `decisions.items=null`, com justificativa.
 
 Método e regras: `docs/commercial-rules.md`.
+
+## Etapa 14.3 — `GET /api/forecast-lab`
+
+Leitura aditiva e somente leitura para o bloco "Modelos candidatos (laboratório)" da Validação. Não altera previsão, ranking, score nem recomendação oficiais (um teste compara `/api/forecasts` antes e depois). Configuração: `config/forecast_engine.json`.
+
+- `promotion_status` (`pendente`), `promotion_note`, `engine` (`v1`) e `requires_human_review`: o motor rolante é um desafiante; a promoção é decisão separada.
+- `selection`: `skus`, `changed_skus`, `models[]` (descrição, histórico mínimo, SKUs escolhidos em cada motor, erro mediano) e `changed[]` (SKUs cujo modelo mudaria).
+- `nested`: avaliação aninhada do padrão (`aggregate` de `baseline`, `v1` e `rolling` com WAPE e viés ponderados e SKUs que superam a baseline, `rolling_vs_v1` e `criteria`).
+- `sensitivity`: `cells[]` (uma por combinação de períodos de teste × janelas mínimas, com a marca `is_default`) e `summary`.
+- `field_nature` e `limitations`, no padrão dos demais endpoints.
+- O cálculo leva alguns segundos na primeira chamada; o resultado fica em cache até a planilha ou `config/forecast_engine.json` mudarem. Configuração inválida devolve 422.
 
 ## Etapa 5 — `GET /api/validation/summary`
 
