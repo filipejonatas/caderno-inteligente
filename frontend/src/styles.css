@@ -178,6 +178,15 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .form-layout { display: grid; grid-template-columns: repeat(4, minmax(130px, 1fr)); gap: var(--space-3); padding: var(--space-3) 0; }
 .form-actions { grid-column: 1 / -1; display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); }
 .form-message { color: var(--ok); font-size: var(--text-meta); }
+.form-message.form-error { color: var(--urgent); }
+/* Fase 3: cadastro de SKU na lista de SKUs. */
+.registry-user { display: flex; align-items: center; gap: var(--space-2); color: var(--graphite); font-size: var(--text-meta); }
+.registry-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-3); padding-top: var(--space-2); }
+.registry-inactive { margin: var(--space-2) 0 0; padding: 0; list-style: none; }
+.registry-inactive li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-1) 0; border-bottom: 1px solid var(--rule); }
+.registry-row-actions { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.registry-notice { margin: 0; }
+.danger-button { border-color: var(--urgent); color: var(--urgent); }
 .stack-form { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-3) 0; }
 .optional-label { margin-left: var(--space-1); font-weight: 400; }
 .inline-error { margin: var(--space-3) 0 0; padding: var(--space-2) var(--space-3); border-left: 4px solid var(--urgent-bar); background: var(--urgent-tint); color: var(--urgent); font-size: var(--text-meta); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }

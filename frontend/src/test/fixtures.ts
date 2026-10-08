@@ -9,6 +9,7 @@ import type { ProductionPlan } from '../types-production';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
+import type { SessionUser, SkuRegistry, SkuRegistryItem } from '../types-registry';
 import type { SystemInfo } from '../hooks/useSystemInfo';
 
 export const SKU_OK = 'TEST-001';
@@ -387,7 +388,7 @@ export const runComparison: RunComparison = {
 };
 
 export const system: SystemInfo = {
-  environment: 'development', demo_mode: false, write_enabled: true, notice: null,
+  environment: 'development', demo_mode: false, write_enabled: true, notice: null, data_source: 'planilha', auth_enabled: true, auth_required: true,
   text_limits: { note: 2000, user_name: 80, owner: 80, case_action: 200, analysis_minutes: 1440 },
 };
 
@@ -420,4 +421,15 @@ export const productionPlan: ProductionPlan = {
   field_nature: { urgent: { nature: 'estimado', origin: 'ordens planejadas com liberação dentro da janela de decisão' }, later: { nature: 'estimado', origin: 'ordens planejadas com liberação depois da janela de decisão' } },
   limitations: ['Plano sugerido, não ordem liberada: cada ordem exige revisão humana antes de virar OP.'],
   requires_human_review: true,
+};
+
+// Fase 3: login e cadastro de SKU (só aparecem com data_source = 'banco').
+export const sessionUser: SessionUser = { email: 'pcp@exemplo.com', name: 'Ana PCP' };
+const registryItem = (sku: string, produto: string, ativo = true): SkuRegistryItem => ({
+  sku, produto, familia: 'Escolar', curva_abc: 'A', lead_time_dias: 14, lote_minimo: 300, estoque_atual: 90,
+  estoque_seguranca_dias: 7, venda_media_dia: 5, ativo, atualizado_em: null, atualizado_por: null,
+});
+export const skuRegistry: SkuRegistry = {
+  data_source: 'banco', editable: true, families: ['Escolar', 'Premium'],
+  items: [registryItem(SKU_OK, 'Produto sintético A'), registryItem('OLD-009', 'Produto descontinuado', false)],
 };

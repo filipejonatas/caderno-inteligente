@@ -976,6 +976,9 @@
     "system": {
       "path": "/api/system",
       "keys": [
+        "auth_enabled",
+        "auth_required",
+        "data_source",
         "demo_mode",
         "environment",
         "notice",
