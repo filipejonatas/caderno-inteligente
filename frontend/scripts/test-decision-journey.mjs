@@ -25,7 +25,7 @@ const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
 // A faixa de eventos busca a API sozinha (coberta pelo Vitest); aqui só se renderiza o conteúdo próprio da página.
 const eventAlertsStub = dataUrl('export const UpcomingEvents = () => null;');
 // Oportunidades e faturamento do painel também buscam a API sozinhos (cobertos pelo Vitest).
-const overviewPanelStub = dataUrl('export const PANEL_ROWS = 5; export const TopOpportunities = () => null; export const RevenueOverview = () => null;');
+const overviewPanelStub = dataUrl('export const PANEL_ROWS = 5; export const TopOpportunities = () => null; export const RevenueOverview = () => null; export const ProjectedStockIndicators = () => null;');
 const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../components/EventAlerts': eventAlertsStub, '../components/OverviewPanel': overviewPanelStub }));
 const render = element => renderToStaticMarkup(element);
 

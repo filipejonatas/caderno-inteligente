@@ -38,6 +38,19 @@ export const overview: Overview = {
   total_skus: 4, prioritized: 3, rupture_sku_count: 2, below_lead_time_count: 2, below_safety_stock_count: 1, rupture_signal_count: 3,
   risk_count: 2, order_without_production: 1, excess_count: 0, low_confidence: 1, decision_count: 0, partner_data_influenced_decision_count: 0,
   risk_distribution: { RUP_LEAD_TIME: 2, RUP_SAFETY_STOCK: 1 }, confidence_distribution: { média: 2, baixa: 1 },
+  projected_stock: {
+    reference_date: '2026-09-14', horizon_end: '2027-02-28', skus_evaluated: 3,
+    without_new_orders: { shortfall_sku_count: 2, below_safety_sku_count: 3, first_shortfall_week: '2026-09-21' },
+    with_planned_orders: { shortfall_sku_count: 1, below_safety_sku_count: 2, first_shortfall_week: '2026-09-21' },
+    shortfall_skus: [
+      { sku: SKU_OK, product: `Produto ${SKU_OK}`, family: 'Família A', first_shortfall_date: '2026-09-23', first_shortfall_week: '2026-09-21', shortfall_with_plan: true },
+      { sku: 'TEST-003', product: 'Agenda sintética', family: 'Família A', first_shortfall_date: '2026-11-04', first_shortfall_week: '2026-11-02', shortfall_with_plan: false },
+    ],
+    planned_production: { urgent_total: 1200, horizon_total: 5400, urgent_window_end: '2026-10-12' },
+    excluded_skus: [{ sku: SKU_SHORT, reason: 'sem_previsao' }],
+    limitations: ['Estoque projetado é estimativa.'],
+    requires_human_review: true,
+  },
 };
 
 export const quality: DataQuality = {

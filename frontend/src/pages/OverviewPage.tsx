@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { UpcomingEvents } from '../components/EventAlerts';
-import { PANEL_ROWS, RevenueOverview, TopOpportunities } from '../components/OverviewPanel';
+import { PANEL_ROWS, ProjectedStockIndicators, RevenueOverview, TopOpportunities } from '../components/OverviewPanel';
 import { Badge, EmptyState, Icon, PageIntro, PriorityTable, SectionCard, confidenceTone, hasRuptureRisk, mainReason, severityTone } from '../components';
 import type { PageProps } from './shared';
 import { formatDate, positiveDelayDays, reasonNames, sortReasons } from './shared';
@@ -29,13 +29,16 @@ export default function OverviewPage({ data, onSelect, refreshToken }: PageProps
         <button className="primary-button" onClick={() => onSelect(first)}>Abrir evidências de {first.sku}<Icon name="arrow" /></button>
       </div>
     </article> : <><EmptyState title="Nenhum SKU na fila de atenção" description="Não foram retornadas prioridades. Isso não substitui a avaliação da qualidade dos dados." /><Link className="secondary-button" to="/fila">Ver a fila operacional</Link></>}
-    <dl className="panel-indicators" aria-label="Indicadores de ruptura">
-      <div><dt>Risco de ruptura</dt><dd>{overview.rupture_sku_count} SKUs</dd></div>
-      <div><dt>Abaixo do prazo de produção</dt><dd>{overview.below_lead_time_count}</dd></div>
-      <div><dt>Abaixo do estoque de segurança</dt><dd>{overview.below_safety_stock_count}</dd></div>
-      <div><dt>Pedidos sem ordem de produção</dt><dd>{overview.order_without_production}</dd></div>
-      <div><dt>Confiança baixa</dt><dd>{overview.low_confidence} de {overview.prioritized}</dd></div>
-    </dl>
+    <div className="panel-figures">
+      <dl className="panel-indicators" aria-label="Indicadores de ruptura">
+        <div><dt>Risco de ruptura</dt><dd>{overview.rupture_sku_count} SKUs</dd></div>
+        <div><dt>Abaixo do prazo de produção</dt><dd>{overview.below_lead_time_count}</dd></div>
+        <div><dt>Abaixo do estoque de segurança</dt><dd>{overview.below_safety_stock_count}</dd></div>
+        <div><dt>Pedidos sem ordem de produção</dt><dd>{overview.order_without_production}</dd></div>
+        <div><dt>Confiança baixa</dt><dd>{overview.low_confidence} de {overview.prioritized}</dd></div>
+      </dl>
+      <ProjectedStockIndicators summary={overview.projected_stock ?? null} />
+    </div>
     <UpcomingEvents />
     <SectionCard title="SKUs com risco de ruptura" subtitle="Na ordem da fila de atenção." action={<Link className="secondary-button" to="/fila?sinal=ruptura">Ver na fila</Link>}>
       {rupture.length ? <PriorityTable rows={rupture.slice(0, PANEL_ROWS)} onSelect={onSelect} weights={weights} /> : <EmptyState title="Nenhum SKU com risco de ruptura" description="Nenhum SKU está abaixo do prazo de produção ou do estoque de segurança." />}

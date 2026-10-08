@@ -8,7 +8,7 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 |---|---|---|---|
 | GET | `/api/health` | Fonte, banco, persistência e cache | — |
 | GET | `/api/system` | Ambiente, modo demonstração, escrita habilitada e limites de texto | — |
-| GET | `/api/overview` | Indicadores da visão geral | — |
+| GET | `/api/overview` | Indicadores da visão geral, inclusive o estoque projetado (`projected_stock`) | — |
 | GET | `/api/priorities` | Ranking oficial (`family`, `confidence`, `search`) | — |
 | GET | `/api/priorities/{sku}` | Detalhe: indicador, sinais, contribuições, previsão, faturamento estimado (`revenue_forecast`), eventos (`event_alerts`, `event_scenario`) e recomendação | — |
 | GET | `/api/forecasts` | Previsão e recomendação resumida de todos os SKUs | — |
@@ -60,6 +60,18 @@ As métricas de ruptura distinguem SKUs únicos de ocorrências de regras:
 - `risk_count`: alias temporário e compatível de `rupture_sku_count`.
 
 Um SKU que aciona as duas regras contribui uma única vez para `rupture_sku_count` e duas vezes para `rupture_signal_count`.
+
+### `projected_stock`
+
+Estoque projetado no horizonte da previsão, agregado da projeção semanal do plano de suprimento (Etapa 15.3). Camada derivada e somente leitura, sem cálculo novo: não altera projeção, ação, quantidade, score nem ranking. Alimenta o bloco "Estoque projetado" do Início. Regra em [calculations.md](calculations.md), seção 4.3.
+
+- `without_new_orders` (só estoque atual e OPs abertas) e `with_planned_orders` (somando as ordens planejadas): `shortfall_sku_count` (SKUs com estoque projetado negativo em alguma semana), `below_safety_sku_count` (abaixo do estoque de segurança em alguma semana, **incluindo** os com falta) e `first_shortfall_week` (segunda-feira da primeira semana com falta, ou `null`);
+- `shortfall_skus[]` (`sku`, `product`, `family`, `first_shortfall_date`, `first_shortfall_week`, `shortfall_with_plan`): SKUs com falta sem novas ordens, da falta mais próxima para a mais distante;
+- `planned_production`: `urgent_total` e `horizon_total`, os mesmos totais de `GET /api/production-plan`, e `urgent_window_end`;
+- `excluded_skus[]` (`sku`, `reason = sem_previsao`): fora da conta, nunca contados como "sem falta";
+- `reference_date`, `horizon_end`, `skus_evaluated`, `limitations` e `requires_human_review = true`.
+
+`projected_stock` é `null` se a agregação falhar; os demais campos do `/api/overview` não são afetados.
 
 ## `GET /api/forecasts`
 

@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom';
 import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
-import { Alert, EmptyState, SectionCard } from '../components';
+import { Alert, EmptyState, SectionCard, Tooltip } from '../components';
+import type { ProjectedStockSummary } from '../types';
 import { sortOpportunities } from './CommercialMatrix';
 import { RevenueTrend } from './RevenueForecast';
-import { displayCurrency, displayDays, displayNumber } from '../pages/shared';
+import { displayCurrency, displayDays, displayNumber, displayUnits, formatDate } from '../pages/shared';
 
 /** Quantas linhas cada bloco do painel mostra; a lista completa fica na página de origem. */
 export const PANEL_ROWS = 5;
@@ -19,6 +20,30 @@ function BlockLoading({ title }: { title: string }) {
 /** Bloco que falhou: explica e permite nova tentativa sem derrubar o restante do Início. */
 function BlockError({ title, error, retry }: { title: string; error: string; retry: () => Promise<void> }) {
   return <Alert tone="warning" title={`${title}: indisponível`} action={<button className="secondary-button" onClick={() => void retry()}>Tentar novamente</button>}>{error || 'Não foi possível carregar este bloco.'} O restante do Início segue válido.</Alert>;
+}
+
+const skuCount = (count: number) => `${count} ${count === 1 ? 'SKU' : 'SKUs'}`;
+const shortDate = (value: string | null) => value ? formatDate(value).slice(0, 5) : null;
+
+/**
+ * Estoque projetado no horizonte da previsão (fase 2): agrega o plano de suprimento que a API já calcula.
+ * Vem junto do /api/overview; `null` quando só essa agregação falhou, sem afetar os indicadores de ruptura.
+ */
+export function ProjectedStockIndicators({ summary }: { summary: ProjectedStockSummary | null }) {
+  if (!summary || !summary.horizon_end) return <p className="panel-note">Estoque projetado indisponível agora. Os indicadores de ruptura seguem válidos.</p>;
+  const { without_new_orders: base, with_planned_orders: planned, planned_production: production } = summary;
+  const firstWeek = shortDate(base.first_shortfall_week);
+  const releaseBy = shortDate(production.urgent_window_end);
+  return <div className="panel-projected">
+    <p className="panel-subhead">Estoque projetado até {formatDate(summary.horizon_end)} <Tooltip label="Como o estoque projetado é calculado">Estoque atual + OPs abertas − demanda (carteira e previsão), dia a dia. “Sem novas ordens” usa só as OPs abertas; “com o plano” soma as ordens planejadas, que exigem revisão humana. Abaixo da segurança inclui os SKUs com falta.</Tooltip></p>
+    <dl className="panel-indicators" aria-label="Estoque projetado">
+      <div><dt>Falta sem novas ordens</dt><dd>{skuCount(base.shortfall_sku_count)}{firstWeek && <small> a partir da semana de {firstWeek}</small>}</dd></div>
+      <div><dt>Falta mesmo com o plano</dt><dd>{skuCount(planned.shortfall_sku_count)}</dd></div>
+      <div><dt>Abaixo da segurança com o plano</dt><dd>{skuCount(planned.below_safety_sku_count)}</dd></div>
+      <div><dt>Produção planejada agora</dt><dd>{displayUnits(production.urgent_total)}{releaseBy && <small> liberar até {releaseBy}</small>}</dd></div>
+    </dl>
+    <Link className="secondary-button" to="/fila">Ver a produção planejada</Link>
+  </div>;
 }
 
 /** Resumo das oportunidades de reposição (página Comercial): as de menor cobertura de estoque no parceiro. */

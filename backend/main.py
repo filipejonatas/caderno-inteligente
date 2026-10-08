@@ -34,6 +34,7 @@ from caderno_inteligente.supply_plan import attach_partner_buildup, build_supply
 from caderno_inteligente.partner_insights import build_partner_insights, load_commercial_thresholds  # noqa: E402
 from caderno_inteligente.capacity_plan import build_capacity_plan  # noqa: E402
 from caderno_inteligente.production_plan import build_production_plan  # noqa: E402
+from caderno_inteligente.projected_stock import build_projected_stock  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
@@ -217,6 +218,31 @@ def production_plan() -> dict:
     result = build_production_plan(plans, built[2], built[5])
     _production_cache = (cached_pipeline, result)
     return result
+
+
+_projected_stock_cache: tuple[tuple, dict] | None = None
+
+
+def projected_stock() -> dict:
+    """Falta e segurança projetadas no horizonte, agregadas do plano de suprimento em cache (fase 2)."""
+    global _projected_stock_cache
+    cached_pipeline = _cached()
+    cached = _projected_stock_cache
+    if cached is not None and cached[0] is cached_pipeline:
+        return cached[1]
+    built, plans = cached_pipeline[1], cached_pipeline[2]
+    result = build_projected_stock(plans, built[2], built[5], production_plan())
+    _projected_stock_cache = (cached_pipeline, result)
+    return result
+
+
+def _projected_stock_summary() -> dict | None:
+    """Camada aditiva: uma falha na agregação não pode derrubar os indicadores do Início."""
+    try:
+        return projected_stock()
+    except Exception:  # noqa: BLE001
+        logger.exception("projected_stock_failed")
+        return None
 
 
 def _revenue_item(sku: str) -> dict | None:
@@ -410,6 +436,7 @@ def overview():
         "low_confidence": int((ranking.confidence == "baixa").sum()),
         "risk_distribution": issues.code.value_counts().to_dict(),
         "confidence_distribution": ranking.confidence.value_counts().to_dict(),
+        "projected_stock": _projected_stock_summary(),
         **decisions,
     }
 

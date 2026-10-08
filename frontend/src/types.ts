@@ -86,6 +86,30 @@ export interface Overview {
   partner_data_influenced_decision_count: number;
   risk_distribution: Record<string, number>;
   confidence_distribution: Record<string, number>;
+  /** Agregado do plano de suprimento (fase 2); `null` se a agregação falhar, sem afetar os demais indicadores. */
+  projected_stock: ProjectedStockSummary | null;
+}
+
+export interface ProjectedStockReading {
+  shortfall_sku_count: number;
+  /** Abaixo da segurança inclui os SKUs com falta. */
+  below_safety_sku_count: number;
+  first_shortfall_week: string | null;
+}
+
+export interface ProjectedStockSummary {
+  reference_date: string | null;
+  horizon_end: string | null;
+  skus_evaluated: number;
+  /** Só estoque atual e OPs abertas. */
+  without_new_orders: ProjectedStockReading;
+  /** Somando as ordens planejadas; a falta que sobra chega antes de qualquer reposição nova. */
+  with_planned_orders: ProjectedStockReading;
+  shortfall_skus: { sku: string; product: string | null; family: string | null; first_shortfall_date: string | null; first_shortfall_week: string; shortfall_with_plan: boolean }[];
+  planned_production: { urgent_total: number; horizon_total: number; urgent_window_end: string | null };
+  excluded_skus: { sku: string; reason: string }[];
+  limitations: string[];
+  requires_human_review: true;
 }
 
 export interface Run {

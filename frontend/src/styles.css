@@ -244,6 +244,11 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .panel-indicators > div { min-width: 0; padding-left: var(--space-2); border-left: 2px solid var(--rule); }
 .panel-indicators dt { color: var(--graphite); font-size: var(--text-meta); line-height: 1.25; }
 .panel-indicators dd { margin: var(--space-1) 0 0; font-stretch: var(--condensed); letter-spacing: var(--tight); font-size: var(--text-lead); font-weight: 700; }
+.panel-indicators dd small { display: block; color: var(--graphite); font-size: var(--text-meta); font-weight: 400; letter-spacing: normal; }
+.panel-projected { margin: 0 0 var(--space-4); }
+.panel-projected .panel-indicators { margin-bottom: var(--space-3); }
+.panel-subhead { display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); font-weight: 600; }
+.panel-note { margin: 0 0 var(--space-4); color: var(--graphite); }
 
 
 /* Cartão da decisão (detalhe do SKU): a anotação na margem. */
