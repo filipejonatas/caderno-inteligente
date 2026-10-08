@@ -223,6 +223,7 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .commercial-pagination { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); margin: var(--space-3) 0; font-size: var(--text-meta); }
 .partner-sku-context { margin-top: var(--space-4); min-width: 0; }
 .show-more { display: flex; justify-content: center; padding: var(--space-3); }
+.pagination { display: flex; align-items: center; justify-content: center; gap: var(--space-3); padding: var(--space-3); color: var(--graphite); font-size: var(--text-meta); }
 
 /* ----------------------------------------------------------------- páginas */
 
@@ -238,6 +239,12 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .focus-actions { display: flex; flex-direction: column; gap: var(--space-2); }
 .focus-actions button { flex-shrink: 0; white-space: nowrap; }
 .summary-line { max-width: var(--measure); margin: 0 0 var(--space-3); line-height: 1.6; }
+/* Indicadores do Início: números em linha, mesma régua das evidências, sem cartões. */
+.panel-indicators { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-4); }
+.panel-indicators > div { min-width: 0; padding-left: var(--space-2); border-left: 2px solid var(--rule); }
+.panel-indicators dt { color: var(--graphite); font-size: var(--text-meta); line-height: 1.25; }
+.panel-indicators dd { margin: var(--space-1) 0 0; font-stretch: var(--condensed); letter-spacing: var(--tight); font-size: var(--text-lead); font-weight: 700; }
+
 
 /* Cartão da decisão (detalhe do SKU): a anotação na margem. */
 .answer-card { --bar: var(--pen); display: grid; gap: var(--space-3); margin-bottom: var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid var(--rule); border-left: 6px solid var(--bar); border-radius: var(--radius-md); background: var(--sheet); }

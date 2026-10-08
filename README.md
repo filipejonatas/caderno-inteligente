@@ -71,7 +71,7 @@ Acesse `http://127.0.0.1:5173`. O Vite encaminha `/api` para `127.0.0.1:8000`.
 
 ## Interface
 
-O menu tem 7 entradas (Início, Planejamento, Financeiro, Comercial, Acompanhamento, Confiança, Bastidores) e o botão **Ajuda** (guia) na barra superior. As rotas agrupadas aparecem como abas e continuam abrindo por URL. Não há grupo "Avançado": Cenários fica em Planejamento e Execuções em Confiança.
+O menu tem 8 entradas (Início, Planejamento, SKUs, Financeiro, Comercial, Acompanhamento, Confiança, Bastidores) e o botão **Ajuda** (guia) na barra superior. As rotas agrupadas aparecem como abas e continuam abrindo por URL. Não há grupo "Avançado": Cenários fica em Planejamento e Execuções em Confiança.
 
 | URL | Menu · página |
 |---|---|

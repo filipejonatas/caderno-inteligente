@@ -152,3 +152,15 @@ Origem: análise crítica de aderência ao PDF do desafio, que encontrou recomen
   - manutenção da precedência do plano (falta inevitável antes de produzir e de rever OP; ordem planejada antes de monitorar excesso), com VC-03, VC-08 e VC-22 revistos.
 - **Fora do escopo:** tendência ano contra ano, alocação de produto escasso entre parceiros e regiões, reconciliação Sell_In × Vendas_24m, recalibração das faixas P10–P90.
 
+## 2026-10-08 — Fase 1 da proposta de melhorias: telas
+
+Origem: [proposta-melhorias.md](proposta-melhorias.md), fase 1. Só frontend; nenhum endpoint ou cálculo novo.
+
+- **Início como painel:** a resposta "o que olho primeiro" (primeiro SKU da fila) continua no topo, respeitando o critério de clareza. Abaixo vêm os indicadores de ruptura, os 5 primeiros SKUs com risco de ruptura (link para `/fila?sinal=ruptura`), as 5 oportunidades de reposição com menor cobertura (link para `/parceiros`) e o gráfico de faturamento observado × estimado (`RevenueTrend`, sem alterações).
+- **Fila de 5 substituída pela lista de ruptura:** a lista de ruptura segue a ordem da fila de atenção, e a fila completa continua a um clique. Manter as duas repetiria quase os mesmos SKUs.
+- **Blocos independentes:** oportunidades e faturamento têm carga própria. Se um falha, mostra o motivo e "Tentar novamente"; o restante do Início não é afetado.
+- **Orçamento de volume:** o limite de blocos de `/` sobe de 5 para 6 (o painel acrescenta oportunidades e faturamento e retira a fila de 5). Nenhum outro limite muda. `/skus` ganha orçamento próprio.
+- **Fila:** novo filtro `sinal=ruptura` (`RUP_LEAD_TIME` ou `RUP_SAFETY_STOCK`, os mesmos códigos de `rupture_sku_count`).
+- **Financeiro:** filtros acima do cartão de resumo, porque a família também o restringe. A lista de SKUs passa a 10 por página, com Anterior/Próxima, no lugar do "Ver mais".
+- **SKUs no menu:** nova entrada com a lista completa (busca, família, 10 por página), a partir de `/api/forecasts`. O detalhe `/skus/:sku` passa a marcar SKUs no menu, e não mais Planejamento.
+

@@ -6,7 +6,7 @@
       "perRow": 12,
       "perEvidence": 90,
       "numbers": 16,
-      "blocks": 5,
+      "blocks": 6,
       "columns": 5,
       "alerts": 1
     },
@@ -18,6 +18,15 @@
       "blocks": 4,
       "columns": 5,
       "alerts": 1
+    },
+    "/skus": {
+      "fixed": 70,
+      "perRow": 14,
+      "perEvidence": 90,
+      "numbers": 6,
+      "blocks": 3,
+      "columns": 4,
+      "alerts": 0
     },
     "/fila": {
       "fixed": 110,

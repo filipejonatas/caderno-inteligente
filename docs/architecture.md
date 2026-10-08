@@ -73,14 +73,15 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
-O menu agrupa as rotas em 7 entradas: Início; Planejamento (`/fila`, `/cenarios` e o detalhe `/skus/:sku`); Financeiro (`/faturamento`); Comercial (`/parceiros`, `/carteira`, `/canais`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`); Bastidores (`/auditoria`, `/execucoes`, `/qualidade`). Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais`. Todos os estilos estão em `frontend/src/styles.css` (tokens no topo).
+O menu agrupa as rotas em 8 entradas: Início; Planejamento (`/fila`, `/capacidade`, `/cenarios`); SKUs (`/skus` e o detalhe `/skus/:sku`); Financeiro (`/faturamento`); Comercial (`/parceiros`, `/carteira`, `/canais`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`); Bastidores (`/auditoria`, `/execucoes`, `/qualidade`). Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais`. Todos os estilos estão em `frontend/src/styles.css` (tokens no topo).
 
 | URL | Página | Dados consultados |
 |---|---|---|
 | `/guia` | Guia de uso | Nenhum (funciona com a API fora do ar) |
-| `/` | Início | `overview`, `priorities`, `data-quality`, `config` |
-| `/fila` | Fila operacional — filtros `busca`, `familia`, `acao`, `rotulo`, `confianca`, `ordem`, `todos` na URL; junta posição e ação pelo SKU no cliente; gráfico de produção planejada por mês, que segue o filtro de família | `priorities`, `forecasts`, `config`, `events`, `production-plan` |
-| `/faturamento` | Faturamento previsto — filtros `busca`, `familia` | `revenue-forecast` |
+| `/` | Início — o primeiro SKU da fila no topo e, abaixo, o painel: indicadores de ruptura, 5 SKUs com risco de ruptura, 5 oportunidades de reposição e o gráfico de faturamento. Oportunidades e faturamento carregam e falham cada um por si | `overview`, `priorities`, `config`, `events`, `commercial-recommendations?action=avaliar_reposicao`, `revenue-forecast` |
+| `/fila` | Fila operacional — filtros `busca`, `familia`, `acao`, `rotulo`, `confianca`, `sinal` (`ruptura`), `ordem`, `todos` na URL; junta posição e ação pelo SKU no cliente; gráfico de produção planejada por mês, que segue o filtro de família | `priorities`, `forecasts`, `config`, `events`, `production-plan` |
+| `/faturamento` | Faturamento previsto — filtros `busca`, `familia` no topo (a família também restringe o resumo); SKUs paginados de 10 em 10 | `revenue-forecast` |
+| `/skus` | Lista de SKUs — filtros `busca`, `familia`; paginada de 10 em 10; cada linha abre `/skus/:sku` | `forecasts` |
 | `/prioridades`, `/previsoes` | Redirecionam para `/fila` (mesmos parâmetros) | Nenhum |
 | `/skus/:sku` | Detalhe do SKU (compartilhável), abas em `?tab=`; o contexto comercial só carrega na aba Parceiros | `priorities/{sku}`, `commercial-recommendations?sku=` (aba Parceiros) |
 | `/casos` | Casos — edição por linha (`PUT cases/{id}`), filtros `status`, `responsavel` | `cases`, `priorities`, `config` |

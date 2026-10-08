@@ -4,7 +4,7 @@ import { api, dashboardReaders } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { MOBILE_LIST_QUERY, useMediaQuery } from '../hooks/useMediaQuery';
-import { Alert, ErrorState, Icon, LoadingState, PageIntro, SectionCard } from '../components';
+import { Alert, ErrorState, Icon, LoadingState, PageIntro, SectionCard, hasRuptureRisk } from '../components';
 import { OperationalQueueTable, joinQueue, rowNeedsAttention, sortQueue } from '../components/OperationalQueue';
 import { ProductionPlanChart } from '../components/ProductionPlanChart';
 import type { QueueRow, QueueSort } from '../components/OperationalQueue';
@@ -44,11 +44,12 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
   const action = params.get('acao') ?? '';
   const label = params.get('rotulo') ?? '';
   const confidence = params.get('confianca') ?? '';
+  const rupture = params.get('sinal') === 'ruptura';
   const showAll = params.get('todos') === '1';
   const requestedSort = params.get('ordem') as QueueSort | null;
   const sort: QueueSort = requestedSort && SORTS.includes(requestedSort) ? requestedSort : 'priority';
-  // Só o que pede atenção por padrão; buscar, escolher ação/rótulo/confiança ou pedir todos mostra tudo o que combina.
-  const attentionOnly = !showAll && !action && !label && !confidence && !search.trim() && !!forecasts.data;
+  // Só o que pede atenção por padrão; buscar, escolher ação/rótulo/confiança/sinal ou pedir todos mostra tudo o que combina.
+  const attentionOnly = !showAll && !action && !label && !confidence && !rupture && !search.trim() && !!forecasts.data;
 
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params);
@@ -67,8 +68,9 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
       && (!action || row.forecast?.operational_recommendation.action === action)
       && (!label || row.forecast?.challenge_action?.code === label)
       && (!confidence || (row.priority?.confidence ?? row.forecast?.confidence) === confidence)
+      && (!rupture || hasRuptureRisk(row.priority?.reasons))
       && (!attentionOnly || rowNeedsAttention(row))), sort);
-  }, [action, all, attentionOnly, confidence, family, label, search, sort]);
+  }, [action, all, attentionOnly, confidence, family, label, rupture, search, sort]);
 
   if (loading && !priorities.data && !forecasts.data) return <LoadingState />;
   if (bothFailed) return <ErrorState message={priorities.error || forecasts.error} onRetry={() => { void priorities.refresh(); void forecasts.refresh(); }} />;
@@ -83,7 +85,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
   const filtersActive = params.size > 0;
   const pageSize = (mobile ? 10 : 25) + extra;
   const visible = filtered.slice(0, pageSize);
-  const noFilters = !action && !label && !confidence && !search.trim();
+  const noFilters = !action && !label && !confidence && !rupture && !search.trim();
   const retry = () => { void priorities.refresh(); void forecasts.refresh(); void config.refresh(); };
   const clear = () => { setParams({}, { replace: true }); setExtra(0); };
 
@@ -100,6 +102,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
         <div className="more-filters-grid">
           {labels.length > 0 && <label><span>Rótulo</span><select value={label} onChange={(event) => update('rotulo', event.target.value)}><option value="">Todos</option>{labels.map(([code, name]) => <option key={code} value={code}>{name}</option>)}</select></label>}
           <label><span>Família</span><select value={family} onChange={(event) => update('familia', event.target.value)}><option value="">Todas</option>{families.map((item) => <option key={item}>{item}</option>)}</select></label>
+          <label><span>Sinal</span><select value={rupture ? 'ruptura' : ''} onChange={(event) => update('sinal', event.target.value)}><option value="">Todos</option><option value="ruptura">Risco de ruptura</option></select></label>
           <label><span>Confiança nos dados</span><select value={confidence} onChange={(event) => update('confianca', event.target.value)}><option value="">Todas</option><option value="baixa">Baixa</option><option value="média">Média</option><option value="alta">Alta</option></select></label>
           <label><span>Ordenar por</span><select value={sort} onChange={(event) => update('ordem', event.target.value)}><option value="priority">Posição na fila de atenção</option><option value="suggested_quantity">Maior quantidade sugerida</option><option value="forecast_next_month">Maior previsão do próximo mês</option><option value="backtest_wape">Maior erro da previsão</option></select></label>
         </div>
