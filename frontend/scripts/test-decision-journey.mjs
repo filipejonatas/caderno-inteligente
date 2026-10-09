@@ -22,13 +22,14 @@ const sharedUrl = await compile('../src/pages/shared.ts');
 const mediaQueryUrl = await compile('../src/hooks/useMediaQuery.ts');
 const componentsUrl = await compile('../src/components.tsx', { './pages/shared': sharedUrl, './hooks/useMediaQuery': mediaQueryUrl });
 const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
-// A faixa de eventos busca a API sozinha (coberta pelo Vitest); aqui só se renderiza o conteúdo próprio da página.
-const eventAlertsStub = dataUrl('export const UpcomingEvents = () => null;');
-// Oportunidades e faturamento do painel também buscam a API sozinhos (cobertos pelo Vitest).
-// Os gráficos do painel (fase 4) usam Recharts e a produção planejada busca a API sozinha: cobertos pelo Vitest.
-const overviewPanelStub = dataUrl('export const PANEL_ROWS = 5; export const TopOpportunities = () => null; export const RevenueOverview = () => null; export const ProjectedStockIndicators = () => null; export const PlannedProductionOverview = () => null;');
+// Indicadores e pizza do painel buscam a API sozinhos e os gráficos usam Recharts: cobertos pelo Vitest.
+const overviewPanelStub = dataUrl('export const OverviewKpis = () => null; export const RevenueByFamily = () => null; export const TopSkusByRevenue = () => null; export const DirectChannelsRevenue = () => null;');
 const projectedChartStub = dataUrl('export const ProjectedStockChart = () => null;');
-const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../components/EventAlerts': eventAlertsStub, '../components/OverviewPanel': overviewPanelStub, '../components/ProjectedStockChart': projectedChartStub }));
+// O Início lê o faturamento uma vez para os blocos (stubados acima); aqui a leitura não acontece.
+const apiStub = dataUrl('export const api = {};');
+const resourceStub = dataUrl("export const useApiResource = () => ({ data: undefined, error: '', loading: true, refresh: async () => {} });");
+const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../api': apiStub, '../hooks/useApiResource': resourceStub, '../components/OverviewPanel': overviewPanelStub, '../components/ProjectedStockChart': projectedChartStub }));
+const { AttentionFocus } = await import(await compile('../src/components/AttentionFocus.tsx', { '../components': componentsUrl, '../pages/shared': sharedUrl }));
 const render = element => renderToStaticMarkup(element);
 
 // Suppress React Router's expected SSR-only useLayoutEffect warning; preserve other warnings.
@@ -40,19 +41,21 @@ const fixture = {
   quality: { sell_out_coverage: { coverage: 0.5, observed_pairs: 1, possible_pairs: 2 } },
   config: { weights: { RUP_LEAD_TIME: 8 } },
 };
-test('overview renders the answer first and the rupture panel, preserves returned priority and links safely', () => {
+test('overview is the panel only: the queue card, rupture, events and opportunities left the page', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: fixture, onSelect() {}, refreshToken: 0 })));
-  for (const title of ['O que olhar primeiro', 'Indicadores de ruptura', 'SKUs com risco de ruptura']) assert.ok(html.includes(title));
-  assert.ok(html.indexOf('posição 7') < html.indexOf('Indicadores de ruptura'), 'a resposta vem antes do painel');
+  assert.ok(html.includes('Indicadores'));
+  for (const gone of ['Primeiro da fila', 'Indicadores de ruptura', 'SKUs com risco de ruptura', 'Abrir evidências de']) assert.ok(!html.includes(gone), gone);
+});
+test('queue card (Planejamento) preserves returned priority and has a single action', () => {
+  const html = render(React.createElement(AttentionFocus, { priorities: fixture.priorities, weights: fixture.config.weights, onSelect() {} }));
+  assert.ok(html.includes('posição 7'));
+  assert.ok(html.includes('Abrir evidências de TEST / SKU'));
   assert.ok(!html.includes('href="/previsoes?busca='), 'o cartão tem uma única ação: abrir as evidências do SKU');
-  assert.ok(html.includes('href="/fila?sinal=ruptura"'));
   assert.ok(!html.includes('Detalhes: qualidade da evidência'), 'a seção de detalhes foi removida da tela de decisão');
 });
-test('empty overview does not invent a priority or action quantity', () => {
-  const html = render(React.createElement(MemoryRouter, null, React.createElement(OverviewPage, { data: { ...fixture, priorities: [] }, onSelect() {}, refreshToken: 0 })));
-  assert.ok(html.includes('Nenhum SKU na fila de atenção'));
-  assert.ok(!html.includes('Abrir evidências de TEST'));
-  assert.ok(html.includes('href="/fila"'));
+test('queue card does not invent a priority when the queue is empty', () => {
+  const html = render(React.createElement(AttentionFocus, { priorities: [], onSelect() {} }));
+  assert.equal(html, '');
 });
 test('the single rule line says once that suggestions need human review and are not production orders', () => {
   const html = render(React.createElement(MemoryRouter, null, React.createElement(RuleLine)));

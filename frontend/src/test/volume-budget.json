@@ -29,10 +29,10 @@
       "alerts": 0
     },
     "/fila": {
-      "fixed": 110,
+      "fixed": 140,
       "perRow": 18,
       "perEvidence": 90,
-      "numbers": 8,
+      "numbers": 13,
       "blocks": 4,
       "columns": 5,
       "alerts": 1

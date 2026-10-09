@@ -34,7 +34,7 @@ const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PAGE_FIELDS = {
-  OverviewPage: ['overview', 'priorities', 'config'],
+  OverviewPage: ['overview'],
   CasesPage: ['cases', 'priorities', 'config'],
   QualityPage: ['quality'],
   ScenariosPage: ['config'],

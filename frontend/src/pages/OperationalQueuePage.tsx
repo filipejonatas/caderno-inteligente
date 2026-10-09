@@ -6,6 +6,7 @@ import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
 import { Alert, ErrorState, Icon, LoadingState, PageIntro, Pagination, SectionCard, hasRuptureRisk } from '../components';
 import { OperationalQueueTable, joinQueue, rowNeedsAttention, sortQueue } from '../components/OperationalQueue';
 import { ProductionPlanChart } from '../components/ProductionPlanChart';
+import { AttentionFocus } from '../components/AttentionFocus';
 import type { QueueRow, QueueSort } from '../components/OperationalQueue';
 import type { SelectedSku } from '../types';
 
@@ -99,6 +100,7 @@ export default function OperationalQueuePage({ onSelect, refreshToken }: { onSel
     <PageIntro title="Qual SKU analisar, o que fazer e quanto" description={description} action={<div className="validation-actions"><Link className="secondary-button" to="/capacidade">Ver capacidade</Link><Link className="secondary-button" to="/cenarios">Simular pesos</Link></div>} />
     {forecasts.error && priorities.data && <Alert tone="warning" title="Ação e quantidade indisponíveis" action={<button className="secondary-button" onClick={retry}>Tentar novamente</button>}>{forecasts.error} A posição na fila continua exibida; nenhuma sugestão foi estimada no lugar.</Alert>}
     {priorities.error && forecasts.data && <Alert tone="warning" title="Posição e motivo indisponíveis" action={<button className="secondary-button" onClick={retry}>Tentar novamente</button>}>{priorities.error} Ação e quantidade continuam exibidas, sem a ordem da fila de atenção.</Alert>}
+    {priorities.data && <AttentionFocus priorities={priorities.data} weights={config.data?.weights} onSelect={onSelect} />}
     <div className="filter-bar queue-filters" role="search" aria-label="Filtrar a fila operacional">
       <label className="search-field"><span>Buscar</span><Icon name="search" /><input value={search} onChange={(event) => update('busca', event.target.value)} placeholder="SKU ou produto" /></label>
       <label><span>Ação</span><select value={action} onChange={(event) => update('acao', event.target.value)}><option value="">Todas</option><option value="atraso_inevitavel">Falta inevitável</option><option value="antecipar_op">Antecipar OP</option><option value="produzir">Produzir</option><option value="produzir_validar_capacidade">Produzir e validar capacidade</option><option value="rever_op">Rever OP</option><option value="monitorar_excesso">Monitorar excesso</option><option value="investigar_dados">Investigar dados</option><option value="sem_acao_necessaria">Sem ação necessária</option></select></label>

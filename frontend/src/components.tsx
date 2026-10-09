@@ -48,7 +48,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 /** Título (h1 e aba do navegador) de cada rota. Um nome só por página. */
 export const navigation: Array<{ id: PageId; path: string; label: string; description: string }> = [
   { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
-  { id: 'overview', path: '/', label: 'Início', description: 'O que olhar primeiro' },
+  { id: 'overview', path: '/', label: 'Início', description: 'Indicadores' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
   { id: 'skus', path: '/skus', label: 'SKUs', description: 'Lista completa de SKUs' },
   { id: 'revenue', path: '/faturamento', label: 'Faturamento previsto', description: 'Estimativa em reais para três meses' },

@@ -6,7 +6,7 @@ import { setViewport } from './setup';
 import { currentLocation, mockApi, renderApp } from './utils';
 
 const ROUTES: Array<[string, string, string]> = [
-  ['/', 'Início', 'O que olhar primeiro'],
+  ['/', 'Início', 'Indicadores'],
   ['/guia', 'Guia de uso', 'Entenda o Caderno Inteligente em poucos minutos'],
   ['/fila', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/skus', 'SKUs', 'Todos os SKUs'],

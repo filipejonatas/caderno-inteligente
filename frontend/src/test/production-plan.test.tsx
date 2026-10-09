@@ -62,13 +62,13 @@ describe('Fila operacional: produção planejada por mês', () => {
     renderApp('/fila');
     expect(await screen.findByText('Produção planejada indisponível')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Tentar novamente' })).toBeInTheDocument();
-    expect(await screen.findByText(SKU_OK)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: `Ver detalhes de ${SKU_OK}` })).toBeInTheDocument();
   });
 
   it('enquanto calcula, a fila já aparece', async () => {
     mockApi({ productionPlan: pending() });
     renderApp('/fila');
-    expect(await screen.findByText(SKU_OK)).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: `Ver detalhes de ${SKU_OK}` })).toBeInTheDocument();
     expect(within(await card()).getByText('Calculando…')).toBeInTheDocument();
   });
 

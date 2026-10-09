@@ -10,7 +10,7 @@ describe('arquitetura de navegação final', () => {
   it('o menu tem oito grupos, com SKUs, Financeiro e Bastidores separados, sem "Avançado"', async () => {
     mockApi();
     renderApp('/');
-    await screen.findByRole('heading', { level: 2, name: 'O que olhar primeiro' });
+    await screen.findByRole('heading', { level: 2, name: 'Indicadores' });
     expect(mainMenu().getAllByRole('link').map((link) => link.querySelector('strong')?.textContent)).toEqual(['Início', 'Planejamento', 'SKUs', 'Financeiro', 'Comercial', 'Acompanhamento', 'Confiança', 'Bastidores']);
     expect(screen.queryByText('Avançado')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ajuda: abrir o guia de uso' })).toHaveAttribute('href', '/guia');
