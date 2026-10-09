@@ -57,7 +57,8 @@ const DEFAULTS: Record<string, Value> = {
   'POST login': { token: 'token-sintetico', expires_at: 4_102_444_800, user: fx.sessionUser },
   'POST skus': (_url: URL, init?: RequestInit) => ({ sku: String(JSON.parse(String(init?.body)).sku), version: 2 }),
   'PUT sku': (url: URL) => ({ sku: decodeURIComponent(url.pathname.split('/').pop() ?? ''), version: 2 }),
-  'POST skuAction': (url: URL) => ({ sku: decodeURIComponent(url.pathname.split('/').at(-2) ?? ''), version: 2 }),
+  // Sem .at(): o tsconfig usa lib ES2020, e .at() só passava localmente por tipos de outros pacotes.
+  'POST skuAction': (url: URL) => { const parts = url.pathname.split('/'); return { sku: decodeURIComponent(parts[parts.length - 2] ?? ''), version: 2 }; },
   'POST runs': { id: 3 }, 'PUT case': { status: 'updated' }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
   'POST scenario': { is_simulation: true, warning: 'Cenário hipotético.', weights: fx.config.weights, thresholds: fx.config.thresholds, ranking: fx.priorities },
 };
