@@ -9,6 +9,7 @@ const ROUTES: Array<[string, string, string]> = [
   ['/', 'Início', 'O que olhar primeiro'],
   ['/guia', 'Guia de uso', 'Entenda o Caderno Inteligente em poucos minutos'],
   ['/fila', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
+  ['/skus', 'SKUs', 'Todos os SKUs'],
   ['/faturamento', 'Faturamento previsto', 'Quanto se estima faturar nos próximos três meses'],
   ['/prioridades', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/previsoes', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
@@ -105,7 +106,7 @@ describe('menu', () => {
     mockApi();
     renderApp('/prioridades');
     const nav = screen.getByRole('navigation', { name: 'Navegação principal' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(7);
+    expect(within(nav).getAllByRole('link')).toHaveLength(8);
     expect(within(nav).getByRole('link', { name: /Planejamento/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /Início/ })).not.toHaveAttribute('aria-current');
     await user.click(within(nav).getByRole('link', { name: /Confiança/ }));

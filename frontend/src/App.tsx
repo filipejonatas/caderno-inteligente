@@ -29,6 +29,7 @@ const RunsPage = lazy(() => import('./pages/RunsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const ValidationPage = lazy(() => import('./pages/ValidationPage'));
 const SkuDetailPage = lazy(() => import('./pages/SkuDetailPage'));
+const SkuListPage = lazy(() => import('./pages/SkuListPage'));
 const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -110,7 +111,7 @@ function App() {
         <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
             <Route path="/guia" element={<GuidePage />} />
-            <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
+            <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} refreshToken={refreshToken} />}</PageResource>} />
             <Route path="/fila" element={<OperationalQueuePage onSelect={selectSku} refreshToken={refreshToken} />} />
             <Route path="/faturamento" element={<RevenueForecastPage refreshToken={refreshToken} />} />
             <Route path="/capacidade" element={<CapacityPage refreshToken={refreshToken} />} />
@@ -129,7 +130,8 @@ function App() {
             <Route path="/decisoes" element={<PageResource key="FeedbackPage" fields={PAGE_FIELDS.FeedbackPage} refreshToken={refreshToken}>{(dashboard, reload) => <FeedbackPage data={dashboard} onSelect={selectSku} onRefresh={reload} />}</PageResource>} />
             <Route path="/validacao" element={<ValidationPage refreshToken={refreshToken} />} />
             <Route path="/auditoria" element={<AuditoriaPage refreshToken={refreshToken} />} />
-            <Route path="/skus/:sku" element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
+            <Route path="/skus" element={<SkuListPage refreshToken={refreshToken} />} />
+            <Route path="/skus/:sku"element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense></RouteErrorBoundary>

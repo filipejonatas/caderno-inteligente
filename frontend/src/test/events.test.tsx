@@ -44,7 +44,7 @@ describe('Início: eventos que pedem decisão', () => {
     renderApp('/');
     expect(await screen.findByRole('heading', { level: 2, name: 'O que olhar primeiro' })).toBeInTheDocument();
     expect(await screen.findByText('Calendário de eventos indisponível no momento.')).toBeInTheDocument();
-    expect(screen.getByText(/Fila de atenção/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'SKUs com risco de ruptura' })).toBeInTheDocument();
   });
 });
 
