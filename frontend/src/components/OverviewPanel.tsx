@@ -4,6 +4,7 @@ import { useApiResource } from '../hooks/useApiResource';
 import { Alert, EmptyState, SectionCard, Tooltip } from '../components';
 import type { ProjectedStockSummary } from '../types';
 import { sortOpportunities } from './CommercialMatrix';
+import { ProductionPlanChart } from './ProductionPlanChart';
 import { RevenueTrend } from './RevenueForecast';
 import { displayCurrency, displayDays, displayNumber, displayUnits, formatDate } from '../pages/shared';
 
@@ -44,6 +45,12 @@ export function ProjectedStockIndicators({ summary }: { summary: ProjectedStockS
     </dl>
     <Link className="secondary-button" to="/fila">Ver a produção planejada</Link>
   </div>;
+}
+
+/** O gráfico de produção planejada da fila, sem alterações (empresa toda). Carrega e falha à parte, como os demais blocos. */
+export function PlannedProductionOverview({ refreshToken }: { refreshToken: number }) {
+  const { data, error, loading, refresh } = useApiResource(api.productionPlan, refreshToken);
+  return <ProductionPlanChart data={data} error={error} loading={loading} refresh={refresh} totals={false} />;
 }
 
 /** Resumo das oportunidades de reposição (página Comercial): as de menor cobertura de estoque no parceiro. */

@@ -47,6 +47,24 @@ def test_counts_shortfall_and_safety_with_and_without_the_planned_orders():
     assert result["requires_human_review"] is True and result["horizon_end"] == "2027-02-28"
 
 
+def test_weekly_counts_skus_in_shortfall_per_week_in_both_readings():
+    result = _build({
+        "A": _plan("A", [_week("2026-09-14", 50, 50), _week("2026-09-21", -5, 20), _week("2026-09-28", 30, 30)]),
+        "B": _plan("B", [_week("2026-09-14", -1, -1), _week("2026-09-21", -30, 15), _week("2026-09-28", -2, 4)]),
+        # Horizonte mais curto: a semana 28/09 fica fora para não parecer melhora.
+        "C": _plan("C", [_week("2026-09-14", 5, 5), _week("2026-09-21", 40, 40)]),
+    })
+    assert result["weekly"] == [
+        {"week_start": "2026-09-14", "shortfall_sku_count": 1, "shortfall_with_plan_sku_count": 1},
+        {"week_start": "2026-09-21", "shortfall_sku_count": 2, "shortfall_with_plan_sku_count": 0},
+    ]
+
+
+def test_weekly_is_empty_without_evaluated_skus():
+    result = _build({"A": _plan("A", [_week("2026-09-14", -5, -5)])}, {"A": "insufficient_data"})
+    assert result["weekly"] == []
+
+
 def test_sku_without_forecast_is_excluded_not_counted_as_safe():
     result = _build({
         "A": _plan("A", [_week("2026-09-14", -5, -5)]),
@@ -75,6 +93,12 @@ def test_overview_aggregates_the_real_supply_plan_without_new_calculation():
     for key in ("shortfall_sku_count", "below_safety_sku_count"):
         assert payload["with_planned_orders"][key] <= payload["without_new_orders"][key] <= payload["skus_evaluated"]
     assert payload["with_planned_orders"]["shortfall_sku_count"] == sum(item["shortfall_with_plan"] for item in payload["shortfall_skus"])
+    # Série semanal: nenhuma semana tem mais SKUs em falta que o total no horizonte; com o plano, nunca mais que sem.
+    assert payload["weekly"], "a série semanal vem com a base real"
+    for week in payload["weekly"]:
+        assert week["shortfall_with_plan_sku_count"] <= week["shortfall_sku_count"] <= payload["without_new_orders"]["shortfall_sku_count"]
+    # A primeira semana é a da data de referência (segunda-feira igual ou anterior a ela).
+    assert payload["weekly"][0]["week_start"] <= payload["reference_date"]
     # Produção planejada: os mesmos totais do gráfico da fila.
     total = production_plan()["total"]
     assert payload["planned_production"]["urgent_total"] == total["urgent_total"]

@@ -2,11 +2,11 @@
   "description": "Orçamento de volume por tela (docs/historico.md, enxugamento). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
   "routes": {
     "/": {
-      "fixed": 200,
+      "fixed": 215,
       "perRow": 12,
       "perEvidence": 90,
-      "numbers": 17,
-      "blocks": 6,
+      "numbers": 20,
+      "blocks": 8,
       "columns": 5,
       "alerts": 1
     },

@@ -107,6 +107,8 @@ export interface ProjectedStockSummary {
   with_planned_orders: ProjectedStockReading;
   shortfall_skus: { sku: string; product: string | null; family: string | null; first_shortfall_date: string | null; first_shortfall_week: string; shortfall_with_plan: boolean }[];
   planned_production: { urgent_total: number; horizon_total: number; urgent_window_end: string | null };
+  /** SKUs em falta em cada semana do horizonte, sem novas ordens e com o plano (gráfico do Início). Ausente em respostas antigas. */
+  weekly?: { week_start: string; shortfall_sku_count: number; shortfall_with_plan_sku_count: number }[];
   excluded_skus: { sku: string; reason: string }[];
   limitations: string[];
   requires_human_review: true;

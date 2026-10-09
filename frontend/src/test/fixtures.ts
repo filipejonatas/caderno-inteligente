@@ -48,6 +48,13 @@ export const overview: Overview = {
       { sku: 'TEST-003', product: 'Agenda sintética', family: 'Família A', first_shortfall_date: '2026-11-04', first_shortfall_week: '2026-11-02', shortfall_with_plan: false },
     ],
     planned_production: { urgent_total: 1200, horizon_total: 5400, urgent_window_end: '2026-10-12' },
+    // Coerente com shortfall_skus: TEST-001 falta a partir de 21/09 (mesmo com o plano); TEST-003 a partir de 02/11, só sem novas ordens.
+    weekly: [
+      { week_start: '2026-09-14', shortfall_sku_count: 0, shortfall_with_plan_sku_count: 0 },
+      { week_start: '2026-09-21', shortfall_sku_count: 1, shortfall_with_plan_sku_count: 1 },
+      { week_start: '2026-10-26', shortfall_sku_count: 1, shortfall_with_plan_sku_count: 0 },
+      { week_start: '2026-11-02', shortfall_sku_count: 2, shortfall_with_plan_sku_count: 0 },
+    ],
     excluded_skus: [{ sku: SKU_SHORT, reason: 'sem_previsao' }],
     limitations: ['Estoque projetado é estimativa.'],
     requires_human_review: true,

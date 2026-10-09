@@ -100,6 +100,71 @@ describe('Financeiro: filtros no topo e 10 SKUs por página', () => {
   });
 });
 
+describe('Início: setas entre os 3 primeiros da fila', () => {
+  it('avança, volta de forma circular, aceita as setas do teclado e abre o SKU mostrado', async () => {
+    const user = userEvent.setup();
+    mockApi();
+    renderApp('/');
+    const card = (await screen.findByText('Primeiro da fila · posição 1')).closest('article') as HTMLElement;
+    const next = within(card).getByRole('button', { name: 'Próximo SKU da fila' });
+    const previous = within(card).getByRole('button', { name: 'SKU anterior da fila' });
+    expect(within(card).getByText('1 de 3')).toBeInTheDocument();
+
+    await user.click(next);
+    expect(within(card).getByText('Posição 2 da fila')).toBeInTheDocument();
+    expect(within(card).getByRole('heading', { level: 3 })).toHaveTextContent(SKU_SHORT);
+    expect(within(card).getByRole('status')).toHaveTextContent(`Mostrando 2 de 3: ${SKU_SHORT}`);
+    await user.click(next);
+    expect(within(card).getByRole('heading', { level: 3 })).toHaveTextContent('TEST-003');
+    // Circular: depois do terceiro volta ao primeiro, e do primeiro "anterior" vai ao terceiro.
+    await user.click(next);
+    expect(within(card).getByText('Primeiro da fila · posição 1')).toBeInTheDocument();
+    await user.click(previous);
+    expect(within(card).getByText('3 de 3')).toBeInTheDocument();
+
+    // Setas do teclado com o foco na navegação.
+    previous.focus();
+    await user.keyboard('{ArrowLeft}');
+    expect(within(card).getByText('2 de 3')).toBeInTheDocument();
+    await user.keyboard('{ArrowRight}');
+    expect(within(card).getByText('3 de 3')).toBeInTheDocument();
+    await user.keyboard('{ArrowRight}{ArrowRight}');
+    expect(within(card).getByText('2 de 3')).toBeInTheDocument();
+
+    // O botão principal abre o SKU que está no cartão.
+    await user.click(within(card).getByRole('button', { name: `Abrir evidências de ${SKU_SHORT}` }));
+    expect(currentLocation()).toBe(`/skus/${encodeURIComponent(SKU_SHORT)}`);
+  });
+});
+
+describe('Planejamento: família na barra e 10 SKUs por página', () => {
+  it('pagina de 10 em 10 só com troca de página e volta à primeira quando a família muda', async () => {
+    const user = userEvent.setup();
+    mockApi({ forecasts: [...forecasts, ...many(forecasts[0], 23)] });
+    renderApp('/fila?todos=1');
+    const queue = () => screen.getByRole('region', { name: /Fila operacional/ });
+    await screen.findByRole('region', { name: /Fila operacional/ });
+    // 3 SKUs do ranking + 23 gerados = 26: páginas de 10, 10 e 6.
+    await waitFor(() => expect(within(queue()).getAllByRole('row')).toHaveLength(1 + 10));
+    expect(screen.queryByRole('button', { name: /Ver mais/ })).not.toBeInTheDocument();
+    const pages = screen.getByRole('navigation', { name: 'Páginas da fila operacional' });
+    expect(within(pages).getByText('Página 1 de 3')).toBeInTheDocument();
+    await user.click(within(pages).getByRole('button', { name: 'Próxima' }));
+    await user.click(within(pages).getByRole('button', { name: 'Próxima' }));
+    expect(within(pages).getByText('Página 3 de 3')).toBeInTheDocument();
+    expect(within(queue()).getAllByRole('row')).toHaveLength(1 + 6);
+
+    // Família fica na barra principal, fora de "Mais filtros", e o filtro volta à página 1.
+    const family = screen.getByLabelText('Família');
+    expect(family.closest('details')).toBeNull();
+    await user.selectOptions(family, 'Família B');
+    expect(currentLocation()).toBe('/fila?todos=1&familia=Fam%C3%ADlia+B');
+    await waitFor(() => expect(within(queue()).getAllByRole('row')).toHaveLength(1 + 1));
+    expect(within(queue()).getByText(SKU_SHORT)).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Páginas da fila operacional' })).not.toBeInTheDocument();
+  });
+});
+
 describe('Lista de SKUs no menu', () => {
   it('o menu leva à lista, que abre a página do SKU e mantém o menu ativo', async () => {
     const user = userEvent.setup();

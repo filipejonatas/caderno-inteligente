@@ -39,6 +39,23 @@ def _reading(plans: list[dict[str, Any]], min_key: str, shortfall_flag: str) -> 
     }
 
 
+def _weekly(plans: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """SKUs em falta em cada semana, nas duas leituras (gráfico do Início).
+
+    Só entram as semanas presentes na projeção de todos os SKUs avaliados: uma semana além do horizonte de algum
+    SKU contaria menos SKUs e pareceria melhora.
+    """
+    if not plans:
+        return []
+    by_sku = [{week["week_start"]: week for week in plan["projection"]} for plan in plans]
+    common = sorted(set.intersection(*(set(weeks) for weeks in by_sku)))
+    return [{
+        "week_start": start,
+        "shortfall_sku_count": sum(1 for weeks in by_sku if weeks[start]["shortfall"]),
+        "shortfall_with_plan_sku_count": sum(1 for weeks in by_sku if weeks[start]["shortfall_with_plan"]),
+    } for start in common]
+
+
 def build_projected_stock(plans: dict[str, dict[str, Any]], indicators: pd.DataFrame, forecasts: pd.DataFrame,
                           production: dict[str, Any]) -> dict[str, Any]:
     """Agrega a projeção por SKU do plano de suprimento; `production` é o resultado de `build_production_plan`."""
@@ -68,6 +85,7 @@ def build_projected_stock(plans: dict[str, dict[str, Any]], indicators: pd.DataF
         "without_new_orders": _reading(included, "min_projected", "shortfall"),
         "with_planned_orders": _reading(included, "min_projected_with_plan", "shortfall_with_plan"),
         "shortfall_skus": shortfall_skus,
+        "weekly": _weekly(included),
         "planned_production": {
             "urgent_total": total["urgent_total"], "horizon_total": total["horizon_total"],
             "urgent_window_end": production["urgent_window_end"],

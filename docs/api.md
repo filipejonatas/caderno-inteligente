@@ -73,6 +73,7 @@ Estoque projetado no horizonte da previsão, agregado da projeção semanal do p
 - `without_new_orders` (só estoque atual e OPs abertas) e `with_planned_orders` (somando as ordens planejadas): `shortfall_sku_count` (SKUs com estoque projetado negativo em alguma semana), `below_safety_sku_count` (abaixo do estoque de segurança em alguma semana, **incluindo** os com falta) e `first_shortfall_week` (segunda-feira da primeira semana com falta, ou `null`);
 - `shortfall_skus[]` (`sku`, `product`, `family`, `first_shortfall_date`, `first_shortfall_week`, `shortfall_with_plan`): SKUs com falta sem novas ordens, da falta mais próxima para a mais distante;
 - `planned_production`: `urgent_total` e `horizon_total`, os mesmos totais de `GET /api/production-plan`, e `urgent_window_end`;
+- `weekly[]` (`week_start`, `shortfall_sku_count`, `shortfall_with_plan_sku_count`): quantos SKUs estão em falta em cada semana, sem novas ordens e com o plano (gráfico "SKUs em falta por semana" do Início). Só entram as semanas presentes na projeção de todos os SKUs avaliados, para uma semana além do horizonte de algum SKU não parecer melhora. Lista vazia quando nenhum SKU tem previsão;
 - `excluded_skus[]` (`sku`, `reason = sem_previsao`): fora da conta, nunca contados como "sem falta";
 - `reference_date`, `horizon_end`, `skus_evaluated`, `limitations` e `requires_human_review = true`.
 

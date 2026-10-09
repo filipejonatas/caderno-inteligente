@@ -25,8 +25,10 @@ const { Topbar, RuleLine, Alert, Tooltip } = await import(componentsUrl);
 // A faixa de eventos busca a API sozinha (coberta pelo Vitest); aqui só se renderiza o conteúdo próprio da página.
 const eventAlertsStub = dataUrl('export const UpcomingEvents = () => null;');
 // Oportunidades e faturamento do painel também buscam a API sozinhos (cobertos pelo Vitest).
-const overviewPanelStub = dataUrl('export const PANEL_ROWS = 5; export const TopOpportunities = () => null; export const RevenueOverview = () => null; export const ProjectedStockIndicators = () => null;');
-const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../components/EventAlerts': eventAlertsStub, '../components/OverviewPanel': overviewPanelStub }));
+// Os gráficos do painel (fase 4) usam Recharts e a produção planejada busca a API sozinha: cobertos pelo Vitest.
+const overviewPanelStub = dataUrl('export const PANEL_ROWS = 5; export const TopOpportunities = () => null; export const RevenueOverview = () => null; export const ProjectedStockIndicators = () => null; export const PlannedProductionOverview = () => null;');
+const projectedChartStub = dataUrl('export const ProjectedStockChart = () => null;');
+const { default: OverviewPage } = await import(await compile('../src/pages/OverviewPage.tsx', { '../components': componentsUrl, './shared': sharedUrl, '../components/EventAlerts': eventAlertsStub, '../components/OverviewPanel': overviewPanelStub, '../components/ProjectedStockChart': projectedChartStub }));
 const render = element => renderToStaticMarkup(element);
 
 // Suppress React Router's expected SSR-only useLayoutEffect warning; preserve other warnings.
