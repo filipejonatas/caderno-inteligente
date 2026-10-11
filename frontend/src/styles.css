@@ -847,4 +847,9 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 .login-card h1 { margin: 0; }
 .login-card .login-form { grid-template-columns: 1fr; padding: 0; }
 .login-brand { margin: 0; color: var(--graphite); font-size: var(--text-meta); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
-.topbar-user { color: var(--graphite); font-size: var(--text-meta); font-weight: 600; }
+.user-menu { position: relative; }
+.user-menu-button { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-menu-button::after { content: '▾'; margin-left: var(--space-1); }
+.user-menu-list { position: absolute; right: 0; top: calc(100% + var(--space-1)); z-index: 40; display: flex; flex-direction: column; min-width: 160px; padding: var(--space-1); border: 1px solid var(--ink); border-radius: var(--radius-sm); background: var(--sheet); box-shadow: 3px 3px 0 var(--ink); }
+.user-menu-list :where(a, button) { display: block; min-height: 40px; padding: 8px 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: none; }
+.user-menu-list :where(a, button):hover { background: var(--paper); }

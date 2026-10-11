@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import * as fx from './fixtures';
 import { sessionUser } from './fixtures';
 import { fail, mockApi, renderApp } from './utils';
 
@@ -51,6 +52,14 @@ describe('/usuarios', () => {
     await userEvent.type(within(form).getByLabelText('Senha provisória'), 'senha-forte-123');
     await userEvent.click(within(form).getByRole('button', { name: 'Cadastrar' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('já existe');
+  });
+
+  it('com a escrita desligada, avisa antes e desabilita o cadastro', async () => {
+    signedIn();
+    mockApi({ users, system: { ...fx.system, write_enabled: false } });
+    renderApp('/usuarios');
+    expect(await screen.findByText(/cadastro está desabilitado/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cadastrar' })).toBeDisabled();
   });
 
   it('sem violações de acessibilidade', async () => {

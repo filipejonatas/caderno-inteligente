@@ -46,7 +46,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 /** Título (h1 e aba do navegador) de cada rota. Um nome só por página. */
-export const navigation: Array<{ id: PageId | 'dataset'; path: string; label: string; description: string }> = [
+export const navigation: Array<{ id: PageId | 'dataset' | 'users'; path: string; label: string; description: string }> = [
   { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
   { id: 'overview', path: '/', label: 'Início', description: 'Indicadores' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
@@ -65,6 +65,7 @@ export const navigation: Array<{ id: PageId | 'dataset'; path: string; label: st
   { id: 'validation', path: '/validacao', label: 'Confiança nas recomendações', description: 'Validação dos resultados' },
   { id: 'model', path: '/modelo', label: 'Modelo de previsão', description: 'O que o modelo prevê, premissas e modelos comparados' },
   { id: 'audit', path: '/auditoria', label: 'Auditoria', description: 'Casos de teste, método e histórico' },
+  { id: 'users', path: '/usuarios', label: 'Usuários', description: 'Cadastro de quem pode entrar' },
 ];
 
 /** Menu principal: 8 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
@@ -76,12 +77,13 @@ export const menuGroups: Array<{ id: string; label: string; to: string; paths: s
   { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'] },
   { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'] },
   { id: 'trust', label: 'Confiança', to: '/validacao', paths: ['/validacao', '/modelo'] },
-  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade', '/dados/atualizar'] },
+  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade', '/dados/atualizar', '/usuarios'] },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
   partners: [{ label: 'Oportunidades', to: '/parceiros' }, { label: 'Parceiros', to: '/carteira' }, { label: 'Canais diretos', to: '/canais' }],
-  backstage: [{ label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Atualizar dados', to: '/dados/atualizar' }],
+  backstage: [{ label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Atualizar dados', to: '/dados/atualizar' }, { label: 'Usuários', to: '/usuarios' }],
+  production: [{ label: 'Fila operacional', to: '/fila' }, { label: 'Capacidade', to: '/capacidade' }, { label: 'Cenários', to: '/cenarios' }],
   decisions: [{ label: 'Casos', to: '/casos' }, { label: 'Histórico de decisões', to: '/decisoes' }],
   trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Modelo de previsão', to: '/modelo' }],
 };
@@ -141,6 +143,29 @@ export function RuleLine() {
   return <p className="rule-line" role="note"><strong>Apoio à decisão:</strong> toda sugestão exige revisão humana e não é ordem de produção. <Link to="/guia">Ajuda</Link></p>;
 }
 
+/** Nome da pessoa conectada como menu: Usuários e Sair. Esc ou clique fora fecham e o foco volta ao botão. */
+function UserMenu({ user, onSignOut }: { user: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const { pathname } = useLocation();
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') { setOpen(false); root.current?.querySelector<HTMLElement>('button')?.focus(); } };
+    const onClick = (event: MouseEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    document.addEventListener('mousedown', onClick);
+    return () => { document.removeEventListener('keydown', onKey); document.removeEventListener('mousedown', onClick); };
+  }, [open]);
+  return <div className="user-menu" ref={root}>
+    <button type="button" className="secondary-button user-menu-button" aria-expanded={open} aria-controls="menu-usuario" title="Usuário conectado" onClick={() => setOpen((value) => !value)}>{user}</button>
+    {open && <div id="menu-usuario" className="user-menu-list" role="group" aria-label="Conta">
+      <Link to="/usuarios">Usuários</Link>
+      <button type="button" onClick={onSignOut}>Sair</button>
+    </div>}
+  </div>;
+}
+
 export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false, user, onSignOut }: { user?: string; onSignOut?: () => void; title: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
   const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
   return <header className="topbar">
@@ -151,8 +176,7 @@ export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = tru
     <div className="topbar-actions">
       <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Atualizado às ${timestamp}` : 'Ainda sem carga concluída'}</small></div>
       <Link className="secondary-button help-link" to="/guia" aria-label="Ajuda: abrir o guia de uso"><Icon name="guide" size={17} /><span>Ajuda</span></Link>
-      {user && <span className="topbar-user" title="Usuário conectado">{user}</span>}
-      {onSignOut && <button type="button" className="secondary-button" onClick={onSignOut}>Sair</button>}
+      {user && onSignOut && <UserMenu user={user} onSignOut={onSignOut} />}
       {showRefresh && <button className="secondary-button" onClick={onRefresh} disabled={refreshing} aria-label={refreshing ? 'Atualizando dados' : 'Atualizar dados desta página'}><Icon name="refresh" /><span>{refreshing ? 'Atualizando…' : 'Atualizar'}</span></button>}
     </div>
   </header>;

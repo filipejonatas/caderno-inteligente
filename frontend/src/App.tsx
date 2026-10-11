@@ -80,7 +80,6 @@ function Shell({ user, onSignOut }: { user: string; onSignOut: () => void }) {
   }, [location.pathname]);
 
   const current = useMemo(() => {
-    if (location.pathname === '/usuarios') return { label: 'Usuários', description: 'Cadastro de quem pode entrar' };
     if (matchPath('/parceiros/:codigo', location.pathname)) return { label: 'Detalhe do parceiro', description: 'Evidência comercial por SKU' };
     if (matchPath('/canais/:canal', location.pathname)) return { label: 'Detalhe do canal', description: 'Faturamento observado por SKU' };
     if (matchPath('/skus/:sku', location.pathname)) return { label: 'Detalhe do SKU', description: 'Evidências e recomendação' };
@@ -96,16 +95,18 @@ function Shell({ user, onSignOut }: { user: string; onSignOut: () => void }) {
   const isUsers = location.pathname === '/usuarios';
   useEffect(() => { document.title = `${current.label} · Caderno Inteligente`; }, [current.label]);
 
-  const staticPage = isGuide || isUsers || current.label === 'Página não encontrada';
+  const notFound = current.label === 'Página não encontrada';
+  const staticPage = isGuide || isUsers || notFound;
   const status = loadStatus.path === location.pathname ? loadStatus : { loading: true, error: '', loadedAt: null };
 
   // Runtime mode (demo / read-only) is read once API-backed pages are used; static pages stay offline-capable.
   useEffect(() => {
-    if (staticPage || systemInfo) return;
+    // /usuarios não tem carga própria, mas precisa saber se o cadastro está liberado.
+    if (isGuide || notFound || systemInfo) return;
     const controller = new AbortController();
     api.system(controller.signal).then(setSystemInfo).catch(() => { /* unknown mode: the server still enforces it */ });
     return () => controller.abort();
-  }, [staticPage, systemInfo, refreshToken]);
+  }, [isGuide, notFound, systemInfo, refreshToken]);
 
   return <SystemInfoContext.Provider value={systemInfo}><PageLoadContext.Provider value={reportLoad}><div className="app-shell">
     <a className="skip-link" href="#conteudo" onClick={(event) => { event.preventDefault(); document.getElementById('page-title')?.focus(); }}>Pular para o conteúdo</a>

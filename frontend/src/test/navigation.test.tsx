@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { menuGroups, navigation, subNavigation } from '../components';
 import { SKU_OK } from './fixtures';
@@ -22,7 +23,7 @@ describe('arquitetura de navegação final', () => {
     const { unmount } = renderApp('/fila');
     await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' });
     expect(screen.getByRole('link', { name: 'Simular pesos' })).toHaveAttribute('href', '/cenarios');
-    expect(screen.queryByRole('navigation', { name: 'Seções desta área' })).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Seções desta área' })).toBeInTheDocument();
     unmount();
 
     const scenarios = renderApp('/cenarios');
@@ -35,7 +36,7 @@ describe('arquitetura de navegação final', () => {
     await screen.findByRole('heading', { level: 2, name: 'O que mudou entre duas execuções' });
     expect(mainMenu().getByRole('link', { name: /Bastidores/ })).toHaveAttribute('aria-current', 'page');
     const backstage = within(screen.getByRole('navigation', { name: 'Seções desta área' }));
-    expect(backstage.getAllByRole('link').map((link) => link.textContent)).toEqual(['Auditoria', 'Execuções', 'Dados da planilha', 'Atualizar dados']);
+    expect(backstage.getAllByRole('link').map((link) => link.textContent)).toEqual(['Auditoria', 'Execuções', 'Dados da planilha', 'Atualizar dados', 'Usuários']);
     expect(backstage.getByRole('link', { name: 'Execuções' })).toHaveAttribute('aria-current', 'page');
   });
 
@@ -53,6 +54,39 @@ describe('arquitetura de navegação final', () => {
     const owners = (path: string) => menuGroups.filter((group) => group.paths.some((item) => item === path || (item !== '/' && path.startsWith(`${item}/`)))).map((group) => group.id);
     for (const item of navigation.filter((entry) => entry.path !== '/guia')) expect(owners(item.path), item.path).toHaveLength(1);
     for (const tabs of Object.values(subNavigation)) for (const tab of tabs) expect(navigation.some((entry) => entry.path === tab.to), tab.to).toBe(true);
+  });
+});
+
+describe('Usuários e Planejamento', () => {
+  it('o menu do nome leva a Usuários, que fica em Bastidores com a aba ativa', async () => {
+    mockApi({ users: { items: [] } });
+    renderApp('/fila');
+    await screen.findByRole('heading', { level: 2, name: 'Qual SKU analisar, o que fazer e quanto' });
+    await userEvent.click(screen.getByRole('button', { expanded: false, name: 'Ana PCP' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Usuários' }));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Usuários' })).toBeInTheDocument();
+    expect(mainMenu().getByRole('link', { name: /Bastidores/ })).toHaveAttribute('aria-current', 'page');
+    const tabs = within(screen.getByRole('navigation', { name: 'Seções desta área' }));
+    expect(tabs.getByRole('link', { name: 'Usuários' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('Esc fecha o menu do nome', async () => {
+    mockApi();
+    renderApp('/');
+    await screen.findByRole('heading', { level: 2, name: 'Indicadores' });
+    const trigger = screen.getAllByRole('button', { expanded: false }).find((button) => button.classList.contains('user-menu-button'))!;
+    await userEvent.click(trigger);
+    expect(screen.getByRole('link', { name: 'Usuários' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('link', { name: 'Usuários' })).not.toBeInTheDocument();
+  });
+
+  it('Planejamento tem abas: Fila, Capacidade e Cenários', async () => {
+    mockApi();
+    renderApp('/capacidade');
+    const tabs = within(await screen.findByRole('navigation', { name: 'Seções desta área' }));
+    expect(tabs.getAllByRole('link').map((link) => [link.textContent, link.getAttribute('href')])).toEqual([['Fila operacional', '/fila'], ['Capacidade', '/capacidade'], ['Cenários', '/cenarios']]);
+    expect(tabs.getByRole('link', { name: 'Capacidade' })).toHaveAttribute('aria-current', 'page');
   });
 });
 
