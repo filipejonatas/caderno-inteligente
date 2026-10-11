@@ -30,7 +30,7 @@ Os números são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803
 
 ## 0:00–0:45 — O problema em uma frase
 
-**Tela:** `/` (Início), bloco "Decisões de hoje"; depois `/fila`.
+**Tela:** `/` (Início): o caminho em cinco passos (ver, decidir, caber, atender, confiar) conta a demonstração inteira em uma tela; depois o bloco "Decisões de hoje" e `/fila`. Cada página seguinte termina em "Próximo passo", que leva à etapa seguinte na mesma ordem deste roteiro.
 
 - O Caderno Inteligente vende para parceiros e vê o sell-in, mas só tem sell-out em 20% dos pares parceiro–SKU. O PCP precisa decidir **hoje** o que produzir, quanto e onde há risco.
 - **Decisões de hoje:** 26 decisões vencem nos próximos 7 dias (até 21/09), cada uma com a alavanca (alocar, antecipar OP, produzir, renegociar, rever OP) e o prazo. Prazo vencido vira "decidir hoje".
