@@ -40,6 +40,24 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 | `model_benchmark.py`, `benchmark_store.py` | Benchmark de modelos (statsforecast, scikit-learn, LightGBM, Prophet) contra o oficial e histórico das rodadas em SQLite local; fora do pipeline oficial |
 | `persistence.py`, `postgres_persistence.py`, `feedback.py`, `cases.py` | Mesmo contrato em SQLite e PostgreSQL |
 | `dataset_store.py`, `auth.py` | Fase 3: abas no banco (mesmos DataFrames da planilha), cadastro de SKU com exclusão lógica, versão dos dados e login ([fase 3](fase-3-banco-e-cadastro.md)) |
+| `reference.py` | Upload: data de planejamento derivada (primeira semana de `Capacidade_Semanal`) e regras de coerência entre a referência e as abas |
+| `upload_safety.py`, `dataset_merge.py`, `dataset_upload.py`, `workbook_writer.py` | Upload: checagem do arquivo (tamanho, ZIP, XML com `defusedxml`), mescla por aba, prévia e aplicação, gravação do modelo `.xlsx` ([resumo](upload-planilha-resumo.md)) |
+
+### Fluxo do envio de planilha
+
+```text
+POST /api/dataset/preview  (corpo bruto, login)
+  → upload_safety: tamanho, ZIP, XML           → 413 / 422 com code
+  → leitura (cabeçalho detectado) + validação com endereço
+  → dataset_merge: cada aba enviada substitui; abas mensais acrescentam ou trocam só os meses enviados
+  → reference: SERIES_NOT_CLOSED, REFERENCE_NOT_ADVANCED, SNAPSHOTS_REQUIRED, OPEN_OP_BEFORE_REFERENCE
+  → motor sobre o conjunto candidato (fila, top 5, faltas)  → prévia; nada é gravado
+POST /api/dataset/apply    (mesmo corpo + X-Confirm-Sha256 + X-Expected-Version)
+  → revalida tudo → dataset_store.apply_version (uma transação: abas, versão, snapshot gzip, poda das 20 últimas)
+  → on_change: o cache do pipeline é invalidado; as outras instâncias recalculam em até 5 s
+```
+
+A data de planejamento passa a ser **uma só** para plano de suprimento, capacidade, alocação, eventos e rótulos. `source_hash` de execuções, validação e laboratório é o hash da base ativa. O upload só existe com `DATA_SOURCE=banco`.
 
 ## Backend (`backend/`)
 
@@ -49,6 +67,7 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
   - `validation.py`: Central de validação;
   - `run_comparisons.py`: comparação de execuções;
   - `registry.py`: login e cadastro de SKU (fase 3);
+  - `dataset.py`: `/api/dataset*` (prévia, aplicação, versões, restauração e modelo);
   - `model_benchmark.py`: cartão do modelo e rodadas do benchmark;
   - `partner_stock_projection.py`: projeção de estoque no parceiro (detalhe em API; o resumo entra nas linhas "Repor");
   - `allocation.py`: `/api/allocation` e `/api/allocation/regions`;
@@ -58,7 +77,7 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
   - modo demonstração (`DEMO_MODE`);
   - escrita desabilitável (`WRITE_ENABLED`);
   - CORS validado;
-  - limite de corpo de 16 KB;
+  - limite de corpo de 16 KB (4 MB só em `/api/dataset/preview` e `/api/dataset/apply`);
   - erros genéricos em produção com `X-Request-ID`;
   - cabeçalhos de segurança;
   - filtro que remove `DATABASE_URL` dos logs.
@@ -87,7 +106,7 @@ O protótipo apoia o PCP com sinais auditáveis. Nenhum componente libera produ�
 
 ### Mapa de rotas
 
-O menu agrupa as rotas em 8 entradas: Início; Planejamento (`/fila`, `/capacidade`, `/cenarios`); SKUs (`/skus` e o detalhe `/skus/:sku`); Financeiro (`/faturamento`); Comercial (`/parceiros`, `/carteira`, `/canais`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`, `/modelo`); Bastidores (`/auditoria`, `/execucoes`, `/qualidade`). Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais`. Todos os estilos estão em `frontend/src/styles.css` (tokens no topo).
+O menu agrupa as rotas em 8 entradas: Início; Planejamento (`/fila`, `/capacidade`, `/cenarios`); SKUs (`/skus` e o detalhe `/skus/:sku`); Financeiro (`/faturamento`); Comercial (`/parceiros`, `/carteira`, `/canais`, `/parceiros/:codigo`, `/canais/:canal`); Acompanhamento (`/casos`, `/decisoes`); Confiança (`/validacao`, `/modelo`); Bastidores (`/auditoria`, `/execucoes`, `/qualidade`, `/dados/atualizar`). Os endereços antigos `?aba=parceiros` e `?aba=diretos` redirecionam para `/carteira` e `/canais`. Todos os estilos estão em `frontend/src/styles.css` (tokens no topo).
 
 | URL | Página | Dados consultados |
 |---|---|---|
@@ -99,7 +118,8 @@ O menu agrupa as rotas em 8 entradas: Início; Planejamento (`/fila`, `/capacida
 | `/prioridades`, `/previsoes` | Redirecionam para `/fila` (mesmos parâmetros) | Nenhum |
 | `/skus/:sku` | Detalhe do SKU (compartilhável), abas em `?tab=`; o resumo traz "Quem atender primeiro" (alocação); o tempo de análise é medido do abrir ao registrar a decisão; o contexto comercial só carrega na aba Parceiros | `priorities/{sku}`, `commercial-recommendations?sku=` (aba Parceiros) |
 | `/casos` | Casos — edição por linha (`PUT cases/{id}`), filtros `status`, `responsavel` | `cases`, `priorities`, `config` |
-| `/qualidade` | Dados da planilha, com os avisos de ABC do cadastro, sell-in × faturado e rateio uniforme | `data-quality` |
+| `/qualidade` | Dados da planilha, com a data de planejamento (`reference`), os avisos de ABC do cadastro, sell-in × faturado e rateio uniforme | `data-quality` |
+| `/dados/atualizar` | Bastidores › Atualizar dados: base ativa, modelo, envio com prévia, aplicação e versões | `dataset`, `dataset/versions`, `dataset/preview`, `dataset/apply` |
 | `/parceiros` | Comercial › Oportunidades — filtros `busca`, `regiao`, `canal`, `ordem`; inclui "Risco por região: pedidos sem cobertura" | `partners`, `commercial-recommendations?action=avaliar_reposicao`, `allocation/regions` |
 | `/carteira` | Comercial › Parceiros — filtros `busca`, `regiao`, `canal`, `rotulo`, `ordem`; mostra a fonte de visibilidade (sell-out do parceiro × venda direta) e "Quanto da venda ao consumidor é observado" | `partners`, `b2b2c/visibility` |
 | `/canais` | Comercial › Canais diretos | `direct-channels` |

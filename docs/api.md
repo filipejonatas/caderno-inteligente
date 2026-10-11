@@ -1,6 +1,6 @@
 # API
 
-A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, qualidade, validação, feedback, casos, execuções e cenários. Nenhuma rota modifica o XLSM ou a configuração oficial. Todas as rotas novas desde a V1 são aditivas: os contratos anteriores continuam válidos.
+A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, qualidade, validação, feedback, casos, execuções e cenários. Nenhuma rota modifica o XLSM ou a configuração oficial. As rotas `/api/dataset*` gravam a base **no banco**, nunca na planilha. Todas as rotas novas desde a V1 são aditivas: os contratos anteriores continuam válidos.
 
 ## Índice de endpoints
 
@@ -22,7 +22,7 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/rules/coverage` | Cobertura de regras (Etapa 16.6): quantas vezes cada regra e rótulo disparou, por que zero, e a lista de pares KA para pedir sell-out | — |
 | GET | `/api/production-plan` | Produção planejada: ordens planejadas somadas por mês de liberação (agora × depois), no total e por família | — |
 | GET | `/api/capacity/{family}` | Capacidade semanal da família, com `allocated` e `remaining` das ordens planejadas | — |
-| GET | `/api/data-quality` | Validação da planilha, cobertura de sell-out e avisos entre fontes (`ABC_REGISTRY_DIVERGENCE`, `SELLIN_BILLING_DIVERGENCE`, `BILLING_UNIFORM_SPLIT`) | — |
+| GET | `/api/data-quality` | Validação da planilha, cobertura de sell-out, avisos entre fontes (`ABC_REGISTRY_DIVERGENCE`, `SELLIN_BILLING_DIVERGENCE`, `BILLING_UNIFORM_SPLIT`) e a data de planejamento (`reference`) | — |
 | GET | `/api/b2b2c/visibility` | Cobertura e nível demonstrativo por parceiro, canais diretos incluídos, e a jornada até a venda ao consumidor (`journey`) | — |
 | GET | `/api/partners` | Parceiros e cobertura medida (filtros e paginação) | — |
 | GET | `/api/partners/{codigo}` | Resumo do parceiro | — |
@@ -46,8 +46,14 @@ A API FastAPI expõe prioridades, previsão, recomendação, visão comercial, q
 | GET | `/api/skus/cadastro` | Cadastro de SKUs, inclusive os excluídos (`ativo`), e famílias válidas; exige login | — |
 | POST | `/api/skus` · PUT `/api/skus/{sku}` | Cria/edita SKU (`Produtos`, `Estoque_Atual`, `Lead_Times`) | sim (login, `DATA_SOURCE=banco`, `WRITE_ENABLED`) |
 | POST | `/api/skus/{sku}/excluir` · `/api/skus/{sku}/reativar` | Exclusão lógica e reativação | sim (login, `DATA_SOURCE=banco`, `WRITE_ENABLED`) |
+| GET | `/api/dataset` | Estado da base ativa (versão, origem, data de planejamento, hashes) e se o envio de planilha está habilitado, com o motivo quando não está | — |
+| GET | `/api/dataset/template` | Baixa a base ativa como `.xlsx` de 13 abas, para usar de modelo | — |
+| POST | `/api/dataset/preview` | Prévia do envio de planilha: erros e avisos com endereço, mudança da data de planejamento e efeito no motor; não grava | não (login, `DATA_SOURCE=banco`, `WRITE_ENABLED`) |
+| POST | `/api/dataset/apply` | Aplica o envio e cria uma versão da base | sim (login, `DATA_SOURCE=banco`, `WRITE_ENABLED`) |
+| GET | `/api/dataset/versions` | Últimas 20 versões da base | — |
+| POST | `/api/dataset/versions/{id}/restore` · `/api/dataset/restore-original` | Volta a uma versão guardada ou à base original | sim (login, `DATA_SOURCE=banco`, `WRITE_ENABLED`) |
 
-Respostas de erro usam `{"detail": ...}`: 401 sem login válido, 404 para recurso inexistente, 403 para escrita desabilitada, 409 para conflito (SKU já existente ou base na planilha), 429 para tentativas de login em excesso, 503 para login não configurado, 413 para corpo acima de 16 KB, 422 para validação e 500 com código de referência (`X-Request-ID`).
+Respostas de erro usam `{"detail": ...}`: 401 sem login válido, 404 para recurso inexistente, 403 para escrita desabilitada, 409 para conflito (SKU já existente ou base na planilha), 429 para tentativas de login em excesso, 503 para login não configurado, 413 para corpo acima de 16 KB (4 MB em `/api/dataset/preview` e `/api/dataset/apply`), 422 para validação e 500 com código de referência (`X-Request-ID`).
 
 ## `GET /api/health`
 
@@ -409,3 +415,109 @@ Detalhes, decisões e passo a passo em [fase-3-banco-e-cadastro.md](fase-3-banco
 - Toda gravação é validada com `validate_dataset` na prévia da base inteira; um erro que a base não tinha antes dá 422. SKU duplicado (ativo ou inativo) dá 409.
 - Com `DATA_SOURCE=planilha`, as gravações respondem 409 e `GET /api/skus/cadastro` retorna `editable: false`.
 - A exclusão é lógica e usa POST, não DELETE: o SKU sai de todos os cálculos, e casos, decisões e execuções que o citam continuam. Excluir um SKU já excluído (ou reativar um ativo) dá 409.
+
+## Atualizar a base pela tela — `/api/dataset*`
+
+Decisões em [decisions.md](decisions.md) (D1–D11) e passo a passo em [upload-planilha-resumo.md](upload-planilha-resumo.md). O envio **não altera o XLSM**: grava no banco, como uma nova versão da base. O pacote fictício de teste é `docs/exemplos/atualizacao-2026-10.xlsx`.
+
+### Quem pode enviar
+
+`preview`, `apply`, `restore` e `restore-original` exigem **tudo** isto, verificado nesta ordem:
+
+| Ordem | Condição | Resposta quando falha |
+|---|---|---|
+| 1 | `WRITE_ENABLED=true` | **403** "Esta publicação está em modo somente leitura" |
+| 2 | `DATA_SOURCE=banco` | **409** "A atualização da base pela tela exige a base no banco (DATA_SOURCE=banco). Esta publicação lê a planilha." |
+| 3 | `Authorization: Bearer <token>` válido, **mesmo com `AUTH_REQUIRED=false`** | **401** "Entre com seu usuário para atualizar a base." (com `WWW-Authenticate: Bearer`); **503** se o login não está configurado (`AUTH_SECRET` ausente ou curto) |
+| 4 | corpo até 4 MB | **413** `{"detail", "code": "FILE_TOO_LARGE"}`, também quando o envio não declara `Content-Length` |
+| 5 | arquivo legível | **422** `{"detail", "code"}` (tabela de códigos abaixo) |
+
+O token vem de `POST /api/auth/login`. `GET /api/dataset`, `/versions` e `/template` não exigem login.
+
+### `GET /api/dataset`
+
+Estado da base ativa. O Bearer é opcional e só define `upload_enabled`.
+
+- `data_source` (`planilha` ou `banco`), `version` e `active_version_id` (`null` com a planilha) e `origin`: `original`, `upload`, `restore` ou `desconhecida` (base importada pela linha de comando, sem versão no histórico);
+- `reference_date`, `reference_source` (`auto`), `sales_last_month` (`AAAA-MM`), `content_sha256` (hash do conteúdo da base ativa), `source_sha256` (hash da planilha empacotada) e `matches_original`;
+- `uploaded_by`, `uploaded_at` e `filename` da versão ativa (`null` se não houver);
+- `upload_enabled` e `upload_disabled_reason` (`planilha`, `somente_leitura`, `login` ou `login_indisponivel`; `null` quando habilitado), com o texto em `upload_disabled_message`;
+- `max_upload_bytes` (4194304), `accepted_extensions` (`.xlsx`, `.xlsm`), `max_versions` (20) e `policy`.
+
+### `GET /api/dataset/template`
+
+Devolve um `.xlsx` de 13 abas com a base ativa (a planilha empacotada, se `DATA_SOURCE=planilha`), com `Content-Disposition: attachment; filename="modelo-caderno-inteligente-AAAA-MM-DD.xlsx"` (data de planejamento).
+
+### `POST /api/dataset/preview` e `POST /api/dataset/apply`
+
+O arquivo vai como **corpo bruto** (`Content-Type: application/octet-stream`), não como `multipart`.
+
+| Cabeçalho | Rota | Obrigatório | Conteúdo |
+|---|---|---|---|
+| `Authorization` | ambas | sim | `Bearer <token>` |
+| `X-Filename` | ambas | não | nome do arquivo (com `encodeURIComponent` se tiver acentos); a extensão define o tipo aceito |
+| `X-Confirm-Sha256` | `apply` | sim | SHA-256 do corpo, igual ao `file.sha256` da prévia. Diferente: **422** `CONFIRM_MISMATCH` |
+| `X-Expected-Version` | `apply` | sim | `expected_version` da prévia. Ausente ou não numérico: **422**. Diferente da versão atual: **409** "Outra pessoa atualizou a base; refaça a prévia." |
+
+```bash
+curl -X POST "$API/api/dataset/preview" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/octet-stream" \
+  -H "X-Filename: atualizacao-2026-10.xlsx" --data-binary @docs/exemplos/atualizacao-2026-10.xlsx
+```
+
+**Resposta da prévia (200)**, quando `can_apply = true`:
+
+- `file`: `filename`, `size_bytes`, `sha256`, `extension`, `has_macro` e `example` (arquivo marcado como fictício);
+- `expected_version`, `can_apply`, `policy` e `ignored_sheets` (abas fora das 13 conhecidas);
+- `sheets[]`: por aba, `policy`, `status` (`mantida`, `mesclada` ou `substituida`), `header_row`, `rows_before`, `rows_received`, `rows_after`, `months_added`, `months_replaced`, `keys_added`, `keys_removed` e exemplos;
+- `errors[]` e `warnings[]`: `code`, `severity`, `message`, `sheet`, `column`, `count` e `examples[]` com endereço (`row`, `cell`, `value`), no máximo 5 por problema;
+- `reference`: `before`, `after`, `advanced`, `sales_last_month_before` e `sales_last_month_after`;
+- `registry_overrides` (`count`, `skus`): SKUs do cadastro da tela que o envio sobrescreve (D10);
+- `engine`: `before` e `after` com `reference_date`, `sales_last_month`, `queue_size`, `top5`, `shortfall_skus` e `forecast_first_month`, mais `error` (`null`, ou o motivo de `after` vir vazio);
+- `requires_human_review: true` e `limitations[]`: a prévia não grava nada e aplicar substitui a base para todos os usuários.
+
+**Com erro de dado**, a prévia e o `apply` respondem **422** com `{"detail": "A planilha tem N erros que bloqueiam a aplicação.", "preview": {...}}` e `can_apply = false`; a tela mostra a prévia mesmo assim. O `apply` revalida tudo antes de gravar.
+
+**Resposta do `apply` (200):** `version`, `version_id`, `reference_date`, `sales_last_month`, `content_sha256`, `pruned_versions` (versões antigas descartadas pelo limite de 20) e `preview`.
+
+### `GET /api/dataset/versions`
+
+`{"data_source", "active_version_id", "max_versions", "items": [...]}`, da mais nova para a mais antiga. Cada item: `id`, `created_at`, `user_email`, `action` (`upload`, `restore` ou `original`), `filename`, `file_sha256`, `size_bytes`, `content_sha256`, `reference_date`, `sales_last_month`, `restored_from` e `active`. Com `DATA_SOURCE=planilha`, `items` vem vazio.
+
+### `POST /api/dataset/versions/{id}/restore` e `POST /api/dataset/restore-original`
+
+Sem corpo. `X-Expected-Version` é opcional (se vier e não bater com a versão atual: **409**). Respondem como o `apply`, com `preview: null` e `restored_from` (id da versão, ou `null` na original). Restaurar **cria uma nova versão** (`action = restore` ou `original`) com o conteúdo antigo. Versão inexistente ou já podada: **404**. A base guardada precisa passar na validação, senão **422**. `restore-original` reimporta a planilha empacotada com todos os SKUs ativos.
+
+### Códigos de erro
+
+| Status | `code` | Quando |
+|---|---|---|
+| 401 · 403 · 409 · 503 | — | Veja "Quem pode enviar". O 409 também vale para conflito de versão |
+| 413 | `FILE_TOO_LARGE` | Corpo acima de 4 MB (`config/dataset_upload.json → max_upload_bytes`) |
+| 422 | `UNSUPPORTED_TYPE` | Extensão diferente de `.xlsx` e `.xlsm` |
+| 422 | `NOT_XLSX` | O conteúdo não é uma planilha válida |
+| 422 | `ZIP_TOO_MANY_ENTRIES` · `ZIP_TOO_LARGE` · `ZIP_RATIO` | Limites do ZIP (300 partes, 50 MB descompactado, compressão 100 vezes) |
+| 422 | `TOO_MANY_COLUMNS` · `TOO_MANY_ROWS` | Recusa antes da leitura: célula além da coluna 64 (`max_columns`) ou linhas além de `max_rows_per_sheet` + 100, conferidas em stream no XML de cada aba |
+| 503 | — | Banco sem a migração 005 (`dataset_versions`/`active_version_id`): "rode a migração 005" — vale para o status, o histórico e as rotas de escrita |
+| 422 | `XML_UNSAFE` | XML com entidades ou DTD (lido com `defusedxml`) |
+| 422 | `CONFIRM_MISMATCH` | `X-Confirm-Sha256` não bate com o corpo |
+| 422 | — | Erro de dado: `preview.errors[]` traz, por exemplo, `NO_KNOWN_SHEETS`, `TOO_MANY_ROWS`, `SERIES_NOT_CLOSED`, `REFERENCE_NOT_ADVANCED`, `SNAPSHOTS_REQUIRED`, `OPEN_OP_BEFORE_REFERENCE`, `REFERENCE_MISSING`, `REFERENCE_NOT_MONDAY` e `REFERENCE_FIXED_IN_CONFIG` (data fixa em `config/supply_plan.json` enquanto as vendas avançam; troque para `"auto"`). Avisos novos: `REFERENCE_FROM_CONFIG` e `INACTIVE_SKU_REMOVED` |
+
+Avisos (não bloqueiam): `EXAMPLE_FILE`, `MACRO_IGNORED`, `REGISTRY_OVERRIDE`, `EXTRA_COLUMNS_IGNORED`, `OVERDUE_ORDER`, `REFERENCE_GAP` e `PRODUCT_STOCK_DIVERGENCE`. O log registra `dataset_upload action=preview|apply|restore|original version=<n> sha=<12 primeiros>`, sem e-mail e sem conteúdo.
+
+### `GET /api/data-quality` — campo `reference`
+
+`reference` informa a data de planejamento usada por todo o motor:
+
+```json
+{"reference_date": "2026-09-14", "reference_source": "auto", "sales_last_month": "2026-08",
+ "series_last_months": {"Vendas_24m": "2026-08", "Sell_In": "2026-08", "Sell_Out": "2026-08"}}
+```
+
+`reference_source` é `auto` quando a data vem da primeira `Semana inicial` de `Capacidade_Semanal` (precisa ser segunda-feira). Depois de aplicar o pacote de exemplo, `reference_date` é `2026-10-12` e os meses finais são `2026-09`.
+
+### `GET /api/validation/summary` — "base anterior"
+
+Quando a base ativa difere da congelada (hash do conteúdo), os casos congelados de origem `base` voltam com `result = "base_anterior"`, `status = "base_anterior"` e `status_label` ("base de 14/09/2026"), sem valor obtido, e saem da contagem. `frozen_cases` ganha `previous_base` (quantos casos). Os casos sintéticos continuam avaliados. Base empacotada: 34 de 34 e `previous_base = 0`. Com o exemplo aplicado: 14 de 34 contados e `previous_base = 20`.
+
+O `source_hash` gravado em `POST /api/runs` e usado na Central de validação, no Laboratório de previsão e no benchmark passa a ser o hash da **base ativa**, não o do XLSM empacotado.

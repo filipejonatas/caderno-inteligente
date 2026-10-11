@@ -39,3 +39,5 @@ Nenhum rótulo passa de 40% da fila.
 
 Previsão somada, faturamento estimado de 3 meses, SKUs na fila (43) e quantidade sugerida agora (22.900 un.) são idênticos ao antes:
 a etapa muda a priorização, os rótulos e a visibilidade, não o motor de previsão nem a ação operacional por SKU.
+
+> Nota (upload, R1): os números de rótulos deste documento são de antes da referência única. Depois dela, na fila de 43: Priorizar produção 16 (37,2%), Monitorar 11, Produzir 6. As tabelas acima/abaixo não foram reescritas.
