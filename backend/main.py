@@ -15,6 +15,8 @@ from datetime import date
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -81,7 +83,7 @@ CAPACITY_EXTENSION_OFF = {"enabled": False, "method": "media_compromissos_8_sema
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 logger = logging.getLogger("caderno_inteligente.api")
 
-from backend.registry import auth_required, auth_secret, create_registry_router  # noqa: E402
+from backend.registry import api_auth_error, auth_required, auth_secret, create_registry_router  # noqa: E402
 from backend.security import (  # noqa: E402
     MAX_ANALYSIS_MINUTES,
     TEXT_LIMITS,
@@ -149,7 +151,23 @@ app = FastAPI(
     title="Caderno Inteligente API",
     description="API local e auditável para apoio à decisão do PCP.",
     version="0.2.0",
+    # Em produção a documentação interativa e o esquema da API não ficam públicos (a barreira de login só cobre /api).
+    docs_url=None if SETTINGS.production else "/docs",
+    redoc_url=None if SETTINGS.production else "/redoc",
+    openapi_url=None if SETTINGS.production else "/openapi.json",
 )
+
+
+async def _require_login(request, call_next):
+    """Login antes de qualquer dado: toda rota de /api (menos login, health e system) exige Bearer válido. Fica por dentro do CORS."""
+    refused = api_auth_error(request, user_store, lambda: settings().production)
+    if refused is not None:
+        status, message = refused
+        return JSONResponse({"detail": message}, status_code=status, headers={"WWW-Authenticate": "Bearer"})
+    return await call_next(request)
+
+
+app.add_middleware(BaseHTTPMiddleware, dispatch=_require_login)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=list(SETTINGS.cors_origins),

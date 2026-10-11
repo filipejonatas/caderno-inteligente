@@ -20,6 +20,7 @@ const ROUTES: Array<[string, RegExp]> = [
   ['datasetApply', /^\/api\/dataset\/apply$/],
   ['datasetRestoreOriginal', /^\/api\/dataset\/restore-original$/],
   ['datasetTemplate', /^\/api\/dataset\/template$/],
+  ['datasetExample', /^\/api\/dataset\/example$/],
   ['dataset', /^\/api\/dataset$/],
   ['validation', /^\/api\/validation\/summary$/],
   ['forecastLab', /^\/api\/forecast-lab$/],
@@ -75,6 +76,7 @@ const DEFAULTS: Record<string, Value> = {
   'POST skuAction': (url: URL) => { const parts = url.pathname.split('/'); return { sku: decodeURIComponent(parts[parts.length - 2] ?? ''), version: 2 }; },
   users: { items: [] }, 'POST users': { email: 'novo@exemplo.test', name: 'Novo' },
   dataset: fx.datasetOriginal, datasetVersions: fx.datasetVersions,
+  datasetExample: () => new Response(new Blob(['exemplo sintético']), { headers: { 'Content-Disposition': 'attachment; filename="atualizacao-2026-10.xlsx"' } }),
   datasetTemplate: () => new Response(new Blob(['modelo sintético']), { headers: { 'Content-Disposition': 'attachment; filename="modelo-caderno-inteligente-2026-09-14.xlsx"' } }),
   'POST datasetPreview': fx.datasetPreviewOk, 'POST datasetApply': fx.datasetApplyResult,
   'POST datasetVersionRestore': (url: URL) => ({ ...fx.datasetApplyResult, version: 3, version_id: 3, restored_from: Number(url.pathname.split('/')[4]) }),
@@ -116,6 +118,9 @@ function LocationProbe() {
 
 export const currentLocation = () => document.querySelector('[data-testid="location"]')?.textContent ?? '';
 
-export function renderApp(path = '/') {
+const SESSION_KEY = 'caderno-inteligente.sessao';
+/** O app só abre depois do login: por padrão os testes já entram (token-padrao); `{ signedIn: false }` mostra a tela de login. */
+export function renderApp(path = '/', { signedIn = true }: { signedIn?: boolean } = {}) {
+  if (signedIn && !window.localStorage.getItem(SESSION_KEY)) window.localStorage.setItem(SESSION_KEY, JSON.stringify({ token: 'token-padrao', expiresAt: 4_102_444_800, user: fx.sessionUser }));
   return render(<MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}><App /><LocationProbe /></MemoryRouter>);
 }

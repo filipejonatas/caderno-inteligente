@@ -21,8 +21,8 @@ const signedIn = () => window.localStorage.setItem(SESSION_KEY, JSON.stringify({
 describe('/usuarios', () => {
   it('sem sessão leva ao login', async () => {
     mockApi({ users });
-    renderApp('/usuarios');
-    expect(await screen.findByRole('heading', { level: 2, name: 'Entrar' })).toBeInTheDocument();
+    renderApp('/usuarios', { signedIn: false });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument();
   });
 
   it('lista, cadastra e recarrega a lista', async () => {

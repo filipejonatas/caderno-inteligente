@@ -166,7 +166,7 @@ Variáveis de ambiente do backend (exemplo em `.env.example`):
 | `DEMO_MODE` | `false` | `true` exibe aviso de dados fictícios que podem ser apagados |
 | `WRITE_ENABLED` | `true` | `false` bloqueia decisões, casos, execuções, cadastro de SKU e envio de planilha (403); consultas e simulações continuam |
 | `DATA_SOURCE` | `planilha` | `banco` lê as abas do banco (importadas com `scripts/import_workbook.py`) e habilita o cadastro de SKU ([fase 3](docs/fase-3-banco-e-cadastro.md)) e a atualização da base pela tela ([resumo](docs/upload-planilha-resumo.md)) |
-| `AUTH_REQUIRED` | `false` | `true` exige login no cadastro de SKU. Por enquanto, o cadastro fica liberado. O envio de planilha exige login **sempre**, com `true` ou `false` |
+| `AUTH_REQUIRED` | `true` | Login em todo o sistema: a tela abre no login e toda rota de `/api` (menos login, `health` e `system`) exige Bearer válido. `false` só para desenvolvimento e testes. O envio de planilha e o cadastro de usuários exigem login **sempre** |
 | `AUTH_SECRET` | — | Secreta (32+ caracteres). Assina o login do cadastro de SKU; em produção, sem ela o login fica desligado |
 | `AUTH_TOKEN_HOURS` | `8` | Validade da sessão de login (1 a 24 h) |
 | `LOG_LEVEL` | `INFO` | Nível de log; os logs nunca imprimem `DATABASE_URL` |

@@ -13,7 +13,7 @@ SECRET = "segredo-de-teste-" + "x" * 30
 @pytest.fixture
 def env(tmp_path, monkeypatch):
     monkeypatch.setenv("AUTH_SECRET", SECRET)
-    monkeypatch.delenv("AUTH_REQUIRED", raising=False)
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
     database = Database(sqlite_path=tmp_path / "dataset.db")
     UserStore(database).create_user("pcp@exemplo.com", "Ana PCP", "senha-gerada-no-teste")
     state = {"writable": True}

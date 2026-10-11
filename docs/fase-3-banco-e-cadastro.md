@@ -39,7 +39,7 @@ Origem: [proposta-melhorias.md](proposta-melhorias.md), fase 3 (a atualização 
 
 ## Login
 
-**Login desligado por enquanto:** `AUTH_REQUIRED` é `false` por padrão. O cadastro de SKU fica liberado para quem abre a lista de SKUs, e as alterações são registradas como `sem-login` em `sku_changes`. O login continua implementado e testado: para religá-lo, configure `AUTH_REQUIRED=true` e `AUTH_SECRET` e crie os usuários com `scripts/create_user.py`.
+**Login em todo o sistema (desde 2026-10-12):** `AUTH_REQUIRED` é `true` por padrão. O app abre na tela de login, antes de qualquer página, e toda rota de `/api` (menos `/api/auth/login`, `/api/health` e `/api/system`) responde 401 sem um Bearer válido. Configure `AUTH_SECRET` e crie o primeiro usuário com `scripts/create_user.py`. Com `AUTH_REQUIRED=false` (só desenvolvimento e testes), a API fica liberada e o cadastro de SKU registra `sem-login` em `sku_changes`.
 
 Com `AUTH_REQUIRED=true`:
 
@@ -54,7 +54,7 @@ Com `AUTH_REQUIRED=true`:
 | Variável | Padrão | Efeito |
 |---|---|---|
 | `DATA_SOURCE` | `planilha` | `banco` lê as abas do banco e habilita o cadastro. Valor desconhecido mantém a planilha |
-| `AUTH_REQUIRED` | `false` | `true` exige login no cadastro de SKU. Com `false`, o cadastro fica liberado e o formulário de login não aparece |
+| `AUTH_REQUIRED` | `true` | Exige login em toda a API e na interface. Com `false` (desenvolvimento e testes), a API fica liberada |
 | `AUTH_SECRET` | — | Secreta, com 32 caracteres ou mais. Sem ela, o desenvolvimento usa um segredo aleatório por processo e a produção desliga o login (503) |
 | `AUTH_TOKEN_HOURS` | `8` | Validade do token, entre 1 e 24 h |
 

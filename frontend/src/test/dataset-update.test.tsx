@@ -50,7 +50,7 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     expect(active.getByText('14/09/2026')).toBeInTheDocument();
     expect(active.getByText('ago/26')).toBeInTheDocument();
     expect(active.getByText('planilha original')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Baixar modelo (.xlsx)' })).toHaveAttribute('href', '/api/dataset/template');
+    expect(screen.getByRole('button', { name: 'Baixar modelo (.xlsx)' })).toBeInTheDocument();
   });
 
   it('com a base na planilha, o envio fica desabilitado e mostra o motivo do servidor', async () => {
@@ -63,24 +63,17 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     expect(api.calls.some((call) => call.method === 'POST')).toBe(false);
   });
 
-  it('com o motivo "login", leva para /login e, depois de entrar, volta com o envio liberado', async () => {
-    mockApi(byLogin);
-    renderApp('/dados/atualizar');
-    expect(await screen.findByRole('heading', { level: 2, name: 'Entrar' })).toBeInTheDocument();
-    expect(screen.queryByLabelText(/^Planilha/)).not.toBeInTheDocument();
-    const form = screen.getByRole('form');
-    await userEvent.type(within(form).getByLabelText('E-mail'), sessionUser.email);
-    await userEvent.type(within(form).getByLabelText('Senha'), 'senha-forte-123');
-    await userEvent.click(within(form).getByRole('button', { name: 'Entrar' }));
-    await screen.findByRole('heading', { level: 2, name: 'Atualizar a base pela planilha' });
-    await waitFor(() => expect(screen.getByLabelText(/^Planilha/)).toBeEnabled());
-    expect(screen.getByText('Ana PCP')).toBeInTheDocument();
-    expect(screen.queryByRole('form')).not.toBeInTheDocument();
-  });
-
-  it('oferece o modelo e o exemplo fictício para baixar', async () => {
-    await openPage();
-    expect(screen.getByRole('link', { name: 'Baixar exemplo fictício' })).toHaveAttribute('href', '/api/dataset/example');
+  it('modelo e exemplo fictício são baixados com o login da sessão', async () => {
+    const created: Blob[] = [];
+    HTMLAnchorElement.prototype.click = () => {}; // jsdom não navega
+    Object.assign(URL, { createObjectURL: (blob: Blob) => { created.push(blob); return 'blob:teste'; }, revokeObjectURL: () => {} });
+    const { api } = await openPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Baixar modelo (.xlsx)' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Baixar exemplo fictício' }));
+    await waitFor(() => expect(created).toHaveLength(2));
+    const downloads = api.calls.filter((call) => call.path === '/api/dataset/template' || call.path === '/api/dataset/example');
+    expect(downloads.map((call) => call.path)).toEqual(['/api/dataset/template', '/api/dataset/example']);
+    expect(downloads.every((call) => call.headers.Authorization === 'Bearer token-padrao')).toBe(true);
   });
 
   it('prévia com erro mostra a linha endereçada, "mais N iguais" e não oferece "Aplicar"', async () => {
@@ -152,11 +145,11 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     await waitFor(() => expect(api.calls.filter((call) => call.path === '/api/dataset/preview')).toHaveLength(2));
   });
 
-  it('sessão vencida (401) na prévia volta ao login', async () => {
+  it('sessão vencida (401) na prévia volta à tela de login', async () => {
     signedIn();
     await openPage({ ...byLogin, 'POST datasetPreview': fail(401, 'Token inválido.') });
     await upload();
-    expect(await screen.findByRole('heading', { level: 2, name: 'Entrar' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
@@ -214,15 +207,6 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     expect(top5.getAllByText('Não disponível').length).toBeGreaterThan(0);
   });
 
-  it('token vencido: com sessão local e GET pedindo login, encerra a sessão e mostra o login', async () => {
-    signedIn();
-    mockApi({ dataset: datasetLoginRequired });
-    renderApp('/dados/atualizar');
-    await screen.findByRole('heading', { level: 2, name: 'Entrar' });
-    expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
-    expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
-  });
-
   it('falha de rede numa nova prévia mostra o erro e "Refazer a prévia", e o campo é limpo para reescolher o mesmo arquivo', async () => {
     signedIn();
     const { api } = await openPage({ ...byLogin, 'POST datasetPreview': () => { throw new TypeError('Failed to fetch'); } });
@@ -248,17 +232,11 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
 });
 
 describe.each(['desktop', 'mobile'] as const)('acessibilidade de /dados/atualizar (%s)', (viewport) => {
-  it('sem violações: desabilitada, com login e com prévia', async () => {
+  it('sem violações: desabilitada e com prévia', async () => {
     setViewport(viewport);
     const disabled = await openPage();
     expect(await violations(disabled.container)).toEqual([]);
     disabled.unmount();
-
-    mockApi(byLogin);
-    const login = renderApp('/dados/atualizar');
-    await screen.findByRole('heading', { level: 2, name: 'Entrar' });
-    expect(await violations(login.container)).toEqual([]);
-    login.unmount();
 
     signedIn();
     const withPreview = await openPage(byLogin);

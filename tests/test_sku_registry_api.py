@@ -46,7 +46,7 @@ def _auth(client) -> dict:
 
 
 def _skus(client) -> set[str]:
-    return {item["sku"] for item in client.get("/api/forecasts").json()}
+    return {item["sku"] for item in client.get("/api/forecasts", headers=_auth(client)).json()}
 
 
 def test_login_issues_a_token_that_identifies_the_user(client):
@@ -69,9 +69,11 @@ def test_system_reports_the_data_source(client):
 
 
 def test_database_source_gives_the_same_ranking_as_the_spreadsheet(client, monkeypatch):
-    from_database = client.get("/api/priorities").json()
+    headers = _auth(client)
+    from_database = client.get("/api/priorities", headers=headers).json()
+    assert from_database and "detail" not in from_database
     monkeypatch.setenv("DATA_SOURCE", "planilha")
-    assert client.get("/api/priorities").json() == from_database
+    assert client.get("/api/priorities", headers=headers).json() == from_database
 
 
 def test_sku_registry_full_cycle(client):
@@ -81,13 +83,13 @@ def test_sku_registry_full_cycle(client):
     assert created.status_code == 201, created.text
     assert created.json() == {"sku": "CI-9001", "version": 2}
     assert "CI-9001" in _skus(client)
-    detail = client.get("/api/priorities/CI-9001").json()
+    detail = client.get("/api/priorities/CI-9001", headers=headers).json()
     assert detail["indicator"]["Produto"] == "Caderno Teste"
 
     assert client.post("/api/skus", json=NEW_SKU, headers=headers).status_code == 409
     edited = client.put("/api/skus/CI-9001", json={**FIELDS, "produto": "Caderno Teste 2"}, headers=headers)
     assert edited.status_code == 200 and edited.json()["version"] == 3
-    assert client.get("/api/priorities/CI-9001").json()["indicator"]["Produto"] == "Caderno Teste 2"
+    assert client.get("/api/priorities/CI-9001", headers=headers).json()["indicator"]["Produto"] == "Caderno Teste 2"
 
     registry = client.get("/api/skus/cadastro", headers=headers).json()
     assert registry["editable"] and "Clássico" in registry["families"]
@@ -96,8 +98,8 @@ def test_sku_registry_full_cycle(client):
 
     assert client.post("/api/skus/CI-9001/excluir", headers=headers).status_code == 200
     assert "CI-9001" not in _skus(client)
-    assert client.get("/api/priorities/CI-9001").status_code == 404
-    assert client.post("/api/cases", json={"sku": "CI-9001"}).status_code == 422
+    assert client.get("/api/priorities/CI-9001", headers=headers).status_code == 404
+    assert client.post("/api/cases", json={"sku": "CI-9001"}, headers=headers).status_code == 422
     assert client.post("/api/skus/CI-9001/excluir", headers=headers).status_code == 409
     assert client.post("/api/skus", json=NEW_SKU, headers=headers).status_code == 409
 
@@ -107,10 +109,10 @@ def test_sku_registry_full_cycle(client):
 
 def test_deleting_an_existing_sku_keeps_its_decision_history(client):
     headers = _auth(client)
-    assert client.post("/api/feedback", json={"sku": "CI-0014", "action": "aceita"}).status_code == 200
+    assert client.post("/api/feedback", json={"sku": "CI-0014", "action": "aceita"}, headers=headers).status_code == 200
     assert client.post("/api/skus/CI-0014/excluir", headers=headers).status_code == 200
     assert "CI-0014" not in _skus(client)
-    assert [item["sku"] for item in client.get("/api/feedback").json()] == ["CI-0014"]
+    assert [item["sku"] for item in client.get("/api/feedback", headers=headers).json()] == ["CI-0014"]
 
 
 @pytest.mark.parametrize("body, message", [
@@ -163,7 +165,7 @@ def test_cors_allows_the_authorization_header():
 
 
 def test_without_auth_required_registry_is_open_and_changes_are_logged_as_sem_login(client, monkeypatch):
-    monkeypatch.delenv("AUTH_REQUIRED")
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
     assert client.get("/api/system").json()["auth_required"] is False
     assert client.get("/api/skus/cadastro").status_code == 200
     assert client.post("/api/skus", json=NEW_SKU).status_code == 201
@@ -175,7 +177,7 @@ def test_without_auth_required_registry_is_open_and_changes_are_logged_as_sem_lo
 
 
 def test_open_registry_still_respects_read_only_and_spreadsheet_mode(client, monkeypatch):
-    monkeypatch.delenv("AUTH_REQUIRED")
+    monkeypatch.setenv("AUTH_REQUIRED", "false")
     monkeypatch.setattr(main, "SETTINGS", replace(main.SETTINGS, write_enabled=False))
     assert client.post("/api/skus", json=NEW_SKU).status_code == 403
     monkeypatch.setattr(main, "SETTINGS", replace(main.SETTINGS, write_enabled=True))

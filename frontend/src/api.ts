@@ -6,6 +6,7 @@ import type { EventAnalysis } from './types-events';
 import type { ForecastLab } from './types-forecast-lab';
 import type { ModelBenchmark } from './types-model-benchmark';
 import type { ProductionPlan } from './types-production';
+import { endSession, readSession } from './session';
 import type { AppUser, LoginResult, SessionUser, SkuFields, SkuRegistry, SkuSaved } from './types-registry';
 import type { RevenueForecast } from './types-revenue';
 import type { RulesCoverage } from './types-rules';
@@ -56,13 +57,20 @@ const bearer = (token: string): Record<string, string> => token ? { Authorizatio
 
 type ErrorBody = { detail?: string | Array<{ msg?: string; loc?: unknown[] }>; code?: string; preview?: DatasetPreview };
 
+/** Toda chamada leva o token da sessão; um 401 (fora do próprio login) encerra a sessão e o app volta para a tela de login. */
 async function send(path: string, init?: RequestInit): Promise<Response> {
+  const token = readSession()?.token;
+  const headers = init?.headers as Record<string, string> | undefined;
+  const signed: RequestInit | undefined = token && !headers?.Authorization ? { ...init, headers: { ...headers, ...bearer(token) } } : init;
+  let response: Response;
   try {
-    return await fetch(`${API_ROOT}${path}`, init);
+    response = await fetch(`${API_ROOT}${path}`, signed);
   } catch (error) {
     if (init?.signal?.aborted) throw error;
     throw new ApiError('Não foi possível conectar ao servidor. Verifique se a API está disponível.');
   }
+  if (response.status === 401 && path !== '/auth/login') endSession();
+  return response;
 }
 
 function errorFrom(status: number, body: ErrorBody | null): ApiError {
@@ -116,9 +124,23 @@ const fileInit = (token: string, file: File, headers: Record<string, string> = {
   body: file,
 });
 
-/** Link direto do modelo .xlsx (base ativa, 13 abas). */
-export const DATASET_TEMPLATE_URL = `${API_ROOT}/dataset/template`;
-export const DATASET_EXAMPLE_URL = `${API_ROOT}/dataset/example`;
+/** Modelo .xlsx (base ativa, 13 abas) e exemplo fictício: baixados com fetch, porque um link simples não leva o login. */
+export const DATASET_TEMPLATE_PATH = '/dataset/template';
+export const DATASET_EXAMPLE_PATH = '/dataset/example';
+
+export async function downloadFile(path: string, fallbackName: string): Promise<void> {
+  const response = await send(path);
+  if (!response.ok) throw errorFrom(response.status, await errorBody(response));
+  const named = /filename="?([^";]+)"?/.exec(response.headers.get('Content-Disposition') ?? '');
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = named?.[1] ?? fallbackName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
 
 export async function previewDataset(token: string, file: File): Promise<DatasetPreviewOutcome> {
   const outcome = await upload<DatasetPreview>('/dataset/preview', fileInit(token, file));

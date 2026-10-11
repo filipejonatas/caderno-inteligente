@@ -53,9 +53,29 @@ OPEN_USER = {"email": "sem-login", "name": ""}
 
 
 def auth_required() -> bool:
-    """AUTH_REQUIRED=true exige login no cadastro de SKU. Padrão false por enquanto: o cadastro fica liberado
-    e as alterações são registradas como 'sem-login'. O login continua implementado para ser religado depois."""
-    return (os.getenv("AUTH_REQUIRED") or "").strip().lower() in ("1", "true", "yes", "on", "sim")
+    """Login em todo o sistema: com AUTH_REQUIRED ligado (padrão), nenhuma rota de /api responde sem um Bearer válido
+    (exceto login, health e system) e o cadastro de SKU registra o usuário. AUTH_REQUIRED=false só serve para
+    desenvolvimento e testes: libera a API (o upload e o cadastro de usuários continuam exigindo login)."""
+    return (os.getenv("AUTH_REQUIRED") or "").strip().lower() not in ("0", "false", "no", "off", "nao", "não")
+
+
+PUBLIC_API_PATHS = frozenset({"/api/auth/login", "/api/health", "/api/system"})
+
+
+def api_auth_error(request: Request, users: Callable[[], UserStore], production: Callable[[], bool]) -> tuple[int, str] | None:
+    """Barreira global da API: (status, mensagem) quando a chamada deve ser recusada, ou None quando pode seguir."""
+    # O mesmo caminho que o roteador casa: sem o root_path (atrás de proxy, request.url.path o inclui e a barreira seria pulada).
+    path = request.scope.get("path", request.url.path)
+    root = request.scope.get("root_path") or ""
+    if root and path.startswith(root):
+        path = path[len(root):]
+    if not auth_required() or request.method == "OPTIONS" or not path.startswith("/api/") or path in PUBLIC_API_PATHS:
+        return None
+    try:
+        login_user(request, users, production)
+    except HTTPException as error:
+        return error.status_code, str(error.detail)
+    return None
 
 
 def token_hours() -> int:

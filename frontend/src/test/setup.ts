@@ -9,6 +9,15 @@ configure({ asyncUtilTimeout: 5000 });
 let mobile = false;
 export function setViewport(kind: 'mobile' | 'desktop') { mobile = kind === 'mobile'; }
 
+// Storage em memória: o `localStorage` experimental do Node recente esconde o do jsdom.
+beforeEach(() => {
+  const data = new Map<string, string>();
+  Object.defineProperty(window, 'localStorage', {
+    configurable: true,
+    value: { getItem: (key: string) => data.get(key) ?? null, setItem: (key: string, value: string) => { data.set(key, String(value)); }, removeItem: (key: string) => { data.delete(key); }, clear: () => data.clear() },
+  });
+});
+
 beforeEach(() => {
   mobile = false;
   window.matchMedia = ((query: string) => ({

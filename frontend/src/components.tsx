@@ -141,7 +141,7 @@ export function RuleLine() {
   return <p className="rule-line" role="note"><strong>Apoio à decisão:</strong> toda sugestão exige revisão humana e não é ordem de produção. <Link to="/guia">Ajuda</Link></p>;
 }
 
-export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false }: { title: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
+export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = true, loadedAt = null, error = '', staticPage = false, menuOpen = false, user, onSignOut }: { user?: string; onSignOut?: () => void; title: string; onMenu: () => void; onRefresh: () => void; refreshing: boolean; showRefresh?: boolean; loadedAt?: number | null; error?: string; staticPage?: boolean; menuOpen?: boolean }) {
   const timestamp = loadedAt === null ? null : new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(loadedAt));
   return <header className="topbar">
     <div className="topbar-title">
@@ -151,6 +151,8 @@ export function Topbar({ title, onMenu, onRefresh, refreshing, showRefresh = tru
     <div className="topbar-actions">
       <div className="load-status" role="status"><span>{staticPage ? 'Conteúdo de orientação' : refreshing ? 'Carregando dados…' : error ? 'Falha na consulta' : loadedAt === null ? 'Sem dados carregados' : 'Dados carregados'}</span><small title="Última consulta concluída no navegador; não indica atualização da planilha de origem.">{staticPage ? 'Não consulta a API' : timestamp ? `Atualizado às ${timestamp}` : 'Ainda sem carga concluída'}</small></div>
       <Link className="secondary-button help-link" to="/guia" aria-label="Ajuda: abrir o guia de uso"><Icon name="guide" size={17} /><span>Ajuda</span></Link>
+      {user && <span className="topbar-user" title="Usuário conectado">{user}</span>}
+      {onSignOut && <button type="button" className="secondary-button" onClick={onSignOut}>Sair</button>}
       {showRefresh && <button className="secondary-button" onClick={onRefresh} disabled={refreshing} aria-label={refreshing ? 'Atualizando dados' : 'Atualizar dados desta página'}><Icon name="refresh" /><span>{refreshing ? 'Atualizando…' : 'Atualizar'}</span></button>}
     </div>
   </header>;

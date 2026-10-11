@@ -35,32 +35,12 @@ describe('cadastro de SKU (fase 3)', () => {
     expect(screen.queryByRole('form', { name: 'Entrar para cadastrar SKUs' })).not.toBeInTheDocument();
   });
 
-  it('com a base no banco, pede login e depois consulta o cadastro com o token', async () => {
+  it('com a base no banco, consulta o cadastro com o token da sessão', async () => {
     const api = mockApi(banco);
     renderApp('/skus');
-    const form = await screen.findByRole('form', { name: 'Entrar para cadastrar SKUs' });
-    expect(screen.queryByRole('button', { name: `Excluir ${SKU_OK}` })).not.toBeInTheDocument();
-    await userEvent.type(within(form).getByLabelText('E-mail'), sessionUser.email);
-    await userEvent.type(within(form).getByLabelText('Senha'), 'senha-forte-123');
-    await userEvent.click(within(form).getByRole('button', { name: 'Entrar' }));
-
-    expect(await screen.findByRole('button', { name: 'Adicionar SKU' })).toBeEnabled();
-    expect(screen.getByText('Ana PCP')).toBeInTheDocument();
-    expect(api.calls.find((call) => call.path === '/api/auth/login')?.body).toEqual({ email: sessionUser.email, password: 'senha-forte-123' });
-    expect(api.calls.find((call) => call.path === '/api/skus/cadastro')?.headers.Authorization).toBe('Bearer token-sintetico');
+    await waitFor(async () => expect(await screen.findByRole('button', { name: 'Adicionar SKU' })).toBeEnabled());
+    expect(api.calls.find((call) => call.path === '/api/skus/cadastro')?.headers.Authorization).toBe('Bearer token-padrao');
     expect(screen.getByRole('button', { name: `Excluir ${SKU_OK}` })).toBeInTheDocument();
-    expect(JSON.parse(window.localStorage.getItem(SESSION_KEY) ?? '{}').user.email).toBe(sessionUser.email);
-  });
-
-  it('login recusado mostra o motivo e não guarda sessão', async () => {
-    mockApi({ ...banco, 'POST login': fail(401, 'E-mail ou senha incorretos.') });
-    renderApp('/skus');
-    const form = await screen.findByRole('form', { name: 'Entrar para cadastrar SKUs' });
-    await userEvent.type(within(form).getByLabelText('E-mail'), sessionUser.email);
-    await userEvent.type(within(form).getByLabelText('Senha'), 'errada');
-    await userEvent.click(within(form).getByRole('button', { name: 'Entrar' }));
-    expect(await within(form).findByRole('alert')).toHaveTextContent('E-mail ou senha incorretos.');
-    expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
   it('cadastra um SKU novo e recarrega a lista', async () => {
@@ -140,7 +120,7 @@ describe('cadastro de SKU (fase 3)', () => {
     mockApi({ ...banco, skuRegistry: fail(401, 'Sessão inválida ou expirada. Entre novamente.') });
     renderApp('/skus');
     expect(await screen.findByText('Sua sessão expirou. Entre novamente.')).toBeInTheDocument();
-    expect(screen.getByRole('form', { name: 'Entrar para cadastrar SKUs' })).toBeInTheDocument();
+    expect(screen.getByRole('form', { name: 'Entrar' })).toBeInTheDocument();
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
@@ -161,17 +141,14 @@ describe('cadastro de SKU (fase 3)', () => {
     expect((await axe.run(container, { rules: { 'color-contrast': { enabled: false } }, resultTypes: ['violations'] })).violations).toEqual([]);
   });
 
-  it('sem login exigido, o cadastro abre direto, sem formulário de login nem token', async () => {
+  it('sem login exigido pelo servidor, o cadastro abre direto, sem formulário de login', async () => {
     const api = mockApi({ system: { ...system, data_source: 'banco', auth_required: false } });
     renderApp('/skus');
     expect(await screen.findByRole('button', { name: 'Adicionar SKU' })).toBeEnabled();
     expect(screen.queryByRole('form', { name: 'Entrar para cadastrar SKUs' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: `Excluir ${SKU_OK}` }));
     await userEvent.click(screen.getByRole('button', { name: `Confirmar exclusão de ${SKU_OK}` }));
     await screen.findByText(/excluído\./);
-    const writes = api.calls.filter((call) => call.path.startsWith('/api/skus'));
-    expect(writes.length).toBeGreaterThan(1);
-    expect(writes.every((call) => !('Authorization' in call.headers))).toBe(true);
+    expect(api.calls.filter((call) => call.path.startsWith('/api/skus')).length).toBeGreaterThan(1);
   });
 });
