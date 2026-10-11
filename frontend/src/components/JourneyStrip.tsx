@@ -4,6 +4,8 @@ import { api } from '../api';
 import { useApiResource } from '../hooks/useApiResource';
 import { JOURNEY } from '../journey';
 import type { CapacityFamilyStatus, Overview } from '../types';
+import type { AllocationRegions } from '../types-allocation';
+import type { Resource } from './OverviewPanel';
 import { displayCurrency, displayNumber, displayUnits, formatDate } from '../pages/shared';
 
 type Tone = 'urgent' | 'review' | 'neutral';
@@ -16,12 +18,11 @@ const tone = (count: number, level: Tone): Tone => count > 0 ? level : 'neutral'
 
 /**
  * Cinco etapas do trabalho do PCP, cada uma com a pergunta, um número e o caminho.
- * Ver, decidir e confiar saem do `overview`; caber e atender carregam à parte e, se falharem, só aquela etapa diz "indisponível".
+ * Ver, decidir e confiar saem do `overview`; atender usa a leitura de regiões que o Início também mostra no mapa; caber carrega à parte e, se falharem, só aquela etapa diz "indisponível".
  * A Validação não é chamada aqui: ela recalcula a cada leitura (2 a 4 s), então "confiar" usa a contagem de confiança baixa do `overview`.
  */
-export function JourneyStrip({ overview, refreshToken }: { overview: Overview; refreshToken: number }) {
+export function JourneyStrip({ overview, allocation, refreshToken }: { overview: Overview; allocation: Resource<AllocationRegions>; refreshToken: number }) {
   const capacity = useApiResource(api.capacityPlan, refreshToken);
-  const allocation = useApiResource(api.allocationRegions, refreshToken);
 
   const decisions = overview.decisions_today;
   const short = capacity.data?.families.filter((family) => isShort(family.status)) ?? [];

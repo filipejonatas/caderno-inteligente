@@ -339,7 +339,9 @@ h1, h2, h3, h4, h5 { margin: 0; }
 .rank-bar path { fill: var(--pen); }
 
 /* Mosaico dos gráficos do Início: 2 × 2, cartões da mesma linha com a mesma altura e o botão no pé. */
-.home-mosaic { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4) var(--space-5); align-items: stretch; margin-bottom: var(--space-4); }
+.home-mosaic { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4) var(--space-5); align-items: stretch; margin-bottom: var(--space-4); }
+.home-mosaic { grid-auto-flow: dense; }
+.home-mosaic > :where(.projected-chart-card, .family-pie-card, .decisions-today) { grid-column: span 2; }
 .home-mosaic > .section-card { display: flex; flex-direction: column; margin-bottom: 0; }
 .home-mosaic > .section-card > .secondary-button { align-self: flex-start; margin-top: auto; }
 .home-mosaic > .section-card > :nth-last-child(2) { margin-bottom: var(--space-3); }
@@ -644,6 +646,18 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 .page-content :where(.page-intro, .attention-focus, .answer-card, .verdict, .filter-bar, .kpi-cards, .section-card, .ui-alert):nth-child(n+5) { animation-delay: 200ms; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
+
+/* Mapa de regiões do Início: blocos no desenho do Brasil; a cor mais forte é mais valor sem cobertura. Região sem pedidos fica tracejada. */
+.region-map { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "n ne" "co se" "s l"; gap: var(--space-2); margin: 0 0 var(--space-3); padding: 0; list-style: none; }
+.region-tile { --heat: 0; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-1); min-height: 76px; padding: var(--space-2) var(--space-3); border: 1px solid var(--ink); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--urgent-bar) calc(8% + var(--heat) * 47%), var(--sheet)); color: var(--ink); }
+.region-tile strong { font-weight: 700; }
+.region-value { font-stretch: 70%; letter-spacing: var(--tight); font-size: var(--text-section); font-weight: 800; line-height: 1.05; }
+.region-tile small { font-size: var(--text-meta); }
+.region-empty { border: 1px dashed var(--graphite); background: transparent; color: var(--graphite); }
+.region-legend { grid-area: l; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-1); color: var(--graphite); font-size: var(--text-meta); }
+.region-scale { height: 8px; border: 1px solid var(--ink); border-radius: var(--radius-sm); background: linear-gradient(90deg, color-mix(in srgb, var(--urgent-bar) 8%, var(--sheet)), color-mix(in srgb, var(--urgent-bar) 55%, var(--sheet))); }
+.home-mosaic > .region-card > .secondary-button { margin-top: auto; }
+
 /* ------------------------------------------------------------------ jornada */
 .journey { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
 .journey-step { --bar: var(--graphite); display: flex; flex-direction: column; gap: var(--space-1); height: 100%; padding: var(--space-3); border: 1px solid var(--rule); border-top: 6px solid var(--bar); border-radius: var(--radius-md); background: var(--sheet); color: var(--ink); text-decoration: none; }
@@ -658,6 +672,10 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 .next-step p { max-width: var(--measure); margin: 0; font-weight: 600; }
 
 /* -------------------------------------------------------------- responsivo */
+@media (max-width: 1199px) {
+  .home-mosaic { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-mosaic > :where(.projected-chart-card, .family-pie-card, .decisions-today) { grid-column: 1 / -1; }
+}
 @media (max-width: 1180px) {
   .journey { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .kpi-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }

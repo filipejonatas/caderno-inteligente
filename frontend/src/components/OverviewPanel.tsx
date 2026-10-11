@@ -12,12 +12,12 @@ import { useWidth } from './MonthlyBars';
 /** Uma leitura da API com o seu estado, para o Início carregar uma vez e repartir entre os blocos. */
 export interface Resource<T> { data?: T; error: string; loading: boolean; refresh: () => Promise<void> }
 
-function BlockLoading({ title }: { title: string }) {
+export function BlockLoading({ title }: { title: string }) {
   return <SectionCard title={title} subtitle="Carregando…"><div className="drawer-loading"><span /><span /></div></SectionCard>;
 }
 
 /** Bloco que falhou: explica e permite nova tentativa sem derrubar o restante do Início. */
-function BlockError({ title, error, retry }: { title: string; error: string; retry: () => Promise<void> }) {
+export function BlockError({ title, error, retry }: { title: string; error: string; retry: () => Promise<void> }) {
   return <Alert tone="warning" title={`${title}: indisponível`} action={<button className="secondary-button" onClick={() => void retry()}>Tentar novamente</button>}>{error || 'Não foi possível carregar este bloco.'} O restante do Início segue válido.</Alert>;
 }
 
@@ -113,7 +113,7 @@ export function RevenueByFamily({ revenue }: { revenue: Resource<RevenueForecast
 }
 
 const ptCompactCurrency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
-const compactCurrency = (value: number) => ptCompactCurrency.format(value);
+export const compactCurrency = (value: number) => ptCompactCurrency.format(value);
 /** Espaço à direita para o valor no fim da barra, pelo maior rótulo (≈7 px por caractere no tamanho de meta). */
 const valueRoom = (rows: RankRow[]) => Math.max(...rows.map((row) => row.valueLabel.length)) * 7 + 12;
 

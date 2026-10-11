@@ -6,7 +6,7 @@ import { useWidth } from './MonthlyBars';
 
 type Week = NonNullable<ProjectedStockSummary['weekly']>[number];
 
-const HEIGHT = 220;
+const HEIGHT = 250;
 const shortDate = (value: string) => formatDate(value).slice(0, 5);
 const skus = (count: number) => `${count} ${count === 1 ? 'SKU' : 'SKUs'}`;
 
