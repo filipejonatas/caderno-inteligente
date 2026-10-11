@@ -10,9 +10,10 @@ describe('legibilidade', () => {
     expect(sizes.filter((size) => size < 12)).toEqual([]);
   });
 
-  it('o texto da interface usa só a escala de cinco tamanhos', () => {
+  it('o texto da interface usa só a escala de tamanhos (cinco, mais o destaque da tela de login)', () => {
     const declared = [...css.matchAll(/font-size:\s*([^;}]+)/g)].map((match) => match[1].trim());
-    const allowed = new Set(['var(--text-meta)', 'var(--text-body)', 'var(--text-lead)', 'var(--text-section)', 'var(--text-page)']);
+    const allowed = new Set(['var(--text-meta)', 'var(--text-body)', 'var(--text-lead)', 'var(--text-section)', 'var(--text-page)', 'var(--text-display)']);
+    // --text-display existe só para o nome do produto na tela de login.
     expect(declared.filter((value) => !allowed.has(value) && !value.startsWith('--'))).toEqual([]);
   });
 });
