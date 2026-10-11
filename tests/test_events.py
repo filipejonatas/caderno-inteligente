@@ -157,6 +157,17 @@ def test_event_inside_horizon_is_flagged_in_horizon_and_decision_date_is_start_m
     assert alert["in_horizon"] is True and alert["decision_date"] == "2026-10-31" and alert["days_to_start"] == 81
 
 
+def test_reference_date_parameter_is_optional_and_overrides_the_forecast_month():
+    """Upload (U.0): sem o parâmetro, referência = fim do último mês de vendas; com ele, a data de planejamento do pipeline."""
+    args = ([_forecast()], _products(("A", "F1", 20)), _sales(), _calendar(BLACK_FRIDAY))
+    default = _analyse(*args)
+    assert default == build_event_analysis(pd.DataFrame([_forecast()]), *args[1:], dict(DEFAULT_SETTINGS), None, None)
+    assert default["reference_date"] == "2026-08-31" and default["reference_month"] == "2026-08-01"
+    pinned = build_event_analysis(pd.DataFrame([_forecast()]), *args[1:], dict(DEFAULT_SETTINGS), reference_date="2026-09-14")
+    assert pinned["reference_date"] == "2026-09-14" and pinned["reference_month"] == "2026-09-01"
+    assert _item(pinned)["alerts"][0]["days_to_start"] == 67 and pinned["horizon_end"] == default["horizon_end"]
+
+
 def test_event_layer_does_not_change_the_forecast_input():
     frame = pd.DataFrame([_forecast()])
     before = frame.copy(deep=True)
@@ -173,6 +184,7 @@ def client():
 
 def test_api_events_contract_and_labels(client):
     body = client.get("/api/events").json()
+    assert body["reference_date"] == "2026-09-14"  # a mesma data de planejamento do plano de suprimento (U.0)
     assert body["limitations"] and body["field_nature"]["factor"]["nature"] == "estimado"
     assert len(body["items"]) == client.get("/api/overview").json()["total_skus"]
     names = {event["name"]: event for event in body["events"]}

@@ -129,3 +129,23 @@ def test_migration_creates_one_table_per_sheet_with_rls():
         assert re.search(rf"create table if not exists public\.{table}\b", sql), table
         assert f"alter table public.{table} enable row level security" in sql, table
     assert "active boolean not null default true" in sql
+
+
+def test_migration_005_is_additive_and_only_uses_if_not_exists():
+    sql = Path("supabase/migrations/005_dataset_uploads.sql").read_text(encoding="utf-8").lower()
+    assert re.search(r"create table if not exists public\.dataset_versions\b", sql)
+    assert "alter table public.dataset_version add column if not exists active_version_id bigint" in sql
+    assert "alter table public.dataset_versions enable row level security" in sql
+    assert "snapshot bytea not null" in sql and "check (action in ('upload', 'restore', 'original'))" in sql
+    for statement in re.findall(r"\b(?:create (?:table|index)|add column)\b[^;]*", sql):
+        assert "if not exists" in statement, statement
+    assert not re.search(r"\b(drop|truncate|delete)\b", sql)
+
+
+def test_load_dataset_can_include_inactive_skus(store, workbook):
+    store.set_active("CI-0001", False, "pcp@exemplo.com")
+    assert store.inactive_skus() == {"CI-0001"}
+    full = store.load_dataset(include_inactive=True)
+    for sheet, frame in workbook.items():
+        pd.testing.assert_frame_equal(full[sheet], frame)
+    assert "CI-0001" not in set(store.load_dataset()["Produtos"]["SKU"])

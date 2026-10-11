@@ -5,7 +5,7 @@ import sqlite3
 from dataclasses import replace
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
 import backend.main as main
@@ -295,3 +295,61 @@ def test_reset_postgres_requires_database_url(monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     with pytest.raises(SystemExit, match="DATABASE_URL não está definida"):
         reset_demo_data(["--postgres"])
+
+
+# ------------------------------------------------------------ limite do upload
+
+def test_upload_routes_have_their_own_body_limit(client):
+    from backend.security import UPLOAD_MAX_BODY_BYTES, max_body_bytes
+    from caderno_inteligente.upload_safety import load_upload_settings
+    assert UPLOAD_MAX_BODY_BYTES == load_upload_settings()["max_upload_bytes"]
+    assert max_body_bytes("/api/dataset/preview") == max_body_bytes("/api/dataset/apply") == UPLOAD_MAX_BODY_BYTES
+    assert max_body_bytes("/api/feedback") == MAX_BODY_BYTES
+    small = client.post("/api/feedback", content=b"x" * (20 * 1024), headers={"content-type": "application/json"})
+    assert small.status_code == 413
+    assert "16 KB" in small.json()["detail"]
+
+
+def _body_limit_app():
+    app = FastAPI()
+    install_error_handling(app, lambda: main.SETTINGS)
+
+    @app.post("/api/dataset/preview")
+    async def preview(request: Request):
+        return {"size": len(await request.body())}
+
+    return TestClient(app)
+
+
+def test_upload_body_limit_is_4_mb_by_content_length_and_chunked_body_is_left_to_the_endpoint():
+    client = _body_limit_app()
+    assert client.post("/api/dataset/preview", content=b"x" * (1024 * 1024)).json() == {"size": 1024 * 1024}
+    big = client.post("/api/dataset/preview", content=b"x" * (5 * 1024 * 1024))
+    assert big.status_code == 413
+    assert big.json()["detail"] == "Arquivo maior que o limite de 4 MB."
+
+    def chunks(total):
+        for _ in range(total // (256 * 1024)):
+            yield b"x" * (256 * 1024)
+
+    assert client.post("/api/dataset/preview", content=chunks(1024 * 1024)).json() == {"size": 1024 * 1024}
+    # Sem Content-Length o middleware não bufferiza o corpo antes da autenticação: o corte é do endpoint real (read_body,
+    # depois do login; ver tests/test_dataset_router.py, critério 8). Este endpoint de teste lê tudo, então recebe os 5 MB.
+    assert client.post("/api/dataset/preview", content=chunks(5 * 1024 * 1024)).json() == {"size": 5 * 1024 * 1024}
+
+
+def test_middleware_does_not_read_a_chunked_upload_body():
+    app = FastAPI()
+    install_error_handling(app, lambda: main.SETTINGS)
+    seen = {}
+
+    @app.post("/api/dataset/apply")
+    async def apply(request: Request):
+        seen["cached"] = hasattr(request, "_body")
+        return {"ok": True}
+
+    def chunks():
+        yield b"x" * 1024
+
+    assert TestClient(app).post("/api/dataset/apply", content=chunks()).json() == {"ok": True}
+    assert seen == {"cached": False}

@@ -13,7 +13,7 @@ import json
 import math
 import re
 import unicodedata
-from datetime import timedelta
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -231,7 +231,9 @@ def build_event_analysis(
     calendar: pd.DataFrame,
     settings: dict[str, Any] | None = None,
     prices: dict[str, float] | None = None,
+    reference_date: str | date | None = None,
 ) -> dict[str, Any]:
+    """Sem `reference_date`, a referência é o fim do último mês de previsão; com ela, a data de planejamento do pipeline."""
     settings = _validate_settings(dict(settings or DEFAULT_SETTINGS))
     events, ignored = parse_events(calendar, settings)
     rows = {row["sku"]: row for row in forecasts.astype(object).where(forecasts.notna(), None).to_dict("records")}
@@ -239,8 +241,12 @@ def build_event_analysis(
 
     sales_last = pd.to_datetime(sales["Mês"]).dt.to_period("M").max()
     references = [row["reference_month"] for row in rows.values() if row.get("reference_month")]
-    reference_period = pd.Period(max(references)[:7], freq="M") if references else sales_last
-    reference_date = reference_period.end_time.normalize()
+    if reference_date is not None:  # referência única do pipeline (upload, U.0): a mesma do plano de suprimento
+        reference_date = pd.Timestamp(reference_date).normalize()
+        reference_period = reference_date.to_period("M")
+    else:
+        reference_period = pd.Period(max(references)[:7], freq="M") if references else sales_last
+        reference_date = reference_period.end_time.normalize()
     horizon_months = sorted({m for row in ok_rows for m in row["forecast_months"]})
     horizon_end = (pd.Period(horizon_months[-1][:7], freq="M") if horizon_months else reference_period + 3).end_time.normalize()
     buffer_days = settings["lookahead_buffer_days"]

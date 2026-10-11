@@ -634,6 +634,14 @@ def _evaluate_case(case: dict, indicators: pd.DataFrame, issues: pd.DataFrame, r
     }
 
 
+def _previous_base_case(case: dict, label: str) -> dict[str, Any]:
+    """Caso de base congelado sobre outra planilha: listado com o rótulo, sem avaliação (D8)."""
+    result = {key: case.get(key) for key in ("id", "title", "kind", "origin", "origin_reason", "sku", "partner", "family", "limitation", "pending_until")}
+    return {**result, "input": None, "expected": case["expected"], "obtained": None, "checks": [], "result": "base_anterior",
+            "status": "base_anterior", "status_label": label,
+            "adjustment": "Nenhum ajuste realizado. O caso foi congelado sobre a base anterior e não é avaliado nem contado com a base ativa."}
+
+
 def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, issues: pd.DataFrame, ranking: pd.DataFrame,
                           forecasts: pd.DataFrame, partner_items: list[dict], thresholds: dict, source_sha256: str,
                           challenge_settings: dict[str, Any] | None = None, plans: dict[str, dict[str, Any]] | None = None,
@@ -644,21 +652,26 @@ def evaluate_frozen_cases(config: dict[str, Any], *, indicators: pd.DataFrame, i
     `channel_rows` (Etapa 16.1): linhas de `build_direct_channels(...)["rows"]`, para rotular o canal direto como a API.
     `allocation` (Etapa 16.2): saída de `build_allocation` do pipeline; sem ela, a alocação do SKU é recalculada pelo mesmo núcleo."""
     settings = challenge_settings or CHALLENGE_DEFAULTS
-    items = [_evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings, plans, capacity, channel_rows, allocation)
-             for case in config["cases"]]
-    counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado", "pendente")}
     matches = source_sha256 == config["frozen_source_sha256"]
+    # D8 (upload): os casos não são recongelados. Com a base ativa diferente da congelada, os casos de origem "base"
+    # ficam visíveis como "base anterior", sem avaliação e fora de passed/failed/pending; os sintéticos seguem valendo.
+    previous_label = f"Refere-se à base anterior ({config.get('frozen_base_label') or 'base congelada'})"
+    items = [_previous_base_case(case, previous_label) if not matches and case.get("origin") == "base"
+             else _evaluate_case(case, indicators, issues, ranking, forecasts, partner_items, thresholds, settings, plans, capacity, channel_rows, allocation)
+             for case in config["cases"]]
+    counts = {key: sum(item["result"] == key for item in items) for key in ("passou", "falhou", "nao_encontrado", "pendente", "base_anterior")}
     return {
         "frozen_at": config["frozen_at"],
         "frozen_source_sha256": config["frozen_source_sha256"],
         "source_matches_frozen": matches,
-        "source_note": None if matches else "A planilha mudou desde o congelamento; os casos baseados na base precisam ser revisados antes de servir como evidência.",
+        "source_note": None if matches else "A planilha mudou desde o congelamento; os casos baseados na base referem-se à base anterior e saem da contagem até serem revisados.",
         "policy": config["policy"],
         "total": len(items),
         "passed": counts["passou"],
         "failed": counts["falhou"],
         "not_found": counts["nao_encontrado"],
         "pending": counts["pendente"],
+        "previous_base": counts["base_anterior"],
         "synthetic": sum(item["origin"] == "synthetic" for item in items),
         "items": items,
     }

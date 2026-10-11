@@ -26,7 +26,7 @@ import pandas as pd
 DEFAULT_PATH = Path(__file__).resolve().parents[2] / "config" / "supply_plan.json"
 
 DEFAULT_SETTINGS: dict[str, Any] = {
-    "reference_date": "2026-09-14",
+    "reference_date": "auto",  # primeira semana de Capacidade_Semanal (reference.py); data explícita sobrescreve
     "decision_window_weeks": 4,
     "target_cover_weeks": 4,
     "excess_coverage_days": 90,
@@ -65,13 +65,14 @@ def _validate_settings(values: dict[str, Any]) -> dict[str, Any]:
             raise ValueError(f"Parâmetro do plano de suprimento inválido: {key}")
         return float(value)
 
-    try:
-        reference = date.fromisoformat(str(values["reference_date"]))
-    except ValueError as error:
-        raise ValueError("reference_date deve ser uma data AAAA-MM-DD") from error
-    if reference.weekday() != 0:
-        raise ValueError("reference_date deve ser uma segunda-feira, como as semanas de Capacidade_Semanal")
-    values["reference_date"] = reference.isoformat()
+    if values["reference_date"] != "auto":  # "auto" é resolvido com os dados (reference.resolve_supply_settings)
+        try:
+            reference = date.fromisoformat(str(values["reference_date"]))
+        except ValueError as error:
+            raise ValueError("reference_date deve ser uma data AAAA-MM-DD ou \"auto\"") from error
+        if reference.weekday() != 0:
+            raise ValueError("reference_date deve ser uma segunda-feira, como as semanas de Capacidade_Semanal")
+        values["reference_date"] = reference.isoformat()
     for key in ("decision_window_weeks", "target_cover_weeks", "excess_coverage_days"):
         if number(key) != int(number(key)) or number(key) < 1:
             raise ValueError(f"Parâmetro precisa ser inteiro ≥ 1: {key}")
@@ -448,6 +449,10 @@ def build_supply_plans(data: dict[str, pd.DataFrame], indicators: pd.DataFrame, 
                        settings: dict[str, Any] | None = None) -> dict[str, dict[str, Any]]:
     """Plano por SKU. `indicators` precisa da demanda de referência (Etapa 15.2) e do status do produto."""
     settings = load_supply_settings() if settings is None else settings
+    if settings["reference_date"] == "auto":
+        from .reference import resolve_supply_settings  # import tardio: reference.py importa este módulo
+
+        settings = resolve_supply_settings(settings, data)
     forecast_by_sku = {str(row["sku"]): row for row in forecasts.to_dict("records")}
     orders = _orders_by_sku(data["Carteira_Pedidos"])
     ops = _open(data["Ordens_Producao"])

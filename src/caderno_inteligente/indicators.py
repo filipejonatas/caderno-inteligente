@@ -3,6 +3,8 @@ from typing import Any
 
 import pandas as pd
 
+from .supply_plan import CLOSED_ORDER_STATUSES
+
 # Etapa 15.2: a cobertura passa a usar a demanda de referência (previsão oficial dos 3 próximos meses), não o campo
 # cadastrado `Produtos.Venda média/dia`, que fica abaixo do vendido em boa parte dos SKUs.
 DEMAND_SETTINGS = {"days_per_month": 30.4, "registered_demand_divergence": 0.20}
@@ -13,6 +15,16 @@ DEMAND_SOURCES = {
 }
 REFERENCE_MONTHS = 3
 
+
+
+# Fonte única dos status encerrados: supply_plan.CLOSED_ORDER_STATUSES.
+CLOSED_STATUSES = CLOSED_ORDER_STATUSES
+
+
+def _open_only(frame: pd.DataFrame) -> pd.DataFrame:
+    if frame.empty or "Status" not in frame:
+        return frame
+    return frame[~frame["Status"].astype(str).str.strip().str.casefold().isin(CLOSED_STATUSES)]
 
 def _sum_by_sku(frame: pd.DataFrame, source_column: str, output_column: str) -> pd.DataFrame:
     return frame.groupby("SKU", as_index=False)[source_column].sum().rename(columns={source_column: output_column})
@@ -139,10 +151,11 @@ def build_sku_indicators(data: dict[str, pd.DataFrame], forecasts: pd.DataFrame 
         for ratio in base["registered_vs_reference_ratio"]
     ]
 
-    orders = data["Ordens_Producao"]
+    # OP concluída ou pedido entregue já está no estoque: não conta como produção aberta nem como carteira (Etapa U.0)
+    orders = _open_only(data["Ordens_Producao"])
     order_totals = _sum_by_sku(orders, "Quantidade", "production_order_quantity")
     first_completion = orders.groupby("SKU", as_index=False)["Conclusão prevista"].min().rename(columns={"Conclusão prevista": "first_production_completion"})
-    backlog = data["Carteira_Pedidos"]
+    backlog = _open_only(data["Carteira_Pedidos"])
     backlog_totals = _sum_by_sku(backlog, "Quantidade", "backlog_order_quantity")
     first_promise = backlog.groupby("SKU", as_index=False)["Data prometida"].min().rename(columns={"Data prometida": "first_promised_date"})
     sell_in = _sum_by_sku(data["Sell_In"], "Quantidade enviada", "sell_in_quantity")

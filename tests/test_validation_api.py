@@ -31,6 +31,7 @@ def test_validation_summary_contract():
     cases = body["frozen_cases"]
     assert len(cases["items"]) == 34
     assert cases["passed"] + cases["failed"] + cases["not_found"] + cases["pending"] == 34
+    assert cases["previous_base"] == 0 and cases["source_matches_frozen"] is True  # base empacotada: nenhum caso fora da contagem (D8)
     # Fechamento da Onda 2 (Etapa 16.2–16.4): os 34 casos passam, nenhum pendente; VC-20 revisto para Priorizar parceiro.
     results = {item["id"]: item["result"] for item in cases["items"]}
     assert all(result == "passou" for result in results.values()) and cases["pending"] == 0 and cases["failed"] == 0
@@ -132,3 +133,31 @@ def test_rebuilt_allocation_matches_the_pipeline_order_for_every_sku():
         rebuilt = _base_allocation(sku, plans, partner_items, None)[0]
         assert rebuilt["contested"] == entry["contested"], sku
         assert [(row["order"], row["uncovered_at_promise"]) for row in rebuilt["orders"]] == [(row["order"], row["uncovered_at_promise"]) for row in entry["orders"]], sku
+
+
+def test_router_uses_the_active_source_hash_and_moves_base_cases_out_of_the_count():
+    from fastapi import FastAPI
+    from backend.validation import create_validation_router
+
+    class Empty:
+        def list_feedback(self):
+            return []
+
+        def list_feedback_records(self):
+            return []
+
+    active = "f" * 64
+    isolated = FastAPI()
+    isolated.include_router(create_validation_router(
+        pipeline=main.pipeline, persistence=lambda: Empty(), recommendations=main._all_operational_recommendations,
+        sku_detail=main.detail, source=main.SOURCE, config_file=ROOT / "config/validation_center.json",
+        thresholds_file=main.THRESHOLDS_FILE, commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
+        source_hash=lambda: active,
+    ))
+    body = TestClient(isolated).get("/api/validation/summary").json()
+    cases = body["frozen_cases"]
+    assert body["source"]["sha256"] == active and cases["source_matches_frozen"] is False
+    assert cases["previous_base"] == 20 and cases["failed"] == 0 and cases["passed"] == 14 and cases["total"] == 34
+    assert all(item["status"] == "base_anterior" and item["status_label"].startswith("Refere-se à base anterior")
+               for item in cases["items"] if item["origin"] == "base")
+    assert not any(failure["area"] == "casos" for failure in body["known_failures"])   # base anterior não é falha

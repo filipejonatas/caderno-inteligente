@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -181,3 +182,13 @@ def test_supabase_migration_enables_rls_and_creates_all_tables():
     for table in ("runs", "cases", "case_history", "feedback"):
         assert f"create table if not exists public.{table}" in sql
         assert f"alter table public.{table} enable row level security" in sql
+
+
+def test_sqlite_persistence_stores_the_active_source_hash_when_given(tmp_path):
+    persistence = SqlitePersistence(tmp_path / "cases.db", tmp_path / "feedback.db", tmp_path / "runs.db")
+    source = tmp_path / "source.xlsm"
+    source.write_bytes(b"base")
+    with_hash = persistence.create_run(source, {}, {}, {}, [], source_hash="abc")
+    without = persistence.create_run(source, {}, {}, {}, [])
+    assert persistence.get_run(with_hash)["source_hash"] == "abc"
+    assert persistence.get_run(without)["source_hash"] == hashlib.sha256(b"base").hexdigest()

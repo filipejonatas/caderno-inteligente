@@ -13,8 +13,10 @@ from typing import Any
 
 import pandas as pd
 
+from .supply_plan import CLOSED_ORDER_STATUSES
+
 DEFAULT_SETTINGS: dict[str, Any] = {"trend_months": 3, "trend_band": 0.1, "inactive_months": 2, "concentration_share": 0.8}
-CLOSED_STATUSES = {"cancelado", "concluído", "entregue", "faturado"}
+CLOSED_STATUSES = CLOSED_ORDER_STATUSES
 VALUE = "Valor faturado (R$)"
 UNITS = "Quantidade faturada"
 
@@ -109,7 +111,7 @@ def direct_channel_codes(partners: pd.DataFrame) -> list[str]:
 
 
 def _open_orders(orders: pd.DataFrame) -> pd.DataFrame:
-    return orders[~orders["Status"].astype(str).str.casefold().isin(CLOSED_STATUSES)]
+    return orders[~orders["Status"].astype(str).str.strip().str.casefold().isin(CLOSED_STATUSES)]
 
 
 def _sku_rows(code: str, frame: pd.DataFrame, products: pd.DataFrame, orders: pd.DataFrame, window: dict[str, Any], settings: dict[str, Any]) -> list[dict]:

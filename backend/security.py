@@ -16,12 +16,16 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from caderno_inteligente.upload_safety import load_upload_settings
+
 logger = logging.getLogger("caderno_inteligente.api")
 
 DEV_ORIGINS = ("http://localhost:5173", "http://127.0.0.1:5173")
 TRUE = {"1", "true", "yes", "on", "sim"}
 FALSE = {"0", "false", "no", "off", "nao", "não"}
 MAX_BODY_BYTES = 16 * 1024
+UPLOAD_MAX_BODY_BYTES = load_upload_settings()["max_upload_bytes"]  # Uma fonte só: config/dataset_upload.json.
+BODY_LIMITS = {"/api/dataset/preview": UPLOAD_MAX_BODY_BYTES, "/api/dataset/apply": UPLOAD_MAX_BODY_BYTES}
 TEXT_LIMITS = {"sku": 32, "note": 2000, "user_name": 80, "owner": 80, "case_action": 200, "search": 100}
 MAX_ANALYSIS_MINUTES = 24 * 60
 WRITE_DISABLED_MESSAGE = "Registro desabilitado nesta publicação (modo somente leitura). Os dados exibidos continuam disponíveis para consulta."
@@ -146,6 +150,16 @@ def clean_text(value: str) -> str:
     return value
 
 
+def max_body_bytes(path: str) -> int:
+    return BODY_LIMITS.get(path, MAX_BODY_BYTES)
+
+
+def _too_large_message(limit: int) -> str:
+    if limit >= 1024 * 1024:
+        return f"Arquivo maior que o limite de {limit // (1024 * 1024)} MB."
+    return f"Requisição maior que o limite de {limit // 1024} KB."
+
+
 def public_message(settings: Settings, message: str, error: Exception) -> str:
     """Development keeps the technical cause; production returns only the generic message and logs the cause."""
     if settings.production:
@@ -162,10 +176,13 @@ def install_error_handling(app: FastAPI, settings_provider) -> None:
         request_id = uuid.uuid4().hex[:12]
         request.state.request_id = request_id
         if request.method in ("POST", "PUT", "PATCH"):
+            limit = max_body_bytes(request.url.path)
             declared = request.headers.get("content-length")
-            if declared and declared.isdigit() and int(declared) > MAX_BODY_BYTES:
-                return JSONResponse({"detail": f"Requisição maior que o limite de {MAX_BODY_BYTES // 1024} KB."}, status_code=413,
-                                    headers={"X-Request-ID": request_id})
+            # Só o Content-Length declarado é conferido aqui (sem ler o corpo). Sem ele (envio em partes), o middleware NÃO
+            # bufferiza nada antes da autenticação: nas rotas de upload o corte em `limit` é do endpoint (read_body em
+            # backend/dataset.py, depois do login), que responde o mesmo 413 FILE_TOO_LARGE.
+            if declared and declared.isdigit() and int(declared) > limit:
+                return JSONResponse({"detail": _too_large_message(limit)}, status_code=413, headers={"X-Request-ID": request_id})
         try:
             response = await call_next(request)
         except Exception as error:  # noqa: BLE001 - last-resort handler; details go to the redacted log only.

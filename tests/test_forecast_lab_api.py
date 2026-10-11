@@ -146,3 +146,25 @@ def test_result_is_cached_until_the_source_or_the_config_changes(tmp_path, monke
     config.write_text(config.read_text(encoding="utf-8").replace('"parsimony_margin": 0.05', '"parsimony_margin": 0.1'), encoding="utf-8")
     client.get("/api/forecast-lab")
     assert len(built) == 3
+
+
+def test_active_source_hash_is_reported_and_keys_the_cache(tmp_path, monkeypatch):
+    built: list[int] = []
+    real = lab_module.build_forecast_lab
+    monkeypatch.setattr(lab_module, "build_forecast_lab", lambda *args, **kwargs: built.append(1) or real(*args, **kwargs))
+    config = tmp_path / "forecast_engine.json"
+    config.write_text((ROOT / "config/forecast_engine.json").read_text(encoding="utf-8"), encoding="utf-8")
+    source = tmp_path / "source.xlsm"
+    source.write_bytes(b"x")
+    active = {"hash": "a" * 64}
+    api = FastAPI()
+    api.include_router(create_forecast_lab_router(pipeline=_fake_pipeline([]), source=source, engine_config_file=config,
+                                                  source_hash=lambda: active["hash"]))
+    client = TestClient(api)
+
+    assert client.get("/api/forecast-lab").json()["source"]["sha256"] == "a" * 64
+    source.write_bytes(b"xyz")  # com o hash da base ativa, o arquivo empacotado não decide o cache
+    client.get("/api/forecast-lab")
+    assert len(built) == 1
+    active["hash"] = "b" * 64
+    assert client.get("/api/forecast-lab").json()["source"]["sha256"] == "b" * 64 and len(built) == 2

@@ -79,7 +79,9 @@ def test_forecasts_labels_follow_the_lever_table(client):
 
 
 def test_no_label_exceeds_40_percent_of_the_queue(client):
-    items = client.get("/api/forecasts").json()
+    # a fila é o ranking (SKUs com algum sinal); os SKUs fora dela não entram na conta do teto
+    queue = {row["sku"] for row in client.get("/api/priorities").json()}
+    items = [item for item in client.get("/api/forecasts").json() if item["sku"] in queue]
     counts: dict[str, int] = {}
     for item in items:
         counts[item["challenge_action"]["code"]] = counts.get(item["challenge_action"]["code"], 0) + 1

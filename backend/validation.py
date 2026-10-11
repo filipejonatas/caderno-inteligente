@@ -37,6 +37,7 @@ def create_validation_router(*, pipeline: Callable, persistence: Callable, recom
                              direct_channels: Callable | None = None,
                              source: Path, config_file: Path, thresholds_file: Path, commercial_thresholds_file: Path,
                              challenge_actions_file: Path | None = None,
+                             source_hash: Callable[[], str] | None = None,
                              describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
     describe = describe_error or (lambda message, error: f"{message}: {error}")
@@ -49,7 +50,7 @@ def create_validation_router(*, pipeline: Callable, persistence: Callable, recom
             raise HTTPException(422, describe("Configuração de validação inválida", error)) from error
         dataset, _, indicators, issues, ranking, forecasts = pipeline()
         partner_items = build_partner_insights(dataset, load_commercial_thresholds(commercial_thresholds_file))["items"]
-        source_sha256 = _sha256(source)
+        source_sha256 = source_hash() if source_hash is not None else _sha256(source)  # hash da base ativa quando vier (upload)
 
         forecast_evaluation = evaluate_forecasts(dataset["Vendas_24m"], forecasts)
         try:

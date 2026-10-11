@@ -72,6 +72,13 @@ def test_family_summary_lists_short_skus_affected_orders_and_peak():
     assert family["available_until_calendar_end"] == 900
 
 
+def test_closed_orders_are_not_listed_as_affected():
+    orders = pd.DataFrame([{"Pedido": f"PED-{i}", "SKU": "X", "Cliente/Canal": "KA-01", "Quantidade": 50.0, "Status": status}
+                           for i, status in enumerate(["Confirmado", "Entregue", "Concluída", "Cancelado"])])
+    family = _run(_plans(("2027-01-10", "2026-09-28", 2000, False)), orders=orders)["families"][0]
+    assert [order["order"] for order in family["affected_orders"]] == ["PED-0"]
+
+
 # ------------------------------------------------------------------------------------ Etapa 16.5: capacidade estimada
 
 OFF = {"enabled": False, "method": "media_compromissos_8_semanas", "scenario": "central", "lookback_weeks": 8, "conservative_method": "minimo_disponivel_observado"}

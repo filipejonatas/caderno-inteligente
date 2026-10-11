@@ -19,7 +19,7 @@ from caderno_inteligente.supply_plan import (
     decide,
 )
 
-SETTINGS = _validate_settings(dict(DEFAULT_SETTINGS))  # planejamento em 14/09/2026, janela de 4 semanas
+SETTINGS = _validate_settings({**DEFAULT_SETTINGS, "reference_date": "2026-09-14"})  # planejamento em 14/09/2026, janela de 4 semanas
 REFERENCE = date(2026, 9, 14)
 MONTHS = ["2026-09-01", "2026-10-01", "2026-11-01"]
 

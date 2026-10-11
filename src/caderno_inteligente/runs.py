@@ -9,8 +9,8 @@ def init_runs_db(path):
   # Additive migration: legacy snapshots keep comparison = NULL.
   if 'comparison' not in {r[1] for r in c.execute('PRAGMA table_info(runs)')}:
    c.execute('ALTER TABLE runs ADD COLUMN comparison TEXT')
-def create_run(path,source,weights,thresholds,quality,ranking,comparison=None):
- init_runs_db(path); h=hashlib.sha256(Path(source).read_bytes()).hexdigest(); now=datetime.now(timezone.utc).isoformat()
+def create_run(path,source,weights,thresholds,quality,ranking,comparison=None,source_hash=None):
+ init_runs_db(path); h=source_hash or hashlib.sha256(Path(source).read_bytes()).hexdigest(); now=datetime.now(timezone.utc).isoformat()
  with sqlite3.connect(path) as c:
   c.execute('INSERT INTO runs(created_at,source_hash,weights,thresholds,quality,ranking,comparison) VALUES(?,?,?,?,?,?,?)',(now,h,json.dumps(weights),json.dumps(thresholds),json.dumps(quality,default=str),json.dumps(ranking,default=str),None if comparison is None else json.dumps(comparison,default=str)))
   return c.execute('SELECT last_insert_rowid()').fetchone()[0]

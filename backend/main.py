@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import math
 
@@ -40,9 +41,10 @@ from caderno_inteligente.impact import abc_registry_divergence_warning, load_imp
 from caderno_inteligente.capacity_plan import build_capacity_plan, load_capacity_extension  # noqa: E402
 from caderno_inteligente.production_plan import build_production_plan  # noqa: E402
 from caderno_inteligente.projected_stock import build_projected_stock  # noqa: E402
+from caderno_inteligente.reference import reference_info, resolve_supply_settings  # noqa: E402
 from caderno_inteligente.ingestion import load_workbook  # noqa: E402
 from caderno_inteligente.auth import UserStore  # noqa: E402
-from caderno_inteligente.dataset_store import Database, DatasetStore  # noqa: E402
+from caderno_inteligente.dataset_store import Database, DatasetStore, content_sha256  # noqa: E402
 from caderno_inteligente.prioritization import load_weights, prioritize  # noqa: E402
 from caderno_inteligente.persistence import build_persistence  # noqa: E402
 from caderno_inteligente.recommendations import build_operational_recommendation  # noqa: E402
@@ -152,8 +154,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=list(SETTINGS.cors_origins),
     allow_methods=["GET", "POST", "PUT", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    expose_headers=["X-Request-ID"],
+    # Upload (U.1): nome do arquivo, confirmação da prévia e versão esperada vão em cabeçalhos; o modelo baixado traz o nome.
+    allow_headers=["Content-Type", "Authorization", "X-Filename", "X-Confirm-Sha256", "X-Expected-Version"],
+    expose_headers=["X-Request-ID", "Content-Disposition"],
     allow_credentials=False,
 )
 install_error_handling(app, settings)
@@ -215,6 +218,54 @@ def load_source() -> dict[str, pd.DataFrame]:
     return load_workbook(SOURCE)
 
 
+# Upload (U.3): hashes da base. Arquivo empacotado e seu conteúdo com cache pela assinatura do arquivo; a base do banco, pela versão.
+_hash_cache: dict[str, tuple[tuple, str]] = {}
+
+
+def _cached_hash(name: str, key: tuple, compute) -> str:
+    cached = _hash_cache.get(name)
+    if cached is None or cached[0] != key:
+        cached = _hash_cache[name] = (key, compute())
+    return cached[1]
+
+
+def source_file_sha256() -> str:
+    """sha256 dos bytes da planilha empacotada (o hash com que os casos da validação foram congelados)."""
+    return _cached_hash("file", _file_signature(SOURCE), lambda: hashlib.sha256(SOURCE.read_bytes()).hexdigest())
+
+
+def original_content_sha256() -> str:
+    """content_sha256 das abas da planilha empacotada, comparável ao da base do banco."""
+    return _cached_hash("original", _file_signature(SOURCE), lambda: content_sha256(load_workbook(SOURCE)))
+
+
+def active_content_sha256() -> str:
+    if data_source() != "banco":
+        return original_content_sha256()
+    # A chave inclui o banco: a mesma versão em outro banco (outro DATASET_DB ou DATABASE_URL) é outro conteúdo.
+    return _cached_hash("active", (os.getenv("DATABASE_URL"), str(DATASET_DB), _source_signature()), lambda: content_sha256(load_source()))
+
+
+def active_source_hash() -> str:
+    """Hash da base ativa para validação, laboratório, benchmark e execuções.
+
+    Com a planilha, o sha256 do arquivo. Com o banco, o content_sha256; se o conteúdo for o da planilha original, devolve o sha256
+    do arquivo, para os casos congelados voltarem a valer depois de restaurar a original."""
+    if data_source() != "banco":
+        return source_file_sha256()
+    content = active_content_sha256()
+    return source_file_sha256() if content == original_content_sha256() else content
+
+
+def current_dataset_info() -> dict:
+    """current_info do router de upload (C6): referência da base ativa e seus hashes."""
+    reference = data()[0]["reference"]
+    content = active_content_sha256()
+    return {"reference_date": reference["reference_date"], "reference_source": reference["reference_source"],
+            "sales_last_month": reference["sales_last_month"], "content_sha256": content, "source_sha256": source_file_sha256(),
+            "matches_original": content == original_content_sha256()}
+
+
 _pipeline_lock = Lock()
 # Slots: (assinatura, resultado, planos, capacidade, alocação ou a exceção que a bloqueou, impacto ou None).
 _pipeline_cache: tuple[tuple[tuple, ...], tuple, dict, dict, dict | Exception, dict | None] | None = None
@@ -246,12 +297,15 @@ def _capacity_extension(quality: dict) -> dict:
         return dict(CAPACITY_EXTENSION_OFF)
 
 
-def _build_pipeline():
+def _build_pipeline(dataset: dict[str, pd.DataFrame] | None = None):
+    """Sem argumento, a base ativa (load_source); com um conjunto de abas (prévia do upload), calcula sobre ele, fora do cache."""
     started = perf_counter()
-    dataset = normalise_dataset(load_source())
+    dataset = normalise_dataset(load_source() if dataset is None else dataset)
     quality = validate_dataset(dataset)
     thresholds = load_rule_thresholds()
-    supply_settings = load_supply_settings(SUPPLY_PLAN_FILE)
+    # Upload (U.0): uma data de planejamento só para todo o motor, derivada da primeira semana de Capacidade_Semanal ("auto").
+    supply_settings = resolve_supply_settings(load_supply_settings(SUPPLY_PLAN_FILE), dataset)
+    quality["reference"] = reference_info(dataset, supply_settings)
     # A previsão vem antes dos indicadores: a cobertura usa a demanda de referência (Etapa 15.2).
     forecasts = build_official_forecasts(dataset["Vendas_24m"], load_engine_config(ENGINE_CONFIG_FILE))
     demand_settings = {"days_per_month": supply_settings["days_per_month"], "registered_demand_divergence": thresholds["registered_demand_divergence"]}
@@ -334,6 +388,24 @@ def pipeline():
 def supply_plans() -> dict[str, dict]:
     """Plano de suprimento datado por SKU (Etapa 15.3), do mesmo cache do pipeline."""
     return _cached()[2]
+
+
+def engine_summary(dataset: dict[str, pd.DataFrame] | None = None) -> dict:
+    """Efeito resumido no motor (C6): None lê a base ativa do cache; um conjunto de abas monta um pipeline novo, fora do cache."""
+    if dataset is None:
+        cached = _cached()
+        built, plans = cached[1], cached[2]
+    else:
+        built, plans, *_ = _build_pipeline(dataset)
+    _, quality, _, _, ranking, forecasts = built
+    months = [str(row[0])[:7] for row in forecasts.get("forecast_months", pd.Series(dtype=object)) if isinstance(row, (list, tuple)) and row]
+    top5 = [{"sku": row["sku"], "product": row["product"], "urgency_label": row.get("urgency_label")} for row in _records(ranking.head(5))]
+    return {
+        "reference_date": quality["reference"]["reference_date"], "sales_last_month": quality["reference"]["sales_last_month"],
+        "queue_size": int(len(ranking)), "top5": top5,
+        "shortfall_skus": sum(1 for plan in plans.values() if plan.get("first_shortfall_date")),
+        "forecast_first_month": min(months) if months else None,
+    }
 
 
 def capacity_plan() -> dict:
@@ -460,10 +532,12 @@ def event_analysis() -> dict:
     cached = _events_cache
     if cached is not None and cached[0] is built and cached[1] == signature:
         return cached[2]
-    dataset, _, indicators, issues, _, forecasts = built
+    dataset, quality, indicators, issues, _, forecasts = built
     prices = {item["sku"]: item["unit_price"] for item in revenue_forecast()["items"] if item["status"] == "ok"}
+    # A mesma referência do plano de suprimento (U.0): rótulos, janela de evento e "Decisões de hoje" usam uma data só.
     result = build_event_analysis(
         forecasts, dataset["Produtos"], dataset["Vendas_24m"], dataset["Calendario_Eventos"], load_event_settings(EVENT_FACTORS_FILE), prices,
+        reference_date=quality["reference"]["reference_date"],
     )
     indicator_by_sku = {row["SKU"]: row for row in _records(indicators)}
     codes_by_sku: dict[str, list[str]] = {}
@@ -1007,7 +1081,8 @@ def quality():
 def create_snapshot():
     quality_report, _, _, ranking = data()
     run_id = _persistence().create_run(
-        SOURCE, load_weights(), load_rule_thresholds(), quality_report, _records(ranking), _comparison_payload()
+        SOURCE, load_weights(), load_rule_thresholds(), quality_report, _records(ranking), _comparison_payload(),
+        source_hash=active_source_hash(),
     )
     return {"id": run_id}
 
@@ -1184,6 +1259,7 @@ app.include_router(create_validation_router(
     commercial_thresholds_file=ROOT / "config/commercial_thresholds.json",
     challenge_actions_file=CHALLENGE_ACTIONS_FILE,
     describe_error=_describe_error,
+    source_hash=active_source_hash,
 ))
 
 # Additive Etapa 14.3 forecast lab: challenger engine side by side with the official one; official outputs are untouched.
@@ -1194,6 +1270,7 @@ app.include_router(create_forecast_lab_router(
     source=SOURCE,
     engine_config_file=ENGINE_CONFIG_FILE,
     describe_error=_describe_error,
+    source_hash=active_source_hash,
 ))
 
 # Additive model card and benchmark history: evidence only; the official forecast is untouched.
@@ -1205,6 +1282,7 @@ app.include_router(create_model_benchmark_router(
     engine_config_file=ENGINE_CONFIG_FILE,
     benchmark_db=BENCHMARK_DB,
     describe_error=_describe_error,
+    source_hash=active_source_hash,
 ))
 
 # Additive partner stock projection: backend only until the group validates it; nothing official reads it.
@@ -1251,4 +1329,23 @@ app.include_router(create_registry_router(
     users=user_store,
     write_access=require_write_access,
     on_change=invalidate_dataset_version,
+))
+
+# Upload (U.1): prévia e aplicação da planilha pela tela, com versões; só grava com DATA_SOURCE=banco.
+from backend.dataset import create_dataset_router  # noqa: E402
+
+app.include_router(create_dataset_router(
+    production=lambda: settings().production,
+    data_source=data_source,
+    store=dataset_store,
+    users=user_store,
+    write_access=require_write_access,
+    settings_file=ROOT / "config/dataset_upload.json",
+    current_info=current_dataset_info,
+    engine_summary=engine_summary,
+    original_loader=lambda: load_workbook(SOURCE),
+    # a prévia e a aplicação usam o mesmo arquivo de data de planejamento que o motor
+    supply_settings=lambda: load_supply_settings(SUPPLY_PLAN_FILE),
+    on_change=invalidate_dataset_version,
+    describe_error=_describe_error,
 ))

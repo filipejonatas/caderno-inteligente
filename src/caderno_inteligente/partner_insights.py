@@ -8,6 +8,7 @@ from pathlib import Path
 import pandas as pd
 
 from caderno_inteligente.direct_channels import direct_channel_codes
+from caderno_inteligente.supply_plan import CLOSED_ORDER_STATUSES
 from caderno_inteligente.partner_stock_projection import DEFAULT_PATH as PROJECTION_SETTINGS, load_partner_projection_settings, projection_by_pair
 
 DEFAULT_THRESHOLDS = {
@@ -266,7 +267,7 @@ def build_partner_insights(data: dict[str, pd.DataFrame], thresholds: dict | Non
     if quantities.isna().any() or (quantities < 0).any() or not quantities.map(math.isfinite).all():
         raise ValueError("Quantidade inválida na carteira comercial")
     orders["Quantidade"] = quantities
-    orders = orders[~orders["Status"].astype(str).str.casefold().isin(["cancelado", "concluído", "entregue", "faturado"])]
+    orders = orders[~orders["Status"].astype(str).str.strip().str.casefold().isin(CLOSED_ORDER_STATUSES)]
     reference = None if monthly.empty else monthly["month"].max()
     window = [] if reference is None else [reference - i for i in reversed(range(cfg["recent_months"]))]
     pairs = set(zip(monthly["partner"], monthly["sku"])) | set(zip(orders["Cliente/Canal"], orders["SKU"]))

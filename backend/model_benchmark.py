@@ -33,13 +33,16 @@ def _ordered(results: list[dict]) -> list[dict]:
 
 
 def create_model_benchmark_router(*, pipeline: Callable, source: Path, engine_config_file: Path, benchmark_db: Path,
+                                  source_hash: Callable[[], str] | None = None,
                                   describe_error: Callable[[str, Exception], str] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
     describe = describe_error or (lambda message, error: f"{message}: {error}")
     lock = Lock()
     cache: dict[str, object] = {}
 
-    def source_hash() -> str:
+    def current_source_hash() -> str:
+        if source_hash is not None:  # base ativa (upload): o hash vem de quem montou o app
+            return source_hash()
         key = _signature(source)
         if cache.get("hash_key") != key:
             cache.update(hash_key=key, hash=hashlib.sha256(source.read_bytes()).hexdigest())
@@ -57,7 +60,7 @@ def create_model_benchmark_router(*, pipeline: Callable, source: Path, engine_co
             if cache.get("card_key") != key:
                 cache.update(card_key=key, card=build_model_card(series_by_sku(built[0]["Vendas_24m"]), built[5], config))
             card = cache["card"]
-            current_hash = source_hash()
+            current_hash = current_source_hash()
         run = latest_benchmark_run(benchmark_db)
         if run is None:
             benchmark = {"status": "no_run", "stale": None, "note": NO_RUN_NOTE, "run": None, "history": []}

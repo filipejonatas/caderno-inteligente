@@ -48,7 +48,7 @@ def test_invalid_evaluation_protocol_is_rejected(tmp_path, change):
 
 
 def test_supply_plan_settings_load_from_the_versioned_file():
-    assert load_supply_settings() == {"reference_date": "2026-09-14", "decision_window_weeks": 4, "target_cover_weeks": 4,
+    assert load_supply_settings() == {"reference_date": "auto", "decision_window_weeks": 4, "target_cover_weeks": 4,
                                       "excess_coverage_days": 90, "days_per_month": 30.4}
 
 
@@ -59,7 +59,7 @@ def test_supply_plan_settings_load_from_the_versioned_file():
     {"days_per_month": 45},
     {"horizonte": 6},
 ])
-def test_invalid_supply_plan_settings_are_rejected(tmp_path, change):
+def test_invalid_supply_plan_settings_are_rejected(tmp_path, change):  # data explícita continua validada
     path = tmp_path / "supply_plan.json"
     path.write_text(json.dumps({**load_supply_settings(), **change}), encoding="utf-8")
     with pytest.raises(ValueError):
