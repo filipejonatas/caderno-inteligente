@@ -10,12 +10,22 @@ export default function LoginPage({ expired, onSignedIn }: { expired: boolean; o
   const signIn = async (email: string, password: string) => onSignedIn(saveSession(await api.login(email, password)));
 
   return <main className="login-screen" id="conteudo">
-    <div className="login-card">
+    <div className="login-pitch">
       <p className="login-brand">Caderno Inteligente</p>
-      <h1 id="page-title">Entrar</h1>
-      <p className="dataset-muted">Entre com seu usuário para ver as recomendações e atualizar a base.</p>
-      {expired && <p className="inline-error" role="alert">Sua sessão expirou. Entre novamente.</p>}
-      <LoginForm onSubmit={signIn} disabled={false} label="Entrar" />
+      <p className="login-lede">O que produzir, quanto e quando, com o motivo à vista.</p>
+      <ul className="login-facts">
+        <li>Ordena os SKUs pelo dinheiro em risco.</li>
+        <li>Mostra se a produção cabe na linha.</li>
+        <li>Guarda cada decisão da equipe.</li>
+      </ul>
+    </div>
+    <div className="login-cover">
+      <div className="login-label">
+        <h1 id="page-title">Entrar</h1>
+        <p className="dataset-muted">Entre com seu usuário para ver as recomendações e atualizar a base.</p>
+        {expired && <p className="inline-error" role="alert">Sua sessão expirou. Entre novamente.</p>}
+        <LoginForm onSubmit={signIn} disabled={false} label="Entrar" />
+      </div>
     </div>
   </main>;
 }
