@@ -6,7 +6,7 @@ import type { EventAnalysis } from './types-events';
 import type { ForecastLab } from './types-forecast-lab';
 import type { ModelBenchmark } from './types-model-benchmark';
 import type { ProductionPlan } from './types-production';
-import type { LoginResult, SessionUser, SkuFields, SkuRegistry, SkuSaved } from './types-registry';
+import type { AppUser, LoginResult, SessionUser, SkuFields, SkuRegistry, SkuSaved } from './types-registry';
 import type { RevenueForecast } from './types-revenue';
 import type { RulesCoverage } from './types-rules';
 import type { RunComparison } from './types-runs';
@@ -118,6 +118,7 @@ const fileInit = (token: string, file: File, headers: Record<string, string> = {
 
 /** Link direto do modelo .xlsx (base ativa, 13 abas). */
 export const DATASET_TEMPLATE_URL = `${API_ROOT}/dataset/template`;
+export const DATASET_EXAMPLE_URL = `${API_ROOT}/dataset/example`;
 
 export async function previewDataset(token: string, file: File): Promise<DatasetPreviewOutcome> {
   const outcome = await upload<DatasetPreview>('/dataset/preview', fileInit(token, file));
@@ -211,6 +212,9 @@ export const api = {
     }),
   login: (email: string, password: string) =>
     request<LoginResult>('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) }),
+  users: (token: string, signal?: AbortSignal) => request<{ items: AppUser[] }>('/users', { headers: bearer(token), signal }),
+  createUser: (token: string, body: { email: string; name: string; password: string }) =>
+    request<{ email: string; name: string }>('/users', { method: 'POST', headers: { ...bearer(token), 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
   me: (token: string, signal?: AbortSignal) => request<{ user: SessionUser }>('/auth/me', { headers: bearer(token), signal }),
   skuRegistry: (token: string, signal?: AbortSignal) => request<SkuRegistry>('/skus/cadastro', { headers: bearer(token), signal }),
   createSku: (token: string, body: SkuFields & { sku: string }) =>

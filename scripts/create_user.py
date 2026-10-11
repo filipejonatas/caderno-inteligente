@@ -1,4 +1,4 @@
-"""Cria um usuário com login (fase 3) ou troca a senha de um existente. Não há cadastro público pela tela.
+"""Cria um usuário com login (fase 3) ou troca a senha de um existente. Pela tela só quem já entrou cadastra (`/usuarios`); este script cria o primeiro usuário.
 
 A senha é pedida no terminal (sem eco) ou lida de CI_USER_PASSWORD, nunca de um argumento.
 

@@ -3,7 +3,7 @@
   "functions": {
     "backend/main.py": {
       "maxDuration": 60,
-      "includeFiles": "{config/**,data/source/**,src/caderno_inteligente/**}"
+      "includeFiles": "{config/**,data/source/**,docs/exemplos/**,src/caderno_inteligente/**}"
     }
   }
 }

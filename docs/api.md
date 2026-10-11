@@ -414,6 +414,7 @@ Detalhes, decisões e passo a passo em [fase-3-banco-e-cadastro.md](fase-3-banco
 - `POST /api/skus` recebe `sku`, `produto`, `familia` (uma família da base), `curva_abc` (`A`, `B` ou `C`), `lead_time_dias`, `lote_minimo`, `estoque_atual`, `estoque_seguranca_dias` e `venda_media_dia`, todos não negativos. Responde 201 com `{sku, version}`. `PUT /api/skus/{sku}` recebe os mesmos campos, sem `sku`. Campos desconhecidos dão 422.
 - Toda gravação é validada com `validate_dataset` na prévia da base inteira; um erro que a base não tinha antes dá 422. SKU duplicado (ativo ou inativo) dá 409.
 - Com `DATA_SOURCE=planilha`, as gravações respondem 409 e `GET /api/skus/cadastro` retorna `editable: false`.
+- `GET /api/users` lista os usuários (`email`, `name`, `active`, `created_at`; nunca a senha) e `POST /api/users` recebe `{email, name, password}` e cadastra um usuário (201). Os dois exigem login **mesmo com `AUTH_REQUIRED=false`** (401; 503 sem `AUTH_SECRET`), e o POST também exige `WRITE_ENABLED=true` (403). E-mail repetido dá 409; e-mail inválido ou senha com menos de 10 caracteres dá 422. Não há cadastro público nem papel de administrador: qualquer usuário cadastrado cadastra outros. Na tela: `/usuarios` (botão "Usuários" no cartão "Atualizar"). O log registra só `user_created`, sem e-mail.
 - A exclusão é lógica e usa POST, não DELETE: o SKU sai de todos os cálculos, e casos, decisões e execuções que o citam continuam. Excluir um SKU já excluído (ou reativar um ativo) dá 409.
 
 ## Atualizar a base pela tela — `/api/dataset*`
@@ -432,7 +433,16 @@ Decisões em [decisions.md](decisions.md) (D1–D11) e passo a passo em [upload-
 | 4 | corpo até 4 MB | **413** `{"detail", "code": "FILE_TOO_LARGE"}`, também quando o envio não declara `Content-Length` |
 | 5 | arquivo legível | **422** `{"detail", "code"}` (tabela de códigos abaixo) |
 
-O token vem de `POST /api/auth/login`. `GET /api/dataset`, `/versions` e `/template` não exigem login.
+O token vem de `POST /api/auth/login`. `GET /api/dataset`, `/versions`, `/template` e `/example` não exigem login.
+
+Na tela, o login fica em `/login`: `/dados/atualizar` leva para lá quando o servidor responde `upload_disabled_reason: "login"` e a pessoa volta para a página depois de entrar (`?next=`, só caminhos internos). Sessão vencida (401) em qualquer gravação também volta para `/login`.
+
+### `GET /api/dataset/template` e `GET /api/dataset/example`
+
+Dois arquivos `.xlsx` para baixar na tela (botões no cartão "Base ativa"), sem login:
+
+- `/template`: o modelo no formato correto (13 abas, cabeçalho na linha 3), preenchido com a base ativa. Edite e reenvie.
+- `/example`: o pacote **fictício** `docs/exemplos/atualizacao-2026-10.xlsx`, para treinar o envio. A prévia o marca como exemplo. Responde 404 se o arquivo não estiver na publicação (`vercel.json` o inclui em `includeFiles`).
 
 ### `GET /api/dataset`
 

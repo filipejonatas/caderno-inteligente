@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from backend.security import clean_text
-from caderno_inteligente.auth import MIN_SECRET_LENGTH, InvalidToken, UserStore, issue_token, read_token
+from caderno_inteligente.auth import MIN_SECRET_LENGTH, InvalidToken, UserExists, UserStore, issue_token, read_token
 from caderno_inteligente.dataset_store import (
     DatasetStore,
     SkuConflict,
@@ -71,6 +71,12 @@ class _Strict(BaseModel):
 
 class Login(_Strict):
     email: str = Field(min_length=3, max_length=120)
+    password: str = Field(min_length=1, max_length=200)
+
+
+class NewUser(_Strict):
+    email: str = Field(min_length=3, max_length=120)
+    name: str = Field(default="", max_length=80)
     password: str = Field(min_length=1, max_length=200)
 
 
@@ -198,6 +204,25 @@ def create_registry_router(*, production: Callable[[], bool], data_source: Calla
     @router.get("/auth/me")
     def me(user: dict = Depends(current_user)):
         return {"user": user}
+
+    # Usuários: quem já entrou cadastra os próximos. Não há cadastro público; o login é exigido mesmo com AUTH_REQUIRED=false.
+    def signed_in(request: Request) -> dict[str, str]:
+        return login_user(request, users, production)
+
+    @router.get("/users")
+    def list_users(user: dict = Depends(signed_in)):
+        return {"items": users().list_users()}
+
+    @router.post("/users", status_code=201, dependencies=[write_access])
+    def create_user(item: NewUser, user: dict = Depends(signed_in)):
+        try:
+            users().create_user(item.email, clean_text(item.name), item.password)
+        except UserExists as error:
+            raise HTTPException(409, str(error)) from error
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
+        logger.info("user_created")
+        return {"email": item.email.strip().lower(), "name": clean_text(item.name)}
 
     @router.get("/skus/cadastro")
     def registry(user: dict = Depends(current_user)):

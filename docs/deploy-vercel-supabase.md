@@ -148,7 +148,7 @@ A tela **Bastidores › Atualizar dados** (`/dados/atualizar`) só funciona na p
    ```
 
    O script valida a planilha e grava a versão **"original"** no histórico, que é a que o botão "Restaurar base original" usa de referência.
-4. **Criar o usuário de demonstração** (a senha é pedida no terminal, com 10 caracteres ou mais; não a coloque em commits nem em chat):
+4. **Criar o primeiro usuário** (os seguintes podem ser cadastrados na tela `/usuarios`, depois de entrar) (a senha é pedida no terminal, com 10 caracteres ou mais; não a coloque em commits nem em chat):
 
    ```powershell
    .\.venv\Scripts\python.exe scripts\create_user.py --email demo@exemplo.com --name "Demonstração" --postgres

@@ -6,7 +6,6 @@ import { Badge, SectionCard, Tooltip } from '../components';
 import { formatDate, formatMonth } from '../pages/shared';
 import type { Session } from '../session';
 import type { DatasetApplyResult, DatasetInfo, DatasetIssue, DatasetPreview, DatasetSheetReport } from '../types-dataset';
-import { LoginForm } from './SkuRegistry';
 
 type Phase = 'choose' | 'previewing' | 'preview' | 'confirm' | 'applying' | 'done';
 type Notice = { tone: 'error' | 'ok'; text: string } | null;
@@ -130,9 +129,9 @@ export function PreviewReport({ preview }: { preview: DatasetPreview }) {
 }
 
 /** Bloco 2: escolher o arquivo → prévia → aplicar com confirmação. O 422 com prévia lista os erros; arquivo recusado, 401, 403 e 409 viram mensagem. */
-export function DatasetUpload({ info, session, expired, token, onSignIn, onSignOut, onExpired, onApplied }: {
-  info: DatasetInfo; session: Session | null; expired: boolean; token: string;
-  onSignIn: (email: string, password: string) => Promise<void>; onSignOut: () => void; onExpired: (caught: unknown) => boolean; onApplied: () => void;
+export function DatasetUpload({ info, session, token, onSignOut, onExpired, onApplied }: {
+  info: DatasetInfo; session: Session | null; token: string;
+  onSignOut: () => void; onExpired: (caught: unknown) => boolean; onApplied: () => void;
 }) {
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -142,7 +141,6 @@ export function DatasetUpload({ info, session, expired, token, onSignIn, onSignO
   const [result, setResult] = useState<DatasetApplyResult | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
   const busy = phase === 'previewing' || phase === 'applying';
-  const needsLogin = info.upload_disabled_reason === 'login';
   const enabled = info.upload_enabled;
 
   const reset = () => {
@@ -152,7 +150,7 @@ export function DatasetUpload({ info, session, expired, token, onSignIn, onSignO
 
   /** `fallback` é a fase de volta, decidida por quem chama (a closure de `preview` pode estar velha). */
   const fail = (caught: unknown, fallback: Phase) => {
-    if (onExpired(caught)) { reset(); setNotice({ tone: 'error', text: 'Sua sessão expirou. Entre novamente.' }); return; }
+    if (onExpired(caught)) return; // a página volta sozinha para /login
     // 409 de versão: a prévia ficou velha; o arquivo continua escolhido para refazer.
     if (caught instanceof ApiError && caught.status === 409) { setPreview(null); setPhase('choose'); }
     else setPhase(fallback);
@@ -196,17 +194,15 @@ export function DatasetUpload({ info, session, expired, token, onSignIn, onSignO
 
   const canApply = preview !== null && preview.can_apply && preview.errors.length === 0;
   const currentStep = STEPS.findIndex((step) => step.phases.includes(phase));
-  const action = session ? <div className="registry-user"><span>{session.user.name || session.user.email}</span><button type="button" className="secondary-button" onClick={onSignOut}>Sair</button></div> : undefined;
+  const action = session ? <div className="registry-user"><span>{session.user.name || session.user.email}</span><Link className="secondary-button" to="/usuarios">Usuários</Link><button type="button" className="secondary-button" onClick={onSignOut}>Sair</button></div> : undefined;
 
   return <SectionCard title="Atualizar" className="dataset-upload" action={action}>
     <ol className="dataset-steps" aria-label="Passos">{STEPS.map((step, index) => <li key={step.label} className={index === currentStep ? 'is-current' : index < currentStep ? 'is-done' : ''} aria-current={index === currentStep ? 'step' : undefined}>{step.label}</li>)}</ol>
 
     <div className="dataset-flow" aria-busy={busy}>
       {notice && <p className={notice.tone === 'error' ? 'inline-error' : 'toast-inline'} role={notice.tone === 'error' ? 'alert' : 'status'}>{notice.text}</p>}
-      {expired && !session && !notice && <p className="inline-error" role="alert">Sua sessão expirou. Entre novamente.</p>}
 
       {!enabled && info.upload_disabled_message && <p className="write-disabled-note" role="note">{info.upload_disabled_message}</p>}
-      {needsLogin && !session && <LoginForm onSubmit={onSignIn} disabled={false} label="Entrar para atualizar a base" />}
 
       {phase !== 'done' && <div className={`dataset-drop ${enabled ? '' : 'is-disabled'}`}>
         <label htmlFor={inputId}>Planilha {info.accepted_extensions.join(' ou ')}</label>

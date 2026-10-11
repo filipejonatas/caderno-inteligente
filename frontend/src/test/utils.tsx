@@ -13,6 +13,7 @@ export const pending = () => new Promise<never>(() => {});
 type Value = unknown | ((url: URL, init?: RequestInit) => unknown);
 
 const ROUTES: Array<[string, RegExp]> = [
+  ['users', /^\/api\/users$/],
   ['datasetVersionRestore', /^\/api\/dataset\/versions\/\d+\/restore$/],
   ['datasetVersions', /^\/api\/dataset\/versions$/],
   ['datasetPreview', /^\/api\/dataset\/preview$/],
@@ -72,6 +73,7 @@ const DEFAULTS: Record<string, Value> = {
   'PUT sku': (url: URL) => ({ sku: decodeURIComponent(url.pathname.split('/').pop() ?? ''), version: 2 }),
   // Sem .at(): o tsconfig usa lib ES2020, e .at() só passava localmente por tipos de outros pacotes.
   'POST skuAction': (url: URL) => { const parts = url.pathname.split('/'); return { sku: decodeURIComponent(parts[parts.length - 2] ?? ''), version: 2 }; },
+  users: { items: [] }, 'POST users': { email: 'novo@exemplo.test', name: 'Novo' },
   dataset: fx.datasetOriginal, datasetVersions: fx.datasetVersions,
   datasetTemplate: () => new Response(new Blob(['modelo sintético']), { headers: { 'Content-Disposition': 'attachment; filename="modelo-caderno-inteligente-2026-09-14.xlsx"' } }),
   'POST datasetPreview': fx.datasetPreviewOk, 'POST datasetApply': fx.datasetApplyResult,
