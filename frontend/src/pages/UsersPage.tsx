@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import { api } from '../api';
 import { ErrorState, LoadingState, PageIntro, SectionCard } from '../components';
 import { useApiResource } from '../hooks/useApiResource';
+import { useSystemInfo } from '../hooks/useSystemInfo';
 import { readSession } from '../session';
 import { formatVersionTime } from '../components/DatasetVersions';
 
@@ -12,6 +13,7 @@ const messageOf = (error: unknown) => error instanceof Error ? error.message : '
 /** Cadastro de usuários: quem já entrou cadastra os próximos. Não há cadastro público; o servidor confere o login a cada chamada. */
 export default function UsersPage() {
   const token = readSession()?.token ?? '';
+  const writeDisabled = useSystemInfo()?.write_enabled === false;
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
@@ -42,13 +44,14 @@ export default function UsersPage() {
     <PageIntro title="Usuários" description="Quem pode entrar para atualizar a base. Qualquer usuário cadastrado pode cadastrar outros." />
 
     <SectionCard title="Cadastrar usuário">
+      {writeDisabled && <p className="form-message form-error" role="note">O cadastro está desabilitado nesta publicação (somente leitura). A lista abaixo continua disponível.</p>}
       <form className="form-layout login-form" aria-label="Cadastrar usuário" onSubmit={(event) => void submit(event)}>
         <label>Nome<input type="text" autoComplete="off" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
         <label>E-mail<input type="email" autoComplete="off" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
         <label>Senha provisória<input type="password" autoComplete="new-password" required minLength={MIN_PASSWORD} value={password} onChange={(event) => setPassword(event.target.value)} /></label>
         <div className="form-actions">
           {notice && <span className={`form-message ${notice.tone === 'error' ? 'form-error' : ''}`} role={notice.tone === 'error' ? 'alert' : 'status'}>{notice.text}</span>}
-          <button className="primary-button" disabled={busy}>{busy ? 'Cadastrando…' : 'Cadastrar'}</button>
+          <button className="primary-button" disabled={busy || writeDisabled}>{busy ? 'Cadastrando…' : 'Cadastrar'}</button>
         </div>
       </form>
       <p className="dataset-muted">A senha precisa ter pelo menos {MIN_PASSWORD} caracteres. Combine a troca da senha provisória com a pessoa por um canal seguro.</p>

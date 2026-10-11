@@ -57,7 +57,8 @@ describe('login antes de tudo: login > tela inicial > demais telas', () => {
   it('"Sair" encerra a sessão e mostra o login', async () => {
     mockApi();
     renderApp('/');
-    await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
+    await userEvent.click(await screen.findByRole('button', { name: sessionUser.name || sessionUser.email }));
+    await userEvent.click(screen.getByRole('button', { name: 'Sair' }));
     expect(await screen.findByRole('heading', { level: 1, name: 'Entrar' })).toBeInTheDocument();
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
