@@ -92,6 +92,10 @@ def normalise_email(email: str) -> str:
     return email.strip().lower()
 
 
+class UserExists(ValueError):
+    pass
+
+
 class UserStore:
     def __init__(self, database: Database):
         self.db = database
@@ -102,8 +106,13 @@ class UserStore:
             raise ValueError("E-mail inválido")
         with self.db.transaction() as cursor:
             if cursor.execute("select 1 as found from app_users where email = ?", (email,)).fetchone():
-                raise ValueError(f"Usuário {email} já existe")
+                raise UserExists(f"Usuário {email} já existe")
             cursor.execute("insert into app_users(email, name, password_hash) values (?, ?, ?)", (email, name.strip(), hash_password(password)))
+
+    def list_users(self) -> list[dict[str, Any]]:
+        with self.db.transaction() as cursor:
+            rows = cursor.execute("select email, name, active, created_at from app_users order by email").fetchall()
+        return [{"email": row["email"], "name": row["name"], "active": bool(row["active"]), "created_at": str(row["created_at"])} for row in rows]
 
     def set_password(self, email: str, password: str) -> None:
         email = normalise_email(email)

@@ -63,17 +63,24 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     expect(api.calls.some((call) => call.method === 'POST')).toBe(false);
   });
 
-  it('com o motivo "login", mostra o formulário de login e libera o envio com o token', async () => {
-    const { api } = await openPage(byLogin);
-    expect(screen.getByLabelText(/^Planilha/)).toBeDisabled();
+  it('com o motivo "login", leva para /login e, depois de entrar, volta com o envio liberado', async () => {
+    mockApi(byLogin);
+    renderApp('/dados/atualizar');
+    expect(await screen.findByRole('heading', { level: 2, name: 'Entrar' })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^Planilha/)).not.toBeInTheDocument();
     const form = screen.getByRole('form');
     await userEvent.type(within(form).getByLabelText('E-mail'), sessionUser.email);
     await userEvent.type(within(form).getByLabelText('Senha'), 'senha-forte-123');
     await userEvent.click(within(form).getByRole('button', { name: 'Entrar' }));
+    await screen.findByRole('heading', { level: 2, name: 'Atualizar a base pela planilha' });
     await waitFor(() => expect(screen.getByLabelText(/^Planilha/)).toBeEnabled());
     expect(screen.getByText('Ana PCP')).toBeInTheDocument();
-    expect(api.calls.filter((call) => call.path === '/api/dataset').pop()?.headers.Authorization).toBe('Bearer token-sintetico');
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
+  it('oferece o modelo e o exemplo fictício para baixar', async () => {
+    await openPage();
+    expect(screen.getByRole('link', { name: 'Baixar exemplo fictício' })).toHaveAttribute('href', '/api/dataset/example');
   });
 
   it('prévia com erro mostra a linha endereçada, "mais N iguais" e não oferece "Aplicar"', async () => {
@@ -149,8 +156,8 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
     signedIn();
     await openPage({ ...byLogin, 'POST datasetPreview': fail(401, 'Token inválido.') });
     await upload();
-    expect(await screen.findByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
-    expect(await screen.findByRole('form')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Entrar' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
     expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
   });
 
@@ -209,10 +216,10 @@ describe('Bastidores › Atualizar dados (U.2)', () => {
 
   it('token vencido: com sessão local e GET pedindo login, encerra a sessão e mostra o login', async () => {
     signedIn();
-    await openPage({ dataset: datasetLoginRequired });
-    await waitFor(() => expect(window.localStorage.getItem(SESSION_KEY)).toBeNull());
-    await screen.findByRole('heading', { level: 2, name: 'Atualizar a base pela planilha' });
-    expect(await screen.findByRole('form')).toBeInTheDocument();
+    mockApi({ dataset: datasetLoginRequired });
+    renderApp('/dados/atualizar');
+    await screen.findByRole('heading', { level: 2, name: 'Entrar' });
+    expect(window.localStorage.getItem(SESSION_KEY)).toBeNull();
     expect(screen.getByRole('alert')).toHaveTextContent('Sua sessão expirou. Entre novamente.');
   });
 
@@ -247,7 +254,9 @@ describe.each(['desktop', 'mobile'] as const)('acessibilidade de /dados/atualiza
     expect(await violations(disabled.container)).toEqual([]);
     disabled.unmount();
 
-    const login = await openPage(byLogin);
+    mockApi(byLogin);
+    const login = renderApp('/dados/atualizar');
+    await screen.findByRole('heading', { level: 2, name: 'Entrar' });
     expect(await violations(login.container)).toEqual([]);
     login.unmount();
 

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError, DATASET_TEMPLATE_URL } from '../api';
+import { Navigate, useLocation } from 'react-router-dom';
+import { api, ApiError, DATASET_EXAMPLE_URL, DATASET_TEMPLATE_URL } from '../api';
 import { ErrorState, LoadingState, PageIntro, SectionCard } from '../components';
 import { DatasetUpload } from '../components/DatasetUpload';
 import { DatasetVersionsPanel, formatVersionTime } from '../components/DatasetVersions';
 import { useApiResource } from '../hooks/useApiResource';
 import { usePageLoadStatus } from '../hooks/usePageLoadStatus';
-import { clearSession, readSession, saveSession } from '../session';
+import { clearSession, readSession } from '../session';
 import type { Session } from '../session';
 import type { DatasetInfo } from '../types-dataset';
 import { formatDate, formatMonth } from './shared';
@@ -16,6 +17,7 @@ const ORIGIN_NAMES: Record<DatasetInfo['origin'], string> = { original: 'planilh
 export default function DatasetUpdatePage({ refreshToken, onChanged }: { refreshToken: number; onChanged: () => void }) {
   const [session, setSession] = useState<Session | null>(() => readSession());
   const [expired, setExpired] = useState(false);
+  const location = useLocation();
   const token = session?.token ?? '';
 
   const loader = useCallback(async (signal: AbortSignal) => {
@@ -38,11 +40,6 @@ export default function DatasetUpdatePage({ refreshToken, onChanged }: { refresh
   const expire = useCallback(() => { clearSession(); setSession(null); setExpired(true); }, []);
   useEffect(() => { if (data?.stale) expire(); }, [data?.stale, expire]);
 
-  const signIn = async (email: string, password: string) => {
-    const created = saveSession(await api.login(email, password));
-    setExpired(false);
-    setSession(created);
-  };
   const signOut = () => { clearSession(); setSession(null); };
   /** 401 em qualquer gravação encerra a sessão local e volta ao login. */
   const handleExpired = (caught: unknown) => {
@@ -54,13 +51,18 @@ export default function DatasetUpdatePage({ refreshToken, onChanged }: { refresh
   if (!data && error) return <ErrorState message={error} onRetry={() => void refresh()} />;
   if (!data) return <LoadingState />;
   const { info, versions } = data;
+  // O login mora em /login; o servidor decide quando ele é preciso (motivo "login") e a pessoa volta para cá depois de entrar.
+  if (!session && info.upload_disabled_reason === 'login') {
+    const next = encodeURIComponent(`${location.pathname}${location.search}`);
+    return <Navigate to={`/login?next=${next}${expired ? '&motivo=expirou' : ''}`} replace />;
+  }
   // O servidor decide (banco, gravação ligada e login): upload_enabled já reflete o token enviado.
   const canWrite = info.upload_enabled;
 
   return <>
     <PageIntro title="Atualizar a base pela planilha" description="Envie a planilha, confira a prévia e só então aplique." />
 
-    <SectionCard title="Base ativa" className="dataset-active" action={<a className="secondary-button" href={DATASET_TEMPLATE_URL} download>Baixar modelo (.xlsx)</a>}>
+    <SectionCard title="Base ativa" className="dataset-active" action={<span className="form-actions"><a className="secondary-button" href={DATASET_TEMPLATE_URL} download>Baixar modelo (.xlsx)</a><a className="secondary-button" href={DATASET_EXAMPLE_URL} download title="Planilha preenchida com números fictícios, só para treinar o envio.">Baixar exemplo fictício</a></span>}>
       <dl className="dataset-facts">
         <div><dt>Referência</dt><dd>{formatDate(info.reference_date)}</dd></div>
         <div><dt>Vendas até</dt><dd>{formatMonth(info.sales_last_month)}</dd></div>
@@ -70,7 +72,7 @@ export default function DatasetUpdatePage({ refreshToken, onChanged }: { refresh
       </dl>
     </SectionCard>
 
-    <DatasetUpload info={info} session={session} expired={expired} token={token} onSignIn={signIn} onSignOut={signOut} onExpired={handleExpired} onApplied={onChanged} />
+    <DatasetUpload info={info} session={session} token={token} onSignOut={signOut} onExpired={handleExpired} onApplied={onChanged} />
 
     <DatasetVersionsPanel versions={versions} enabled={canWrite} token={token} version={info.version} onExpired={handleExpired} onRestored={onChanged} />
   </>;

@@ -14,7 +14,7 @@ Especificação: [discovery-upload-planilha.md](discovery-upload-planilha.md). D
 ## Como usar
 
 1. Publicação: migração `005`, `DATA_SOURCE=banco`, `WRITE_ENABLED=true`, `AUTH_SECRET`, `scripts/import_workbook.py` e `scripts/create_user.py` ([deploy](deploy-vercel-supabase.md), seção 7).
-2. Entre em Bastidores › Atualizar dados com o usuário de demonstração.
+2. Abra Bastidores › Atualizar dados; sem sessão, a tela leva para `/login`. Entre com o usuário de demonstração. Os botões "Baixar modelo" e "Baixar exemplo fictício" estão em "Base ativa". Novos usuários se cadastram em `/usuarios` (botão "Usuários").
 3. Escolha o arquivo e leia a prévia (erros e avisos por célula, nova data de planejamento, efeito na fila). Para testar, use o [pacote de exemplo fictício](exemplos/README.md), `docs/exemplos/atualizacao-2026-10.xlsx`.
 4. "Aplicar e recalcular" e "Confirmar e aplicar".
 5. **Ao final de qualquer teste, "Restaurar base original".** O envio vale para todos os usuários.

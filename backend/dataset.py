@@ -39,6 +39,7 @@ except ImportError:  # pragma: no cover - psycopg só é necessário com DATABAS
 
 logger = logging.getLogger("caderno_inteligente.api")
 
+EXAMPLE_FILE = Path(__file__).resolve().parents[1] / "docs/exemplos/atualizacao-2026-10.xlsx"
 XLSX_MEDIA_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 SPREADSHEET_MODE = "A atualização da base pela tela exige a base no banco (DATA_SOURCE=banco). Esta publicação lê a planilha."
 READ_ONLY = "Esta publicação está em modo somente leitura (WRITE_ENABLED=false)."
@@ -229,6 +230,14 @@ def create_dataset_router(*, production: Callable[[], bool], data_source: Callab
         content = write_workbook(dataset, title=f"Caderno Inteligente — modelo de atualização (base de {_br_date(reference)})")
         name = f"modelo-caderno-inteligente-{reference or 'base'}.xlsx"
         return Response(content, media_type=XLSX_MEDIA_TYPE, headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+    @router.get("/example")
+    def example():
+        """Pacote de exemplo fictício (docs/exemplos): serve para treinar o envio; a prévia o marca como exemplo."""
+        if not EXAMPLE_FILE.is_file():
+            raise HTTPException(404, "O arquivo de exemplo não está disponível nesta publicação.")
+        return Response(EXAMPLE_FILE.read_bytes(), media_type=XLSX_MEDIA_TYPE,
+                        headers={"Content-Disposition": f'attachment; filename="{EXAMPLE_FILE.name}"'})
 
     @router.post("/preview", dependencies=editor)
     async def preview(request: Request, user: dict = Depends(login)):

@@ -235,6 +235,13 @@ def test_template_has_the_thirteen_sheets_with_header_on_row_three(env, original
     assert "14/09/2026" in sheet["A1"].value
 
 
+def test_example_download_is_the_fictional_package(env):
+    response = env.client.get("/api/dataset/example")
+    assert response.status_code == 200
+    assert response.headers["content-disposition"] == 'attachment; filename="atualizacao-2026-10.xlsx"'
+    assert "LEIA_ME" in open_xlsx(io.BytesIO(response.content), read_only=True).sheetnames
+
+
 def test_restore_routes_require_the_expected_version(env):
     """Voltar para versão e restaurar a original: 422 sem X-Expected-Version, 409 com versão desatualizada; nada é gravado."""
     first = env.post("restore-original")

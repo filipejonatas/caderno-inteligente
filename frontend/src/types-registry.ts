@@ -1,6 +1,8 @@
 /** Fase 3: login e cadastro de SKU (backend/registry.py). */
 export interface SessionUser { email: string; name: string }
 
+export interface AppUser { email: string; name: string; active: boolean; created_at: string }
+
 export interface LoginResult { token: string; expires_at: number; user: SessionUser }
 
 export interface SkuFields {
