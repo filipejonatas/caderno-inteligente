@@ -410,11 +410,11 @@ A etapa de usabilidade ([histórico](historico.md)) não adicionou, removeu nem 
 Detalhes, decisões e passo a passo em [fase-3-banco-e-cadastro.md](fase-3-banco-e-cadastro.md).
 
 - `POST /api/auth/login` recebe `{email, password}`. Responde 401 se a senha estiver errada, 429 depois de 5 falhas em 10 minutos e 503 em produção sem `AUTH_SECRET`.
-- Com `AUTH_REQUIRED=true`, as rotas de cadastro exigem `Authorization: Bearer <token>`; sem token válido, ou com usuário inativo, respondem 401. Com `AUTH_REQUIRED=false` (padrão atual), as rotas ficam liberadas e as alterações são registradas como `sem-login`. `GET /api/system` informa o modo em `auth_required`.
+- **Login em todo o sistema:** com `AUTH_REQUIRED=true` (padrão), toda rota de `/api` exige `Authorization: Bearer <token>`, exceto `POST /api/auth/login`, `GET /api/health` e `GET /api/system`. Sem token válido, ou com usuário inativo, a resposta é 401 (com `WWW-Authenticate: Bearer`); sem `AUTH_SECRET` válido em produção, 503. Com `AUTH_REQUIRED=false` (só desenvolvimento e testes), a API fica liberada e as alterações de SKU são registradas como `sem-login`. `GET /api/system` informa o modo em `auth_required`.
 - `POST /api/skus` recebe `sku`, `produto`, `familia` (uma família da base), `curva_abc` (`A`, `B` ou `C`), `lead_time_dias`, `lote_minimo`, `estoque_atual`, `estoque_seguranca_dias` e `venda_media_dia`, todos não negativos. Responde 201 com `{sku, version}`. `PUT /api/skus/{sku}` recebe os mesmos campos, sem `sku`. Campos desconhecidos dão 422.
 - Toda gravação é validada com `validate_dataset` na prévia da base inteira; um erro que a base não tinha antes dá 422. SKU duplicado (ativo ou inativo) dá 409.
 - Com `DATA_SOURCE=planilha`, as gravações respondem 409 e `GET /api/skus/cadastro` retorna `editable: false`.
-- `GET /api/users` lista os usuários (`email`, `name`, `active`, `created_at`; nunca a senha) e `POST /api/users` recebe `{email, name, password}` e cadastra um usuário (201). Os dois exigem login **mesmo com `AUTH_REQUIRED=false`** (401; 503 sem `AUTH_SECRET`), e o POST também exige `WRITE_ENABLED=true` (403). E-mail repetido dá 409; e-mail inválido ou senha com menos de 10 caracteres dá 422. Não há cadastro público nem papel de administrador: qualquer usuário cadastrado cadastra outros. Na tela: `/usuarios` (botão "Usuários" no cartão "Atualizar"). O log registra só `user_created`, sem e-mail.
+- `GET /api/users` lista os usuários (`email`, `name`, `active`, `created_at`; nunca a senha) e `POST /api/users` recebe `{email, name, password}` e cadastra um usuário (201). Os dois exigem login **sempre, mesmo com `AUTH_REQUIRED=false`** (401; 503 sem `AUTH_SECRET`), e o POST também exige `WRITE_ENABLED=true` (403). E-mail repetido dá 409; e-mail inválido ou senha com menos de 10 caracteres dá 422. Não há cadastro público nem papel de administrador: qualquer usuário cadastrado cadastra outros. Na tela: `/usuarios` (botão "Usuários" no cartão "Atualizar"). O log registra só `user_created`, sem e-mail.
 - A exclusão é lógica e usa POST, não DELETE: o SKU sai de todos os cálculos, e casos, decisões e execuções que o citam continuam. Excluir um SKU já excluído (ou reativar um ativo) dá 409.
 
 ## Atualizar a base pela tela — `/api/dataset*`
@@ -433,13 +433,13 @@ Decisões em [decisions.md](decisions.md) (D1–D11) e passo a passo em [upload-
 | 4 | corpo até 4 MB | **413** `{"detail", "code": "FILE_TOO_LARGE"}`, também quando o envio não declara `Content-Length` |
 | 5 | arquivo legível | **422** `{"detail", "code"}` (tabela de códigos abaixo) |
 
-O token vem de `POST /api/auth/login`. `GET /api/dataset`, `/versions`, `/template` e `/example` não exigem login.
+O token vem de `POST /api/auth/login`. Com `AUTH_REQUIRED=true` (padrão), `GET /api/dataset`, `/versions`, `/template` e `/example` também exigem login (barreira global); só `preview`, `apply`, `restore` e `restore-original` exigem login mesmo com `AUTH_REQUIRED=false`.
 
-Na tela, o login fica em `/login`: `/dados/atualizar` leva para lá quando o servidor responde `upload_disabled_reason: "login"` e a pessoa volta para a página depois de entrar (`?next=`, só caminhos internos). Sessão vencida (401) em qualquer gravação também volta para `/login`.
+Na tela, o login vem antes de tudo: sem sessão o app mostra só a tela de login (em qualquer endereço) e, depois de entrar, abre a tela inicial. Toda chamada leva o token; um 401 em qualquer rota encerra a sessão e volta ao login. O modelo e o exemplo são baixados com `fetch` autenticado (botões, não links).
 
 ### `GET /api/dataset/template` e `GET /api/dataset/example`
 
-Dois arquivos `.xlsx` para baixar na tela (botões no cartão "Base ativa"), sem login:
+Dois arquivos `.xlsx` para baixar na tela (botões no cartão "Base ativa"); exigem o login da sessão como o resto da API:
 
 - `/template`: o modelo no formato correto (13 abas, cabeçalho na linha 3), preenchido com a base ativa. Edite e reenvie.
 - `/example`: o pacote **fictício** `docs/exemplos/atualizacao-2026-10.xlsx`, para treinar o envio. A prévia o marca como exemplo. Responde 404 se o arquivo não estiver na publicação (`vercel.json` o inclui em `includeFiles`).

@@ -9,6 +9,9 @@ import { PageLoadContext } from './hooks/usePageLoadStatus';
 import { SystemInfoContext } from './hooks/useSystemInfo';
 import type { SystemInfo } from './hooks/useSystemInfo';
 import { api } from './api';
+import LoginPage from './pages/LoginPage';
+import { clearSession, readSession, SESSION_ENDED } from './session';
+import type { Session } from './session';
 import type { PageLoadStatus } from './hooks/usePageLoadStatus';
 import './styles.css';
 
@@ -33,7 +36,6 @@ const SkuDetailPage = lazy(() => import('./pages/SkuDetailPage'));
 const SkuListPage = lazy(() => import('./pages/SkuListPage'));
 const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage'));
 const DatasetUpdatePage = lazy(() => import('./pages/DatasetUpdatePage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
 const UsersPage = lazy(() => import('./pages/UsersPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -57,7 +59,7 @@ function LegacyPartnersRoute({ children }: { children: ReactNode }) {
   return <Navigate to={{ pathname: tab === 'diretos' ? '/canais' : '/carteira', search }} replace />;
 }
 
-function App() {
+function Shell({ user, onSignOut }: { user: string; onSignOut: () => void }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [refreshToken, setRefreshToken] = useState(0);
@@ -79,7 +81,6 @@ function App() {
 
   const current = useMemo(() => {
     if (location.pathname === '/usuarios') return { label: 'Usuários', description: 'Cadastro de quem pode entrar' };
-    if (location.pathname === '/login') return { label: 'Entrar', description: 'Acesso para atualizar a base' };
     if (matchPath('/parceiros/:codigo', location.pathname)) return { label: 'Detalhe do parceiro', description: 'Evidência comercial por SKU' };
     if (matchPath('/canais/:canal', location.pathname)) return { label: 'Detalhe do canal', description: 'Faturamento observado por SKU' };
     if (matchPath('/skus/:sku', location.pathname)) return { label: 'Detalhe do SKU', description: 'Evidências e recomendação' };
@@ -92,10 +93,10 @@ function App() {
   }, [location.pathname, location.search, navigate]);
 
   const isGuide = location.pathname === '/guia';
-  const isLogin = location.pathname === '/login' || location.pathname === '/usuarios';
+  const isUsers = location.pathname === '/usuarios';
   useEffect(() => { document.title = `${current.label} · Caderno Inteligente`; }, [current.label]);
 
-  const staticPage = isGuide || isLogin || current.label === 'Página não encontrada';
+  const staticPage = isGuide || isUsers || current.label === 'Página não encontrada';
   const status = loadStatus.path === location.pathname ? loadStatus : { loading: true, error: '', loadedAt: null };
 
   // Runtime mode (demo / read-only) is read once API-backed pages are used; static pages stay offline-capable.
@@ -110,7 +111,7 @@ function App() {
     <a className="skip-link" href="#conteudo" onClick={(event) => { event.preventDefault(); document.getElementById('page-title')?.focus(); }}>Pular para o conteúdo</a>
     <Sidebar open={menuOpen} onClose={closeMenu} />
     <main className="main-content" id="conteudo">
-      <Topbar title={current.label} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} />
+      <Topbar title={current.label} onMenu={() => setMenuOpen(true)} menuOpen={menuOpen} onRefresh={() => void refresh()} refreshing={!staticPage && status.loading} loadedAt={staticPage ? null : status.loadedAt} error={staticPage ? '' : status.error} staticPage={staticPage} showRefresh={!staticPage} user={user} onSignOut={onSignOut} />
       <div className="page-content">
         {!staticPage && <SystemBanner info={systemInfo} />}
         {!staticPage && showsRule(location.pathname) && <RuleLine />}
@@ -118,7 +119,6 @@ function App() {
         <RouteErrorBoundary key={location.pathname}><Suspense fallback={<LoadingState />}>
           <Routes>
             <Route path="/guia" element={<GuidePage />} />
-            <Route path="/login" element={<LoginPage />} />
             <Route path="/usuarios" element={<UsersPage />} />
             <Route path="/" element={<PageResource key="OverviewPage" fields={PAGE_FIELDS.OverviewPage} refreshToken={refreshToken}>{(dashboard, reload) => <OverviewPage data={dashboard} onSelect={selectSku} onRefresh={reload} refreshToken={refreshToken} />}</PageResource>} />
             <Route path="/fila" element={<OperationalQueuePage onSelect={selectSku} refreshToken={refreshToken} />} />
@@ -150,6 +150,22 @@ function App() {
       </div>
     </main>
   </div></PageLoadContext.Provider></SystemInfoContext.Provider>;
+}
+
+/** Login > tela inicial > demais telas: sem sessão, só a tela de login existe; nenhuma página nem chamada de API é feita antes. */
+function App() {
+  const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(() => readSession());
+  const [ended, setEnded] = useState(false);
+
+  useEffect(() => {
+    const onEnded = () => { setSession(null); setEnded(true); };
+    window.addEventListener(SESSION_ENDED, onEnded);
+    return () => window.removeEventListener(SESSION_ENDED, onEnded);
+  }, []);
+
+  if (!session) return <LoginPage expired={ended} onSignedIn={(created) => { setEnded(false); setSession(created); navigate('/', { replace: true }); }} />;
+  return <Shell user={session.user.name || session.user.email} onSignOut={() => { clearSession(); setEnded(false); setSession(null); }} />;
 }
 
 export default App;

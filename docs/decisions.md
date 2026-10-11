@@ -175,7 +175,7 @@ Origem: [proposta-melhorias.md](proposta-melhorias.md), fase 3. Detalhes em [fas
 - **Mesma validação de `schemas.py`:** cada gravação roda `validate_dataset` sobre a prévia da base inteira e recusa erros novos. A família precisa existir, porque capacidade e linhas dependem dela.
 - **Versão dos dados:** incrementada na mesma transação de cada gravação. As instâncias consultam a versão a cada 5 s, e a instância que gravou recalcula na hora.
 - **SQLite local para o cadastro:** sem `DATABASE_URL`, o cadastro usa `runtime/dataset.db`, o que permite testar o fluxo inteiro sem PostgreSQL.
-- **Login desligado temporariamente (pedido do usuário):** `AUTH_REQUIRED=false` é o padrão, e o cadastro de SKU fica liberado. O login não foi removido; volta com `AUTH_REQUIRED=true`.
+- **Login desligado temporariamente (pedido do usuário):** `AUTH_REQUIRED=false` era o padrão, e o cadastro de SKU ficava liberado. **Substituída em 2026-10-12:** o login passou a valer para o sistema todo (ver a decisão "Login antes de tudo" abaixo).
 
 ## 2026-10-09 — Benchmark de modelos e aba Modelo de previsão
 
@@ -243,3 +243,11 @@ Origem: [discovery-upload-planilha.md](discovery-upload-planilha.md) (problemas 
 
 - **Problema:** depois de um envio com referência posterior, OPs de status "Concluída" e pedidos encerrados (data crítica no passado) eram contados como abertos. No exemplo de outubro, 23 pedidos apareciam com data crítica vencida.
 - **Decisão:** `indicators.py` ignora OPs concluídas e pedidos encerrados na contagem de abertos. Com o exemplo aplicado, os pedidos com data crítica no passado vão de 23 para 0. A base empacotada não muda (não tem OPs concluídas), e o teste novo está em `tests/test_indicators.py`.
+
+## 2026-10-12 — Login antes de tudo
+
+- **Fluxo:** login → tela inicial → demais telas. Sem sessão, o app mostra só a tela de login (sem menu, sem páginas e sem nenhuma chamada à API). `/guia` e rotas inexistentes também exigem login.
+- **API:** `AUTH_REQUIRED` passa a ser `true` por padrão e vale para toda rota de `/api`, por um middleware que roda por dentro do CORS. Ficam abertas só `POST /api/auth/login`, `GET /api/health` e `GET /api/system` (sem dados de negócio). Sem `AUTH_SECRET` em produção, a API responde 503 (falha fechada).
+- **Navegador:** toda chamada leva o token da sessão; um 401 encerra a sessão e volta ao login. O modelo e o exemplo da planilha são baixados com `fetch` (um link simples não leva o token).
+- **Sem papéis:** qualquer usuário cadastrado entra em tudo e cadastra outros usuários (`/usuarios`). Papel de administrador ficou para depois.
+- **Testes:** `tests/conftest.py` desliga o login global nos testes de rotas (`AUTH_REQUIRED=false`); `tests/test_api_login_gate.py` o liga e confere a barreira.

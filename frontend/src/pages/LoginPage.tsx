@@ -1,31 +1,21 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { api } from '../api';
-import { PageIntro, SectionCard } from '../components';
 import { LoginForm } from '../components/SkuRegistry';
-import { readSession, saveSession } from '../session';
+import { saveSession } from '../session';
+import type { Session } from '../session';
 
-/** Só caminhos internos: evita redirecionar para outro site por um `?next=` forjado. */
-export const safeNext = (value: string | null) => value && value.startsWith('/') && !value.startsWith('//') && !value.startsWith('/login') ? value : '/dados/atualizar';
+/** Primeira tela do sistema: nada mais carrega até a pessoa entrar. Depois do login o app abre a tela inicial. */
+export default function LoginPage({ expired, onSignedIn }: { expired: boolean; onSignedIn: (session: Session) => void }) {
+  useEffect(() => { document.title = 'Entrar · Caderno Inteligente'; }, []);
+  const signIn = async (email: string, password: string) => onSignedIn(saveSession(await api.login(email, password)));
 
-/** Tela de entrada: guarda a sessão no navegador e volta para onde a pessoa estava (`?next=`). */
-export default function LoginPage() {
-  const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const next = safeNext(params.get('next'));
-  const expired = params.get('motivo') === 'expirou';
-  const signedIn = readSession();
-
-  const signIn = async (email: string, password: string) => {
-    saveSession(await api.login(email, password));
-    navigate(next, { replace: true });
-  };
-
-  return <>
-    <PageIntro title="Entrar" description="Entre com seu usuário para atualizar a base pela planilha." />
-    <SectionCard title="Acesso">
+  return <main className="login-screen" id="conteudo">
+    <div className="login-card">
+      <p className="login-brand">Caderno Inteligente</p>
+      <h1 id="page-title">Entrar</h1>
+      <p className="dataset-muted">Entre com seu usuário para ver as recomendações e atualizar a base.</p>
       {expired && <p className="inline-error" role="alert">Sua sessão expirou. Entre novamente.</p>}
-      {signedIn && <p className="dataset-muted" role="status">Você já está conectado como {signedIn.user.name || signedIn.user.email}. <button type="button" className="link-button" onClick={() => navigate(next)}>Continuar</button></p>}
       <LoginForm onSubmit={signIn} disabled={false} label="Entrar" />
-    </SectionCard>
-  </>;
+    </div>
+  </main>;
 }

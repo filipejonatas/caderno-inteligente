@@ -139,7 +139,7 @@ A tela **Bastidores › Atualizar dados** (`/dados/atualizar`) só funciona na p
    AUTH_SECRET=<32 caracteres ou mais; por exemplo: python -c "import secrets; print(secrets.token_urlsafe(48))">
    ```
 
-   O envio exige `WRITE_ENABLED=true` (com `false`, o motivo é "somente leitura") e `AUTH_SECRET` (sem ele o login fica desligado e o motivo é "login indisponível"). O login é exigido sempre, mesmo com `AUTH_REQUIRED=false`.
+   O envio exige `WRITE_ENABLED=true` (com `false`, o motivo é "somente leitura") e `AUTH_SECRET` (sem ele o login fica desligado e o motivo é "login indisponível"). O login vale para o sistema todo (`AUTH_REQUIRED=true` é o padrão; não defina `false` em produção): sem `AUTH_SECRET` e sem um usuário criado por `scripts/create_user.py`, ninguém entra.
 3. **Importar a base.** A partir da sua máquina, com a `DATABASE_URL` só no terminal:
 
    ```powershell

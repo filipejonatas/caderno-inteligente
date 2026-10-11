@@ -36,7 +36,7 @@ def original():
 class Env:
     def __init__(self, tmp_path, original, monkeypatch, *, settings_file=DEFAULT_PATH, supply=None):
         monkeypatch.setenv("AUTH_SECRET", SECRET)
-        monkeypatch.delenv("AUTH_REQUIRED", raising=False)
+        monkeypatch.setenv("AUTH_REQUIRED", "false")
         self.source = "banco"
         self.writable = True
         self.changes = 0

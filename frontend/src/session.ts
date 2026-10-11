@@ -26,3 +26,10 @@ export function saveSession(result: LoginResult): Session {
 export function clearSession() {
   try { window.localStorage.removeItem(KEY); } catch { /* nada a limpar */ }
 }
+
+/** Avisa o app de que o servidor recusou o token (401): ele volta para a tela de login. */
+export const SESSION_ENDED = 'caderno-inteligente:sessao-encerrada';
+export function endSession() {
+  clearSession();
+  window.dispatchEvent(new Event(SESSION_ENDED));
+}
