@@ -151,6 +151,12 @@ def backend_checks(runner: Runner, backend: str, frontend: str | None = None, ex
         runner.check("validação", "planilha igual à congelada", cases.get("source_matches_frozen") is True)
         runner.check("validação", "nenhum comportamento seguro reprovado", not any(item["status"] == "reprovado" for item in body.get("safe_behavior", [])))
 
+    dataset = runner.get(f"{api}/dataset")  # somente leitura: nada é enviado
+    if dataset and runner.check("dataset", "estado da base responde 200", dataset.status == 200, f"status {dataset.status}"):
+        body = dataset.json()
+        runner.check("dataset", "base com data de referência", bool(body.get("reference_date")), str(body.get("reference_date")))
+        runner.check("dataset", "fonte da base informada", body.get("data_source") in ("banco", "planilha"), str(body.get("data_source")))
+
     runs = runner.get(f"{api}/runs")
     if runs:
         runner.check("persistência", "execuções respondem 200", runs.status == 200, f"status {runs.status}")

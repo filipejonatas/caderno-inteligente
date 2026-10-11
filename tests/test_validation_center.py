@@ -140,13 +140,14 @@ def test_base_allocation_case_reads_the_pipeline_allocation_or_rebuilds_it_from_
     case = {"id": "VC-X", "title": "t", "kind": "allocation", "origin": "base", "sku": "SKU-A", "limitation": "l",
             "expected": {"contested": True, "ranked_clients": {"includes": ["KA-01", "KA-02"]}, "orders_with_reason": {"positive": True}, "requires_human_review": True}}
     config = {**load_validation_config(CONFIG), "cases": [case]}
-    rebuilt = evaluate_frozen_cases(config, **_empty_context(), source_sha256="x", plans={"SKU-A": plan})["items"][0]
+    frozen = config["frozen_source_sha256"]   # caso de base só é avaliado sobre a base congelada (D8)
+    rebuilt = evaluate_frozen_cases(config, **_empty_context(), source_sha256=frozen, plans={"SKU-A": plan})["items"][0]
     assert rebuilt["result"] == "passou" and rebuilt["obtained"]["allocation_source"].startswith("recalculada")
     given = {"requires_human_review": True, "skus": {"SKU-A": {"contested": True, "orders": [{"client": "KA-02", "reason": "r"}, {"client": "KA-01", "reason": "r"}],
                                                                "first_client": "KA-02", "last_client": "KA-01", "decision_text": "d"}}}
-    piped = evaluate_frozen_cases(config, **_empty_context(), source_sha256="x", plans={"SKU-A": plan}, allocation=given)["items"][0]
+    piped = evaluate_frozen_cases(config, **_empty_context(), source_sha256=frozen, plans={"SKU-A": plan}, allocation=given)["items"][0]
     assert piped["obtained"]["allocation_source"] == "pipeline" and piped["obtained"]["ranked_clients"] == ["KA-02", "KA-01"]
-    assert evaluate_frozen_cases(config, **_empty_context(), source_sha256="x")["items"][0]["result"] == "nao_encontrado"
+    assert evaluate_frozen_cases(config, **_empty_context(), source_sha256=frozen)["items"][0]["result"] == "nao_encontrado"
 
 
 def test_outranks_higher_value_active_compares_active_skus_of_the_same_tier():
@@ -183,10 +184,10 @@ def test_failed_and_missing_cases_are_reported_not_hidden():
     synthetic["expected"]["action"] = "sem_acao_necessaria"
     base_case = next(case for case in broken["cases"] if case["id"] == "VC-02")
     broken["cases"] = [synthetic, base_case]
-    result = evaluate_frozen_cases(broken, **_empty_context(), source_sha256="outro-hash")
+    result = evaluate_frozen_cases(broken, **_empty_context(), source_sha256=config["frozen_source_sha256"])
     assert [item["result"] for item in result["items"]] == ["falhou", "nao_encontrado"]
     assert result["failed"] == 1 and result["not_found"] == 1
-    assert result["source_matches_frozen"] is False and result["source_note"]
+    assert result["source_matches_frozen"] is True and result["source_note"] is None and result["previous_base"] == 0
     failed_check = next(check for check in result["items"][0]["checks"] if check["field"] == "action")
     assert failed_check == {"field": "action", "expected": "sem_acao_necessaria", "obtained": "produzir", "passed": False}
 
@@ -198,3 +199,33 @@ def test_safe_behavior_guard_rails_pass_and_detect_violation():
     violated = {item["id"]: item for item in safe_behavior_checks(forecasts, [{"requires_human_review": False}], [{"estimated_stock": None, "coverage_days": 10}])}
     assert violated["human_review"]["status"] == "reprovado"
     assert violated["no_false_precision"]["status"] == "reprovado"
+
+
+def test_other_active_base_moves_the_20_base_cases_out_of_the_count_and_keeps_the_14_synthetic():
+    config = load_validation_config(CONFIG)
+    result = evaluate_frozen_cases(config, **_empty_context(), source_sha256="0" * 64)
+    previous = [item for item in result["items"] if item["result"] == "base_anterior"]
+    assert result["source_matches_frozen"] is False and "base anterior" in result["source_note"]
+    assert result["total"] == 34 and result["previous_base"] == 20 and len(previous) == 20
+    assert all(item["origin"] == "base" and item["status"] == "base_anterior" for item in previous)
+    assert all(item["status_label"] == "Refere-se à base anterior (base de 14/09/2026)" for item in previous)
+    assert all(item["obtained"] is None and item["checks"] == [] and item["limitation"] and item["adjustment"] for item in previous)
+    # Os sintéticos seguem avaliados e são os únicos na contagem.
+    assert result["passed"] == 14 and result["failed"] == 0 and result["not_found"] == 0 and result["pending"] == 0
+    assert result["passed"] + result["failed"] + result["not_found"] + result["pending"] + result["previous_base"] == 34
+    rule = config["adjustments"][-1]
+    assert rule["changed_weights_or_models"] is False and "base_anterior" in rule["change"]
+
+
+def test_previous_base_label_falls_back_without_the_config_key():
+    config = load_validation_config(CONFIG)
+    config.pop("frozen_base_label")
+    item = evaluate_frozen_cases({**config, "cases": [config["cases"][1]]}, **_empty_context(), source_sha256="outro")["items"][0]
+    assert item["origin"] == "base" and item["status_label"] == "Refere-se à base anterior (base congelada)"
+
+
+def test_same_active_base_keeps_todays_output_without_previous_base():
+    config = load_validation_config(CONFIG)
+    result = evaluate_frozen_cases(config, **_empty_context(), source_sha256=config["frozen_source_sha256"])
+    assert result["previous_base"] == 0 and result["source_matches_frozen"] is True
+    assert not any(item["result"] == "base_anterior" or "status" in item for item in result["items"])

@@ -45,3 +45,9 @@ def test_migration_002_is_additive():
     sql = Path("supabase/migrations/002_run_comparison.sql").read_text(encoding="utf-8").lower()
     assert "add column if not exists comparison jsonb" in sql
     assert "drop" not in sql and "not null" not in sql
+
+
+def test_postgres_run_stores_the_active_source_hash_when_given(tmp_path):
+    connection = FakeConnection(one_results=[{"id": 6}])
+    TestPostgresPersistence(connection).create_run(_source(tmp_path), {}, {}, {}, [], source_hash="abc")
+    assert connection.statements[0][1][0] == "abc"

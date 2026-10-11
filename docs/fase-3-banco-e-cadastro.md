@@ -1,6 +1,6 @@
 # Fase 3: base no banco, login e cadastro de SKU
 
-Origem: [proposta-melhorias.md](proposta-melhorias.md), fase 3. A planilha continua sendo a fonte padrão e a base dos testes. Nada muda enquanto `DATA_SOURCE` não for `banco`.
+Origem: [proposta-melhorias.md](proposta-melhorias.md), fase 3 (a atualização pela tela veio depois, veja a seção própria abaixo). A planilha continua sendo a fonte padrão e a base dos testes. Nada muda enquanto `DATA_SOURCE` não for `banco`.
 
 ## O que entrou
 
@@ -89,8 +89,28 @@ O banco é o mesmo Supabase que já guarda execuções, casos e decisões. Não 
 
 Sem `DATA_SOURCE=banco`, a API continua lendo a planilha empacotada, mesmo com as tabelas da 004 criadas.
 
+## Atualizar a base pela tela (migração 005)
+
+**Pré-requisito:** aplique a migração 005 antes de publicar este código; sem ela, a tela e o import quebram.
+
+Os dados fora do cadastro (vendas, pedidos, ordens, sell-in/out e o restante) agora também mudam **pela tela**, em `/dados/atualizar`, sem `--replace`. Resumo em [upload-planilha-resumo.md](upload-planilha-resumo.md); rotas em [api.md](api.md); decisões D1–D11 em [decisions.md](decisions.md).
+
+| Parte | Onde |
+|---|---|
+| Histórico de versões com snapshot comprimido (gzip) e coluna `dataset_version.active_version_id` | `supabase/migrations/005_dataset_uploads.sql` (rodar depois da 004; aditiva) |
+| Versões, aplicação atômica e restauração | `src/caderno_inteligente/dataset_store.py` (`apply_version`, `list_versions`, `version_snapshot`) |
+| Regra de mescla por aba e coerência com a data de planejamento | `dataset_merge.py`, `reference.py`, `dataset_upload.py` |
+| Rotas `/api/dataset*` | `backend/dataset.py` |
+| Limites (4 MB, ZIP, linhas, 20 versões) | `config/dataset_upload.json` |
+
+- **Requisitos:** `DATA_SOURCE=banco`, `WRITE_ENABLED=true`, `AUTH_SECRET` e **login sempre**, mesmo com `AUTH_REQUIRED=false`. Para a demonstração, crie o usuário com `scripts/create_user.py --email … --name … --postgres`.
+- **Base original no histórico:** `scripts/import_workbook.py` valida a planilha e grava a versão "original" (usuário `script`). "Restaurar base original" reimporta a planilha empacotada, com todos os SKUs ativos.
+- **Cadastro da tela:** o envio sobrescreve o que foi cadastrado pela tela (D10); a prévia lista os SKUs afetados. As exclusões lógicas dos SKUs que seguem na planilha continuam valendo.
+- **Versão dos dados:** cada aplicação ou restauração aumenta `dataset_version.version`, e as outras instâncias recalculam em até 5 s, como nas alterações de SKU.
+- **Passo a passo no Supabase e no Vercel:** [deploy-vercel-supabase.md](deploy-vercel-supabase.md), seção 7.
+
 ## Limitações conhecidas
 
-- **Hash da fonte:** `source_hash` das execuções, a Central de validação e o Laboratório de previsão continuam calculando o hash do XLSM empacotado, mesmo com `DATA_SOURCE=banco`. Depois de uma alteração de SKU, esse hash não identifica a base usada. A versão dos dados está em `dataset_version`.
-- **Abas fora do cadastro:** vendas, pedidos, ordens, sell-in/out, preços e o restante só mudam por uma nova importação (`--replace`), que descarta o cadastro feito pela tela.
+- **Hash da fonte (resolvida):** `source_hash` das execuções, da Central de validação, do Laboratório de previsão e do benchmark é o hash do conteúdo da **base ativa**, não mais o do XLSM empacotado. Os casos congelados de origem `base` aparecem como "base anterior" quando a base ativa difere da congelada. A versão dos dados continua em `dataset_version`.
+- **Abas fora do cadastro:** podem mudar pelo envio de planilha (acima). A importação com `--replace` continua existindo e descarta o cadastro feito pela tela.
 - **Bloqueio de login por instância:** na Vercel, cada função tem o seu contador; o limite é por instância, não global.

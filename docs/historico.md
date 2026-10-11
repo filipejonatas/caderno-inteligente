@@ -175,8 +175,35 @@ Especificação em [discovery-etapa-16.md](discovery-etapa-16.md); decisões em 
 
 - Tempo de análise medido automaticamente; valor em risco endereçado e pauta Modelo × S&OP (52 divergências acima de 20% em 32 SKUs) na Validação; narrativa da IA no roteiro. 34 de 34 casos congelados passam.
 
+## Upload da planilha — atualizar a base pela tela (U.0–U.3)
+
+Especificação em [discovery-upload-planilha.md](discovery-upload-planilha.md); decisões D1–D11, R1 e a correção de indicadores em [decisions.md](decisions.md); resumo, números e commits sugeridos em [upload-planilha-resumo.md](upload-planilha-resumo.md); contratos em [api.md](api.md).
+
+### Upload U.0 — Data de planejamento derivada e validação com endereço
+
+- `reference_date = "auto"` em `config/supply_plan.json`: primeira semana de `Capacidade_Semanal`, única para todo o motor (inclusive eventos, R1). Base empacotada: 14/09/2026, top 10 da fila idêntico. `GET /api/data-quality` traz `reference`.
+- Validação com endereço (linha, célula e valor) e sem 500 por texto em coluna numérica; leitura de planilha a partir de bytes; nove regras de coerência entre a referência e as abas.
+- R1: a referência única nos eventos leva 10 SKUs a Priorizar produção pelo Lançamento Coleção Primavera (12 para 22 dos 50; na fila, 10 para 16, 37,2%); o teto de 40% passou a ser medido sobre a fila.
+
+### Upload U.1 — Prévia, aplicação e versões
+
+- `/api/dataset*`: prévia sem gravação, aplicação com confirmação por hash e por versão, histórico das 20 últimas versões com snapshot e restauração da base original. Migração `005_dataset_uploads.sql`.
+- Segurança: limite de 4 MB só nas duas rotas de envio, ZIP e XML verificados (`defusedxml`), login sempre, `DATA_SOURCE=banco` e `WRITE_ENABLED`. `scripts/import_workbook.py` valida e grava a versão "original".
+- Correção de indicadores: OPs concluídas e pedidos encerrados não contam como abertos (data crítica no passado após o exemplo: 23 para 0).
+
+### Upload U.2 — Tela
+
+- Bastidores › Atualizar dados (`/dados/atualizar`): base ativa e modelo para baixar, prévia, aplicação em duas etapas e versões. Dados da planilha e Validação mostram a data de planejamento e os casos "base anterior".
+
+### Upload U.3 — Exemplo, casos e documentação
+
+- `docs/exemplos/atualizacao-2026-10.xlsx` (fictício) e `scripts/build_example_update.py --check`. Aplicado: referência 12/10/2026, previsão desde 2026-10, demanda de 12 a 31/10 de 7.980 un., top 5 CI-0014, CI-0004, CI-0042, CI-0036, CI-0041.
+- Casos congelados: com a base diferente da congelada, 20 casos de origem `base` ficam como "base anterior" (fora da contagem) e os 14 sintéticos contam (14 de 34). Restaurar a original volta a 34 de 34.
+- Limitações: só meses fechados nas abas mensais; o mês substituído vai para o fim da aba; tempo de gravação no Supabase não medido; janelas fixas de avaliação da previsão (D11).
+
 ## Pendências registradas
 
 - Deploy e smoke test com o motor novo; teste moderado com usuários (protocolo em [semana-4-validacao-v2.md](semana-4-validacao-v2.md)).
 - Recalibração das faixas P10–P90; reconciliação Sell_In × Vendas_24m (hoje só aviso); vínculo pedido–OP (depende de dados da empresa); capacidade informada pela empresa depois de dezembro (hoje é estimativa); teste moderado com usuários para destravar a comparação do tempo de análise (0 registros hoje); resumo por LLM (D7, fora da Etapa 16).
 - Sem autenticação; decisões não atribuíveis a parceiros.
+- Envio de planilha: teste na Vercel com Supabase (migrações 004 e 005, `DATA_SOURCE=banco`, usuário de demonstração), medindo prévia e aplicação, e "Restaurar base original" ao final.

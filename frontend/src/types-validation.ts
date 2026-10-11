@@ -90,7 +90,11 @@ export interface FrozenCase {
   expected: Record<string, unknown>;
   obtained: Record<string, unknown> | null;
   checks: CaseCheck[];
-  result: 'passou' | 'falhou' | 'nao_encontrado' | 'pendente';
+  /** 'base_anterior' (D8): caso de origem `base` congelado sobre outra base; não é avaliado nem contado com a base ativa. */
+  result: 'passou' | 'falhou' | 'nao_encontrado' | 'pendente' | 'base_anterior';
+  /** Presentes só nos casos 'base_anterior' (ex.: "Refere-se à base anterior (base de 14/09/2026)"). */
+  status?: 'base_anterior';
+  status_label?: string;
   pending_until?: string | null;
   adjustment: string;
 }
@@ -106,6 +110,8 @@ export interface FrozenCases {
   failed: number;
   not_found: number;
   pending?: number;
+  /** Casos de origem `base` fora da contagem por referirem-se à base anterior (0 quando a base ativa é a congelada); ausente em respostas antigas. */
+  previous_base?: number;
   synthetic: number;
   items: FrozenCase[];
 }

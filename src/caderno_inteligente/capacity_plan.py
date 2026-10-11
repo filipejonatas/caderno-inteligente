@@ -23,6 +23,8 @@ from typing import Any
 
 import pandas as pd
 
+from .supply_plan import CLOSED_ORDER_STATUSES
+
 STATUS_ORDER = {"ok": 0, "pre_producao": 1, "ok_estimado": 2, "a_confirmar": 3, "insuficiente_estimado": 4, "insuficiente": 5}
 STATUS_LABELS = {"ok": "Cabe na semana planejada", "pre_producao": "Cabe com pré-produção", "a_confirmar": "Capacidade a confirmar (fora do calendário)",
                  "insuficiente": "Não cabe até a data de necessidade"}
@@ -210,6 +212,8 @@ def build_capacity_plan(plans: dict[str, dict[str, Any]], indicators: pd.DataFra
         }
 
     open_orders = orders if orders is not None else pd.DataFrame(columns=["SKU"])
+    if not open_orders.empty and "Status" in open_orders:
+        open_orders = open_orders[~open_orders["Status"].astype(str).str.strip().str.casefold().isin(CLOSED_ORDER_STATUSES)]
     short_statuses = ("insuficiente", "insuficiente_estimado")
     families = []
     for family, item in calendar.items():

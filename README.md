@@ -29,6 +29,7 @@ Protótipo de apoio à decisão do PCP em uma cadeia B2B2C. Ele lê uma base XLS
 | Quanto confiar na análise? | Confiança › Validação e Bastidores › Dados da planilha: erro da previsão em meses normais e de pico, cobertura de sell-out, divergência do cadastro (inclusive ABC e sell-in × faturado), casos congelados (34 de 34) e falhas conhecidas |
 | Quais regras existem e não dispararam? | Bastidores › Auditoria › Cobertura de regras: disparos por regra e, para as que não dispararam (Ampliar mix, Recomendar recompra, Reativar), o motivo com o número que o comprova; mais os 23 pares KA para pedir sell-out |
 | Onde a IA ajuda e qual o impacto? | Confiança › Modelo de previsão (a previsão aprendida dos dados, testada contra statsforecast, scikit-learn, LightGBM e Prophet; o modelo sazonal simples venceu) e Validação (valor em risco endereçado, pauta Modelo × S&OP e tempo de análise medido; nenhum ganho de processo é afirmado antes de 20 registros) |
+| Como atualizo a base quando chega uma planilha nova? | Bastidores › Atualizar dados (`/dados/atualizar`, exige login e a base no banco): prévia sem gravar, com erros e avisos por célula, nova data de planejamento e efeito na fila; aplicar cria uma versão (as 20 últimas ficam guardadas) e "Restaurar base original" desfaz tudo. Há um [pacote de exemplo fictício](docs/exemplos/README.md) |
 | Por que a prioridade mudou? | Bastidores › Execuções: comparação entre snapshots, com decomposição do score |
 | O que foi decidido? | Acompanhamento › Casos (status, responsável e prazo editáveis) e Histórico de decisões: ação, efeito do dado do parceiro e tempo de análise |
 
@@ -109,6 +110,7 @@ O menu tem 8 entradas (Início, Planejamento, SKUs, Financeiro, Comercial, Acomp
 | `/decisoes` | Acompanhamento › Histórico de decisões; registrar exige escolher o SKU (ou vir de `?sku=`) |
 | `/validacao` | Confiança › Validação: resumo, 3 números, falhas conhecidas e 2 abas, com exportação CSV e impressão |
 | `/modelo` | Confiança › Modelo de previsão: o que é previsto, premissas, erro medido e modelos comparados no benchmark |
+| `/dados/atualizar` | Bastidores › Atualizar dados: base ativa e modelo para baixar, envio de planilha (.xlsx ou .xlsm, até 4 MB) com prévia sem gravação, aplicação em duas etapas e histórico de versões com "Voltar para esta versão" e "Restaurar base original". Exige login e `DATA_SOURCE=banco`; com a planilha empacotada, o botão aparece desabilitado com o motivo |
 | `/auditoria` | Bastidores › Auditoria (blocos recolhidos): casos de teste congelados, verificações de segurança, limitações, histórico de ajustes e método comercial |
 
 Rotas inexistentes mostram uma página 404. O `frontend/vercel.json` redireciona deep links para o `index.html`, permitindo abrir ou atualizar qualquer URL interna.
@@ -148,9 +150,10 @@ Durante o desenvolvimento, `npm run test:watch` reexecuta os testes do frontend.
 | Rótulos de ação (fila de atenção, janela de evento, reposições, recompra) | `config/challenge_actions.json` |
 | Linha de base, casos congelados e histórico de ajustes da validação | `config/validation_center.json` |
 | Motor de previsão (cadeia oficial, horizonte, teto sazonal, protocolo de avaliação com pico) | `config/forecast_engine.json` |
-| Plano de suprimento (data de planejamento, janela de decisão, cobertura-alvo, excesso projetado) | `config/supply_plan.json` |
+| Plano de suprimento (data de planejamento, janela de decisão, cobertura-alvo, excesso projetado). `reference_date` vale `"auto"`: a primeira semana de `Capacidade_Semanal` | `config/supply_plan.json` |
 | Alocação de estoque escasso (pesos de urgência, canal direto, cobertura e pedido pequeno; atendimento parcial) | `config/allocation.json` |
 | Valor em risco e faixas (peso da falta estimada, janela da faixa 2, limites da curva ABC medida) | `config/prioritization_impact.json` |
+| Envio de planilha pela tela (tamanho máximo de 4 MB, limites do ZIP e de linhas por aba, 20 versões, extensões aceitas). A leitura do arquivo usa `defusedxml` | `config/dataset_upload.json` |
 | Capacidade estimada além do calendário (método, cenário, janela de 8 semanas; `enabled: false` desliga) | `config/capacity_extension.json` |
 
 Variáveis de ambiente do backend (exemplo em `.env.example`):
@@ -161,9 +164,9 @@ Variáveis de ambiente do backend (exemplo em `.env.example`):
 | `CORS_ORIGINS` | `localhost:5173` e `127.0.0.1:5173` em desenvolvimento | Origens exatas, sem caminho e sem curinga. Em produção, sem valor, nenhuma origem externa é aceita |
 | `APP_ENV` | `development` | `production` retorna erros genéricos com código de referência |
 | `DEMO_MODE` | `false` | `true` exibe aviso de dados fictícios que podem ser apagados |
-| `WRITE_ENABLED` | `true` | `false` bloqueia decisões, casos, execuções e cadastro de SKU (403); consultas e simulações continuam |
-| `DATA_SOURCE` | `planilha` | `banco` lê as abas do banco (importadas com `scripts/import_workbook.py`) e habilita o cadastro de SKU ([fase 3](docs/fase-3-banco-e-cadastro.md)) |
-| `AUTH_REQUIRED` | `false` | `true` exige login no cadastro de SKU. Por enquanto, o cadastro fica liberado |
+| `WRITE_ENABLED` | `true` | `false` bloqueia decisões, casos, execuções, cadastro de SKU e envio de planilha (403); consultas e simulações continuam |
+| `DATA_SOURCE` | `planilha` | `banco` lê as abas do banco (importadas com `scripts/import_workbook.py`) e habilita o cadastro de SKU ([fase 3](docs/fase-3-banco-e-cadastro.md)) e a atualização da base pela tela ([resumo](docs/upload-planilha-resumo.md)) |
+| `AUTH_REQUIRED` | `false` | `true` exige login no cadastro de SKU. Por enquanto, o cadastro fica liberado. O envio de planilha exige login **sempre**, com `true` ou `false` |
 | `AUTH_SECRET` | — | Secreta (32+ caracteres). Assina o login do cadastro de SKU; em produção, sem ela o login fica desligado |
 | `AUTH_TOKEN_HOURS` | `8` | Validade da sessão de login (1 a 24 h) |
 | `LOG_LEVEL` | `INFO` | Nível de log; os logs nunca imprimem `DATABASE_URL` |
@@ -181,7 +184,7 @@ O deploy usa dois projetos Vercel do mesmo repositório:
 
 Antes de publicar:
 
-1. execute `supabase/migrations/001_initial.sql`, `002_run_comparison.sql`, `003_challenge_action.sql` e `004_dataset_and_auth.sql` no Supabase, nessa ordem (a 004 só é usada com `DATA_SOURCE=banco`);
+1. execute `supabase/migrations/001_initial.sql`, `002_run_comparison.sql`, `003_challenge_action.sql` e `004_dataset_and_auth.sql` e `005_dataset_uploads.sql` no Supabase, nessa ordem (a 004 e a 005 só são usadas com `DATA_SOURCE=banco`; a 005 guarda as versões do envio de planilha);
 2. configure no backend `DATABASE_URL` (Transaction Pooler, porta 6543), `CORS_ORIGINS` com o domínio exato do frontend e `APP_ENV=production`;
 3. se for demonstração aberta, configure também `DEMO_MODE=true` e, opcionalmente, `WRITE_ENABLED=false`;
 4. configure no frontend `VITE_API_URL` com a URL do backend seguida de `/api`.
@@ -210,6 +213,7 @@ Passo a passo completo em [Deploy com Vercel e Supabase](docs/deploy-vercel-supa
 - [Decisões técnicas](docs/decisions.md)
 - [Deploy com Vercel e Supabase](docs/deploy-vercel-supabase.md)
 - [Fase 3: base no banco, login e cadastro de SKU](docs/fase-3-banco-e-cadastro.md)
+- [Atualizar a base pela tela: resumo](docs/upload-planilha-resumo.md), [especificação](docs/discovery-upload-planilha.md) e [pacote de exemplo fictício](docs/exemplos/README.md)
 
 **Histórico**
 

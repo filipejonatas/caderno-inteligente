@@ -175,3 +175,12 @@ def test_forward_projection_only_on_sufficient_partner_rows_and_never_breaks_ana
     auto = first(data)
     assert auto['action'] == 'avaliar_reposicao' and auto['forward_projection']['status'] == 'insufficient_data'
     assert auto['forward_projection']['replenishment_to_target'] is None
+
+
+def test_closed_order_statuses_do_not_enter_the_partner_backlog():
+    data = source()
+    extra = pd.DataFrame([{'Pedido': f'PED{i}', 'SKU': 'S2', 'Cliente/Canal': 'P2', 'Quantidade': 40, 'Data prometida': pd.Timestamp('2026-09-10'), 'Status': s}
+                          for i, s in enumerate(['Entregue', 'Concluída', 'Encerrada', 'Cancelado'], start=2)])
+    data['Carteira_Pedidos'] = pd.concat([data['Carteira_Pedidos'], extra], ignore_index=True)
+    row = next(r for r in build_partner_insights(data)['items'] if r['partner'] == 'P2')
+    assert row['backlog_order_count'] == 1

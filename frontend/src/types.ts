@@ -312,6 +312,17 @@ export interface DataQuality {
     coverage: number;
     missing_data_is_not_zero: boolean;
   };
+  /** Upload (U.0): data de planejamento derivada dos dados; ausente em respostas antigas. */
+  reference?: DataReference;
+}
+
+export interface DataReference {
+  /** AAAA-MM-DD: primeira semana de Capacidade_Semanal ("auto") ou a data explícita do config. */
+  reference_date: string;
+  reference_source: 'auto' | 'config';
+  /** AAAA-MM; `null` sem vendas. */
+  sales_last_month: string | null;
+  series_last_months: Record<string, string | null>;
 }
 
 export interface DashboardData {

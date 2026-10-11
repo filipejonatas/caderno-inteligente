@@ -1,0 +1,12 @@
+{
+  "max_upload_bytes": 4194304,
+  "max_zip_entries": 300,
+  "max_uncompressed_bytes": 52428800,
+  "max_compression_ratio": 100,
+  "max_rows_per_sheet": 50000,
+  "max_columns": 64,
+  "max_versions": 20,
+  "max_examples_per_error": 5,
+  "header_search_rows": 5,
+  "accepted_extensions": [".xlsx", ".xlsm"]
+}

@@ -55,3 +55,5 @@ O verificador aprovou P1–P6 e as metas mensuráveis; o code review apontou 12 
 - a nota da alocação não conta canal direto como sell-out do parceiro; "Atender A antes de B" usa clientes distintos; faixa 3 sem OP a reduzir mostra excesso ausente, não R$ 0; "Decisões de hoje" traz `requires_human_review`; o texto da capacidade estimada lê `lookback_weeks` em vez de fixar 8 semanas; o tempo de análise é zerado ao trocar de SKU.
 
 Aceito sem correção: o pico da Escolar sai `insuficiente` (falta observada em dezembro, mais grave que a estimada) e SKUs com ordem planejada fora da janela de 4 semanas saem como Monitorar.
+
+> Nota (upload, R1): os números de rótulos deste documento são de antes da referência única. Depois dela, na fila de 43: Priorizar produção 16 (37,2%), Monitorar 11, Produzir 6. As tabelas acima/abaixo não foram reescritas.

@@ -67,3 +67,16 @@ def test_capacity_is_aggregated_by_family():
     indicators = build_sku_indicators(normalise_dataset(load_workbook(SOURCE)))
     assert indicators["capacity_weeks"].min() > 0
     assert indicators["capacity_occupation_average"].between(0, 1).all()
+
+
+def test_closed_production_orders_and_delivered_orders_do_not_count_as_open():
+    data = normalise_dataset(load_workbook(SOURCE))
+    before = build_sku_indicators(data).set_index("SKU").loc["CI-0001"]
+    orders = data["Ordens_Producao"].copy()
+    first = orders.index[orders["SKU"] == "CI-0001"][0]
+    orders.loc[first, "Status"] = "Concluída"
+    orders.loc[first, "Conclusão prevista"] = pd.Timestamp("2026-01-01")
+    changed = build_sku_indicators({**data, "Ordens_Producao": orders}).set_index("SKU").loc["CI-0001"]
+    # a OP concluída já está no estoque: não soma de novo nem vira a "primeira conclusão" no passado
+    assert changed["production_order_quantity"] == before["production_order_quantity"] - orders.loc[first, "Quantidade"]
+    assert pd.isna(changed["first_production_completion"]) or changed["first_production_completion"] > pd.Timestamp("2026-01-01")

@@ -49,7 +49,7 @@ GET https://DOMINIO-DO-BACKEND.vercel.app/api/health
 
 O retorno deve indicar `status: ok`, `database: ok` e `persistence: postgres`.
 
-Para ler a base do banco e habilitar o login e o cadastro de SKU (fase 3), rode também a migração `004_dataset_and_auth.sql`, importe a planilha e configure `DATA_SOURCE=banco` e `AUTH_SECRET`. O passo a passo está em [fase-3-banco-e-cadastro.md](fase-3-banco-e-cadastro.md).
+Para ler a base do banco e habilitar o login e o cadastro de SKU (fase 3), rode também a migração `004_dataset_and_auth.sql`, importe a planilha e configure `DATA_SOURCE=banco` e `AUTH_SECRET`. O passo a passo está em [fase-3-banco-e-cadastro.md](fase-3-banco-e-cadastro.md). Para **atualizar a base pela tela** (envio de planilha), veja a seção 7.
 
 ## 3. Frontend na Vercel
 
@@ -125,3 +125,39 @@ O script termina com `N/N verificações aprovadas` e código de saída 0. Qualq
 Sem `DATABASE_URL`, o backend usa automaticamente os bancos SQLite em `runtime/`. O proxy do Vite mantém `/api` apontando para `127.0.0.1:8000`, portanto `VITE_API_URL` também é opcional localmente.
 
 Para testar deliberadamente com Supabase, defina `DATABASE_URL` apenas na sessão local ou em um `.env` não versionado. O projeto não carrega `.env` automaticamente; exporte a variável no terminal ou use a configuração da sua IDE.
+
+## 7. Atualizar a base pela tela (envio de planilha)
+
+A tela **Bastidores › Atualizar dados** (`/dados/atualizar`) só funciona na publicação com a base no banco. Com `DATA_SOURCE=planilha`, o botão aparece desabilitado e mostra o motivo. Faça uma vez, nesta ordem:
+
+1. **Migração 005 (PRÉ-REQUISITO: rode antes de publicar este código; sem ela a tela e o import quebram).** No SQL Editor do Supabase, rode `supabase/migrations/005_dataset_uploads.sql` depois da 004. Ela cria `dataset_versions` (histórico de versões com snapshot comprimido, RLS habilitado) e a coluna `dataset_version.active_version_id`. É aditiva e pode ser executada mais de uma vez.
+2. **Variáveis do backend na Vercel**, além da `DATABASE_URL` que já existe:
+
+   ```text
+   DATA_SOURCE=banco
+   WRITE_ENABLED=true
+   AUTH_SECRET=<32 caracteres ou mais; por exemplo: python -c "import secrets; print(secrets.token_urlsafe(48))">
+   ```
+
+   O envio exige `WRITE_ENABLED=true` (com `false`, o motivo é "somente leitura") e `AUTH_SECRET` (sem ele o login fica desligado e o motivo é "login indisponível"). O login é exigido sempre, mesmo com `AUTH_REQUIRED=false`.
+3. **Importar a base.** A partir da sua máquina, com a `DATABASE_URL` só no terminal:
+
+   ```powershell
+   $env:DATABASE_URL = "<connection string do Transaction Pooler do Supabase>"
+   .\.venv\Scripts\python.exe scripts\import_workbook.py --postgres
+   ```
+
+   O script valida a planilha e grava a versão **"original"** no histórico, que é a que o botão "Restaurar base original" usa de referência.
+4. **Criar o usuário de demonstração** (a senha é pedida no terminal, com 10 caracteres ou mais; não a coloque em commits nem em chat):
+
+   ```powershell
+   .\.venv\Scripts\python.exe scripts\create_user.py --email demo@exemplo.com --name "Demonstração" --postgres
+   ```
+
+5. **Conferir.** `GET /api/system` deve mostrar `data_source: "banco"` e `auth_enabled: true`; `GET /api/dataset` deve mostrar `upload_enabled` verdadeiro depois do login e `matches_original: true`.
+
+**Limite de tamanho:** o corpo do envio vai até **4 MB** (`config/dataset_upload.json`), só em `/api/dataset/preview` e `/api/dataset/apply`. O pacote de exemplo tem 38 KB. O corpo das demais rotas de escrita continua limitado a 16 KB. Confira se o limite de corpo da Vercel para a função cobre 4 MB; arquivos maiores recebem 413.
+
+**Tempo no Supabase não medido.** No SQLite local, a prévia leva cerca de 3,4 s e a aplicação cerca de 4,4 s. Na Vercel com Supabase (gravação de cerca de 11,7 mil linhas), isso ainda não foi medido. Meça na primeira vez e anote.
+
+**Depois de testar:** use "Restaurar base original" na tela (ou `POST /api/dataset/restore-original`). O envio vale para todos os usuários da publicação e fica nas últimas 20 versões.

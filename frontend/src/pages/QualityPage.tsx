@@ -3,7 +3,7 @@ import { Badge, Hint, MetricCard, PageIntro, SectionCard, Tooltip } from '../com
 import { ChannelFindings } from '../components/ChannelViews';
 import type { AbcRegistryDivergenceWarning, BillingUniformSplitWarning, DemandDivergenceWarning, SellInBillingDivergenceWarning } from '../types';
 import type { PageProps } from './shared';
-import { displayCurrency, displayQuantity, displayShare } from './shared';
+import { displayCurrency, displayQuantity, displayShare, formatDate, formatMonth } from './shared';
 
 const ratioText = (ratio: number) => `×${ratio.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`;
 const plural = (count: number, one: string, many: string) => `${count.toLocaleString('pt-BR')} ${count === 1 ? one : many}`;
@@ -49,8 +49,14 @@ export default function QualityPage({ data }: PageProps<'quality'>) {
   const abc = data.quality.warnings.find((item) => item.code === 'ABC_REGISTRY_DIVERGENCE') as AbcRegistryDivergenceWarning | undefined;
   const sellIn = data.quality.warnings.find((item) => item.code === 'SELLIN_BILLING_DIVERGENCE') as SellInBillingDivergenceWarning | undefined;
   const split = data.quality.warnings.find((item) => item.code === 'BILLING_UNIFORM_SPLIT') as BillingUniformSplitWarning | undefined;
+  const reference = data.quality.reference;
+  const verdict = noErrors ? `Sem erros bloqueantes e sem registros sem vínculo. O principal limite é a cobertura de sell-out: ${displayShare(coverage.coverage)}.` : 'Há itens para revisar antes de decidir.';
+  // Com a data de referência, a linha de intenção abre com a base em uso (troca o texto antigo de abertura, não soma outra linha).
+  const intro = reference
+    ? <>Base de {formatDate(reference.reference_date)}{reference.sales_last_month ? ` · vendas até ${formatMonth(`${reference.sales_last_month}-01`)}` : ''}. {verdict} <Link to="/dados/atualizar">Atualizar dados</Link></>
+    : verdict;
   return <>
-    <PageIntro title="Posso confiar na planilha?" description={noErrors ? `Sem erros bloqueantes e sem registros sem vínculo. O principal limite é a cobertura de sell-out: ${displayShare(coverage.coverage)}.` : 'Há itens para revisar antes de decidir.'} />
+    <PageIntro title="Posso confiar na planilha?" description={intro} />
     <div className="quality-summary"><div className="metrics-grid quality-metrics">
       <MetricCard label="Situação da base" value={noErrors ? 'Sem erros' : `${data.quality.errors.length + orphanCount} a revisar`} detail={`${sheets.length - toReview.length} de ${sheets.length} abas íntegras`} tone={noErrors ? 'green' : 'amber'} icon="quality" />
       <MetricCard label={<>Cobertura de sell-out <Hint term="ausente" /></>} value={displayShare(coverage.coverage)} detail={`${coverage.observed_pairs} de ${coverage.possible_pairs} combinações parceiro–SKU com venda informada`} tone="slate" icon="b2b" />

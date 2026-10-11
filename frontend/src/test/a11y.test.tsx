@@ -21,6 +21,7 @@ const PAGES: Array<[string, string]> = [
   [`/skus/${encodeURIComponent(SKU_SHORT)}?tab=impacto`, SKU_SHORT],
   ['/casos', 'Casos em acompanhamento'],
   ['/qualidade', 'Posso confiar na planilha?'],
+  ['/dados/atualizar', 'Atualizar a base pela planilha'],
   ['/parceiros', 'Onde há oportunidade de reposição'],
   [`/parceiros/${encodeURIComponent(PARTNER)}`, 'Parceiro sintético'],
   ['/carteira', 'Parceiros e cobertura de dados'],

@@ -28,3 +28,43 @@ def test_create_user_reads_the_password_from_the_environment(tmp_path, monkeypat
     assert create_user(["--email", "pcp@exemplo.com", "--reset-password", "--sqlite", str(target)]) == 0
     assert UserStore(Database(sqlite_path=target)).authenticate("pcp@exemplo.com", "outra-senha-456") is not None
     assert create_user(["--email", "ninguem@exemplo.com", "--reset-password", "--sqlite", str(target)]) == 1
+
+
+def test_import_records_the_original_version_with_the_file_hash(tmp_path):
+    import hashlib
+    from caderno_inteligente.dataset_store import content_sha256
+    from caderno_inteligente.ingestion import load_workbook
+    from scripts.import_workbook import DEFAULT_SOURCE
+
+    target = tmp_path / "dataset.db"
+    assert import_workbook(["--sqlite", str(target)]) == 0
+    store = DatasetStore(Database(sqlite_path=target))
+    versions = store.list_versions()
+    assert [(item["action"], item["user_email"], item["filename"]) for item in versions] == [("original", "script", DEFAULT_SOURCE.name)]
+    assert versions[0]["file_sha256"] == hashlib.sha256(DEFAULT_SOURCE.read_bytes()).hexdigest()
+    assert versions[0]["content_sha256"] == content_sha256(load_workbook(DEFAULT_SOURCE))
+    assert store.state()["active_version_id"] == versions[0]["id"]
+
+
+def test_import_accepts_xlsx_and_blocks_invalid_data_before_writing(tmp_path, capsys):
+    import pandas as pd
+    from caderno_inteligente.ingestion import load_workbook
+    from scripts.import_workbook import DEFAULT_SOURCE
+
+    dataset = load_workbook(DEFAULT_SOURCE)
+    good = tmp_path / "base.xlsx"
+    bad = tmp_path / "ruim.xlsx"
+    for path, broken in ((good, False), (bad, True)):
+        with pd.ExcelWriter(path) as writer:
+            for sheet, frame in dataset.items():
+                frame = frame.copy()
+                if broken and sheet == "Carteira_Pedidos":
+                    frame["Quantidade"] = frame["Quantidade"].astype(object)
+                    frame.loc[frame.index[0], "Quantidade"] = "abc"
+                frame.to_excel(writer, sheet_name=sheet, index=False, startrow=2)
+    target = tmp_path / "dataset.db"
+    assert import_workbook(["--sqlite", str(target), "--source", str(bad)]) == 1
+    assert "nada foi gravado" in capsys.readouterr().err
+    assert DatasetStore(Database(sqlite_path=target)).is_empty()
+    assert import_workbook(["--sqlite", str(target), "--source", str(good)]) == 0
+    assert DatasetStore(Database(sqlite_path=target)).list_versions()[0]["filename"] == "base.xlsx"

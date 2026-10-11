@@ -25,7 +25,8 @@ Os números são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803
    - `/validacao`
    - `/auditoria`
 3. Se for registrar uma decisão ao vivo, a publicação precisa estar com `WRITE_ENABLED=true`. Depois da apresentação, limpe os dados de teste (veja [Deploy](deploy-vercel-supabase.md)).
-4. **Plano B:** se a API cair, o Guia de uso (`/guia`) funciona sem a API e contém o fluxo resumido.
+4. **Confirmar a base original.** Abrir `/dados/atualizar` (exige login, veja [Deploy](deploy-vercel-supabase.md), seção 7) e conferir em "Base ativa" que a origem é a base original e a data de planejamento é 14/09/2026. Se um envio anterior ficou aplicado, use "Restaurar base original" antes de começar: **todos os números deste roteiro valem só para a base original**.
+5. **Plano B:** se a API cair, o Guia de uso (`/guia`) funciona sem a API e contém o fluxo resumido.
 
 ## 0:00–0:45 — O problema em uma frase
 
@@ -83,6 +84,18 @@ Os números são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803
   - a pauta Modelo × S&OP aponta 52 divergências acima de 20% em 32 SKUs (out a dez/26) para revisão; o erro do S&OP não é mensurável porque a base só traz meses futuros.
 - **Fechamento:** toda sugestão exige revisão humana. Nada cria, antecipa, reduz OP nem reserva estoque sozinho, e a decisão fica registrada em Decisões.
 
+## Extra opcional (2 minutos) — Atualizar a base pela tela
+
+Mostra que a base não é um retrato fixo de 14/09. Só faça com o usuário de demonstração, `DATA_SOURCE=banco` e `WRITE_ENABLED=true` (sem eles o botão aparece desabilitado, com o motivo). O arquivo `docs/exemplos/atualizacao-2026-10.xlsx` é um **exemplo fictício** (setembro de vendas e fotografias de 12/10/2026 geradas por regras fixas); diga isso em voz alta, a prévia também avisa.
+
+1. **Tela:** `/dados/atualizar` (Bastidores › Atualizar dados). Entre com o usuário de demonstração. Em "Base ativa": base original, referência 14/09/2026, vendas até agosto/2026.
+2. **Prévia:** escolher o arquivo. A prévia **não grava nada** e mostra: referência de 14/09 para 12/10/2026, vendas até setembro/2026, as abas que serão mescladas ou substituídas (setembro entra e os 24 meses anteriores ficam), o aviso "arquivo de exemplo fictício" e o efeito no motor (tamanho da fila e os 5 primeiros antes e depois).
+3. **Aplicar:** "Aplicar e recalcular", depois "Confirmar e aplicar". A base nova vale para todos os usuários.
+4. **Ver a fila com a referência 12/10:** `/fila` e `/` mostram a data de planejamento 12/10/2026 (decisões de hoje até 19/10). O topo da fila muda de CI-0004, CI-0041, CI-0011, CI-0017, CI-0025 para **CI-0014, CI-0004, CI-0042, CI-0036, CI-0041**; SKUs em risco de ruptura no Início: 21 para 15 (na prévia, SKUs com falta projetada sem novas ordens: 44 para 43). Em `/validacao`, 14 dos 34 casos contam e 20 aparecem como "base anterior": o sistema não finge que os casos de 14/09 valem para a base nova.
+5. **Restaurar base original (obrigatório ao final):** voltar a `/dados/atualizar`, "Restaurar base original" e "Confirmar". Conferir que a referência voltou a 14/09/2026, o topo da fila é CI-0004 e a validação mostra 34 de 34. Sem esse passo, o roteiro seguinte (e o próximo avaliador) abre com números de outubro.
+
+Tempos medidos no SQLite local: prévia cerca de 3,4 s e aplicação cerca de 4,4 s; no Supabase ainda não foram medidos (confira ao vivo antes de prometer).
+
 ## Perguntas prováveis
 
 | Pergunta | Resposta curta |
@@ -97,4 +110,5 @@ Os números são os da planilha de demonstração atual (SHA-256 `03fa0ed4…803
 | O pico de novembro foi testado? | Não diretamente: o modelo exige 15 meses de histórico, então o teste rolante cobre os picos de janeiro e fevereiro. Novembro é conferido por um caso congelado contra o realizado de 2025 |
 | O estoque do parceiro é real? | É estimado na planilha. A conta fechar mostra coerência entre as abas, não inventário físico; por isso o rótulo é "Investigar" |
 | A IA reduz as 22 horas por semana? | Ainda não foi medido. O tempo de análise é registrado automaticamente, mas há 0 registros; com 20, a Validação libera a comparação |
+| Posso enviar a planilha de outubro? | Sim, pela tela, só com a base no banco e com login. Cada aba enviada substitui a atual e as abas mensais aceitam só meses fechados; a prévia mostra tudo antes de gravar e a base original sempre pode ser restaurada. Limitações: o mês substituído vai para o fim da aba e as janelas de avaliação da previsão não mudam |
 | O que falta para uso real? | Teste com usuários, dados reais (vínculo pedido–OP, capacidade informada depois de dezembro, sell-out dos KAs), autenticação e limiares aprovados pela empresa |

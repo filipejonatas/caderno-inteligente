@@ -45,7 +45,7 @@ Para atacar a lacuna real, os 23 pares KA × SKU com pedido em carteira e sem se
 
 ## Limites configuráveis
 
-Os limites de excesso e de divergência do cadastro estão em [config/rule_thresholds.json](../config/rule_thresholds.json); os do plano (data de planejamento, janela de decisão, cobertura-alvo, excesso projetado) em [config/supply_plan.json](../config/supply_plan.json). Alterações de regra ou limiar devem ser registradas em `docs/decisions.md` e no histórico de ajustes da validação.
+Os limites de excesso e de divergência do cadastro estão em [config/rule_thresholds.json](../config/rule_thresholds.json); os do plano (data de planejamento, janela de decisão, cobertura-alvo, excesso projetado) em [config/supply_plan.json](../config/supply_plan.json). A data de planejamento (`reference_date`) vale `"auto"`: é a primeira `Semana inicial` de `Capacidade_Semanal` (segunda-feira), não um valor fixo, e muda quando a base é atualizada pela tela. O envio é bloqueado se as vendas avançarem e essa data não ([decisions.md](decisions.md)). Os limites do envio de planilha (4 MB, 20 versões, linhas por aba) ficam em [config/dataset_upload.json](../config/dataset_upload.json). Alterações de regra ou limiar devem ser registradas em `docs/decisions.md` e no histórico de ajustes da validação.
 
 ## Limitação de atraso
 

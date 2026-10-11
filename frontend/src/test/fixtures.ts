@@ -12,6 +12,7 @@ import type { ProductionPlan } from '../types-production';
 import type { RevenueForecast, RevenueItem } from '../types-revenue';
 import type { RunComparison } from '../types-runs';
 import type { ValidationSummary } from '../types-validation';
+import type { DatasetApplyResult, DatasetInfo, DatasetIssue, DatasetPreview, DatasetSheetReport, DatasetVersions, EngineSummary } from '../types-dataset';
 import type { SessionUser, SkuRegistry, SkuRegistryItem } from '../types-registry';
 import type { SystemInfo } from '../hooks/useSystemInfo';
 
@@ -94,6 +95,7 @@ export const quality: DataQuality = {
   sheets: { Produtos: { records: 4, duplicate_keys: 0, missing_columns: [], missing_values: {} } },
   foreign_keys: [{ child_sheet: 'Estoque_Atual', orphan_count: 0 }],
   sell_out_coverage: { observed_pairs: 1, possible_pairs: 4, coverage: 0.25, missing_data_is_not_zero: true },
+  reference: { reference_date: '2026-09-14', reference_source: 'auto', sales_last_month: '2026-08', series_last_months: { Vendas_24m: '2026-08', Sell_In: '2026-08', Sell_Out: null } },
 };
 
 export const config: AppConfig = {
@@ -414,7 +416,7 @@ export const validationSummary: ValidationSummary = {
     ],
     beat_baseline_skus: 1, did_not_beat_baseline_skus: 0, not_comparable_skus: 0, items: [], limitations: ['Holdout otimista.'],
   },
-  frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, pending: 0, synthetic: 0, items: [] },
+  frozen_cases: { frozen_at: '2026-10-05', frozen_source_sha256: 'abc', source_matches_frozen: true, source_note: null, policy: 'Política.', total: 0, passed: 0, failed: 0, not_found: 0, pending: 0, previous_base: 0, synthetic: 0, items: [] },
   safe_behavior: [{ id: 'a', label: 'Verificação', status: 'aprovado', method: 'executado', evidence: 'ok' }],
   known_failures: [], known_limitations: ['Limitação.'], adjustments: [], requires_human_review: true,
   addressed_value: { observed_total: 1875, missing_reason: null, sku_count: 1, decided_skus: [SKU_OK, 'TEST-003'], skus_without_value: ['TEST-003'], nature: 'observado',
@@ -626,4 +628,113 @@ export const rulesCoverage: RulesCoverage = {
     { partner: 'KA-T2', sku: 'TEST-003', product: 'Agenda sintética', backlog_quantity: 200, backlog_value: null, orders: ['PED-T2'] },
   ],
   field_nature: { fires: 'calculado sobre as saídas atuais' }, limitations: ['Caso de referência sintético comprova a regra, não a ocorrência na operação.'], requires_human_review: true,
+};
+
+// Upload (U.2): GET /api/dataset, prévia, aplicação e versões. Arquivos e e-mails sintéticos; ausente fica `null`, nunca zero.
+const DATASET_POLICY = 'Cada aba enviada substitui a atual; nas abas mensais, só os meses enviados são substituídos.';
+export const datasetOriginal: DatasetInfo = {
+  data_source: 'planilha', version: null, active_version_id: null, origin: 'original', reference_date: '2026-09-14', reference_source: 'auto', sales_last_month: '2026-08',
+  content_sha256: 'c0ffee'.repeat(10) + 'c0ff', source_sha256: 'abc123'.repeat(10) + 'abc1', matches_original: true, uploaded_by: null, uploaded_at: null, filename: null,
+  upload_enabled: false, upload_disabled_reason: 'planilha', upload_disabled_message: 'A atualização da base pela tela exige a base no banco (DATA_SOURCE=banco). Esta publicação lê a planilha.',
+  max_upload_bytes: 4_194_304, accepted_extensions: ['.xlsx', '.xlsm'], max_versions: 20, policy: DATASET_POLICY,
+};
+/** Banco com login feito: envio liberado. */
+export const datasetEnabled: DatasetInfo = { ...datasetOriginal, data_source: 'banco', version: 1, upload_enabled: true, upload_disabled_reason: null, upload_disabled_message: null };
+/** Banco sem login: a tela mostra o LoginForm. */
+export const datasetLoginRequired: DatasetInfo = { ...datasetEnabled, upload_enabled: false, upload_disabled_reason: 'login', upload_disabled_message: 'Entre com seu usuário para atualizar a base.' };
+
+const keptSheet = (sheet: string, policy: DatasetSheetReport['policy'], rows: number): DatasetSheetReport => ({
+  sheet, policy, status: 'mantida', header_row: null, rows_before: rows, rows_received: null, rows_after: rows,
+  months_added: [], months_replaced: [], keys_added: 0, keys_removed: 0, keys_added_examples: [], keys_removed_examples: [],
+});
+const salesMerged: DatasetSheetReport = {
+  sheet: 'Vendas_24m', policy: 'serie_mensal', status: 'mesclada', header_row: 3, rows_before: 48, rows_received: 2, rows_after: 50,
+  months_added: ['2026-09'], months_replaced: [], keys_added: 2, keys_removed: 0, keys_added_examples: [`2026-09 / ${SKU_OK} / ${PARTNER}`, '2026-09 / TEST-003 / KA-T2'], keys_removed_examples: [],
+};
+const capacityReplaced: DatasetSheetReport = {
+  sheet: 'Capacidade_Semanal', policy: 'fotografia', status: 'substituida', header_row: 3, rows_before: 4, rows_received: 4, rows_after: 4,
+  months_added: [], months_replaced: [], keys_added: 1, keys_removed: 1, keys_added_examples: ['2027-01-04 / Linha Teste'], keys_removed_examples: ['2026-09-14 / Linha Teste'],
+};
+const engineBefore: EngineSummary = {
+  reference_date: '2026-09-14', sales_last_month: '2026-08', queue_size: 2, shortfall_skus: 2, forecast_first_month: '2026-09',
+  top5: [{ sku: SKU_OK, product: `Produto ${SKU_OK}`, urgency_label: 'Pedido confirmado sem cobertura' }, { sku: 'TEST-003', product: 'Agenda sintética', urgency_label: null }],
+};
+const exampleWarning: DatasetIssue = {
+  code: 'EXAMPLE_FILE', severity: 'warning', sheet: 'LEIA_ME', column: null, message: 'Este é um arquivo de exemplo fictício: não use os números para decidir.',
+  count: 1, examples: [], more: 1, row: null, cell: null, value: null,
+};
+const stockWarning: DatasetIssue = {
+  code: 'PRODUCT_STOCK_DIVERGENCE', severity: 'warning', sheet: 'Produtos', column: 'Estoque atual', message: 'Produtos.Estoque atual difere de Estoque_Atual em 2 SKUs; o cálculo usa Estoque_Atual',
+  count: 2, examples: [{ row: null, cell: null, key: SKU_OK, value: '90 × 498' }], more: 1, row: null, cell: null, value: '90 × 498',
+};
+const datasetLimitations = ['A prévia não grava nada; aplicar substitui a base para todos os usuários.', 'O efeito no motor é uma estimativa; confira as recomendações antes de agir.'];
+
+/** Prévia aplicável: referência avança de 14/09 para 12/10 e o motor é recalculado. */
+export const datasetPreviewOk: DatasetPreview = {
+  file: { filename: 'atualizacao-teste.xlsx', size_bytes: 38_597, sha256: 'feed01'.repeat(10) + 'feed', extension: '.xlsx', has_macro: false, example: true },
+  expected_version: 1, can_apply: true, policy: DATASET_POLICY,
+  sheets: [salesMerged, capacityReplaced, keptSheet('Produtos', 'cadastro', 4)], ignored_sheets: ['LEIA_ME'],
+  errors: [], warnings: [stockWarning, exampleWarning],
+  reference: { before: '2026-09-14', after: '2026-10-12', advanced: true, sales_last_month_before: '2026-08', sales_last_month_after: '2026-09' },
+  registry_overrides: { count: 1, skus: ['TEST-003'] },
+  engine: {
+    before: engineBefore, error: null,
+    after: { ...engineBefore, reference_date: '2026-10-12', sales_last_month: '2026-09', queue_size: 3, shortfall_skus: 1, forecast_first_month: '2026-10',
+      top5: [{ sku: 'TEST-003', product: 'Agenda sintética', urgency_label: 'Pedido confirmado sem cobertura' }, ...engineBefore.top5.slice(0, 1)] },
+  },
+  requires_human_review: true, limitations: datasetLimitations,
+};
+
+/** Prévia com 1 erro endereçado (3 células, 2 exemplos + "mais 1") e 2 avisos: não aplica e o motor não é recalculado. */
+export const datasetPreviewError: DatasetPreview = {
+  ...datasetPreviewOk,
+  file: { ...datasetPreviewOk.file, filename: 'vendas-com-erro.xlsx', sha256: 'bad0'.repeat(16), example: false },
+  can_apply: false,
+  sheets: [{ ...salesMerged, months_added: [], months_replaced: ['2026-08'], rows_after: 48, keys_added: 0, keys_added_examples: [] }, keptSheet('Capacidade_Semanal', 'fotografia', 4)],
+  ignored_sheets: [],
+  errors: [{
+    code: 'INVALID_NUMBER', severity: 'error', sheet: 'Vendas_24m', column: 'Quantidade faturada', message: 'Vendas_24m.Quantidade faturada: 3 valores não são números', count: 3,
+    examples: [{ row: 10, cell: 'D10', key: `2026-08 | ${SKU_OK} | ${PARTNER}`, value: 'abc' }, { row: 11, cell: 'D11', key: '2026-08 | TEST-003 | KA-T2', value: 'n/d' }],
+    more: 1, row: 10, cell: 'D10', value: 'abc',
+  }],
+  warnings: [stockWarning, { code: 'MISSING_VALUES', severity: 'warning', sheet: 'Vendas_24m', column: 'Canal', message: 'Vendas_24m.Canal: 1 célula vazia', count: 1,
+    examples: [{ row: 12, cell: 'C12', key: null, value: null }], more: 0, row: 12, cell: 'C12', value: null }],
+  reference: { before: '2026-09-14', after: null, advanced: false, sales_last_month_before: '2026-08', sales_last_month_after: null },
+  registry_overrides: { count: 0, skus: [] },
+  engine: { before: engineBefore, after: null, error: 'Não calculado: a planilha tem erros que bloqueiam a aplicação.' },
+};
+
+/** Prévia aplicável em que o motor não resumiu a base atual (`engine.before: null`). */
+export const datasetPreviewNoBefore: DatasetPreview = { ...datasetPreviewOk, engine: { ...datasetPreviewOk.engine, before: null } };
+
+export const datasetApplyResult: DatasetApplyResult = {
+  version: 2, version_id: 2, reference_date: '2026-10-12', sales_last_month: '2026-09', content_sha256: 'beef02'.repeat(10) + 'beef', pruned_versions: 0, preview: datasetPreviewOk,
+};
+
+export const datasetVersions: DatasetVersions = {
+  data_source: 'banco', active_version_id: 2, max_versions: 20,
+  items: [
+    { id: 2, created_at: '2026-10-12 09:30:00', user_email: 'pcp@exemplo.test', action: 'upload', filename: 'atualizacao-teste.xlsx', file_sha256: datasetPreviewOk.file.sha256,
+      size_bytes: 38_597, content_sha256: datasetApplyResult.content_sha256, reference_date: '2026-10-12', sales_last_month: '2026-09', restored_from: null, active: true },
+    { id: 1, created_at: '2026-10-11 08:00:00', user_email: 'script', action: 'original', filename: null, file_sha256: null,
+      size_bytes: null, content_sha256: datasetOriginal.content_sha256, reference_date: '2026-09-14', sales_last_month: '2026-08', restored_from: null, active: false },
+  ],
+};
+
+/** Validação depois de um upload (D8): o caso de origem `base` vira "base anterior" e sai da contagem; o sintético continua contando. */
+export const validationSummaryPreviousBase: ValidationSummary = {
+  ...validationSummary,
+  frozen_cases: {
+    ...validationSummary.frozen_cases, source_matches_frozen: false,
+    source_note: 'A planilha mudou desde o congelamento; os casos baseados na base referem-se à base anterior e saem da contagem até serem revisados.',
+    total: 2, passed: 1, failed: 0, not_found: 0, pending: 0, previous_base: 1, synthetic: 1,
+    items: [
+      { id: 'VC-T1', title: 'Caso sintético', kind: 'operational', origin: 'synthetic', origin_reason: 'Sem exemplo na base.', sku: 'TEST-SINT', partner: null, limitation: 'Limitação A',
+        input: { current_stock: 50 }, expected: { action: 'produzir' }, obtained: { action: 'produzir' }, checks: [{ field: 'action', expected: 'produzir', obtained: 'produzir', passed: true }],
+        result: 'passou', adjustment: 'Nenhum ajuste.' },
+      { id: 'VC-T2', title: 'Caso da base anterior', kind: 'operational', origin: 'base', origin_reason: null, sku: SKU_OK, partner: null, limitation: 'Limitação B',
+        input: null, expected: { ranked: true }, obtained: null, checks: [], result: 'base_anterior', status: 'base_anterior', status_label: 'Refere-se à base anterior (base de 14/09/2026)',
+        adjustment: 'Nenhum ajuste realizado. O caso foi congelado sobre a base anterior e não é avaliado nem contado com a base ativa.' },
+    ],
+  },
 };

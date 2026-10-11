@@ -112,3 +112,5 @@ Gerado por `scripts/snapshot_decisions.py --comparar` a partir de `antes.json` (
 | E-commerce | `faturamento_direto` | 100,0% |
 | Marketplace | `faturamento_direto` | 100,0% |
 | Loja própria | `faturamento_direto` | 100,0% |
+
+> Nota (upload, R1): os números de rótulos deste documento são de antes da referência única. Depois dela, na fila de 43: Priorizar produção 16 (37,2%), Monitorar 11, Produzir 6. As tabelas acima/abaixo não foram reescritas.

@@ -44,6 +44,20 @@ def test_full_smoke_passes_against_real_api_and_vercel_headers(client, capsys):
     assert client.get("/api/feedback").json() == []  # the write probe never records data
 
 
+def test_smoke_reads_dataset_status_without_sending_anything(client, capsys):
+    calls = []
+    inner = requester(client)
+
+    def spy(method, url, headers, body):
+        calls.append((method, url))
+        return inner(method, url, headers, body)
+
+    assert smoke_main(["--backend", BACKEND], spy) == 0
+    assert "dataset · estado da base responde 200" in capsys.readouterr().out
+    assert ("GET", f"{BACKEND}/api/dataset") in calls
+    assert not [call for call in calls if "/api/dataset" in call[1] and call[0] != "GET"]
+
+
 def test_readonly_expectation_fails_when_writes_are_enabled(client, capsys):
     assert smoke_main(["--backend", BACKEND, "--expect-readonly"], requester(client)) == 1
     assert "FALHA backend · WRITE_ENABLED = False" in capsys.readouterr().out

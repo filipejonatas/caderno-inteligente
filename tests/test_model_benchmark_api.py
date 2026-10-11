@@ -97,3 +97,16 @@ def test_endpoint_never_changes_the_official_forecast():
     before = client.get("/api/forecasts").json()
     client.get("/api/model-benchmark")
     assert client.get("/api/forecasts").json() == before
+
+
+def test_stale_follows_the_active_source_hash_when_given(tmp_path):
+    db = tmp_path / "benchmarks.db"
+    _save(db, [_result("official", 0.08)], source_hash="a" * 64)
+    active = {"hash": "a" * 64}
+    app = FastAPI()
+    app.include_router(create_model_benchmark_router(pipeline=main.pipeline, source=main.SOURCE, engine_config_file=main.ENGINE_CONFIG_FILE,
+                                                     benchmark_db=db, source_hash=lambda: active["hash"]))
+    client = TestClient(app)
+    assert client.get("/api/model-benchmark").json()["benchmark"]["stale"] is False
+    active["hash"] = "b" * 64
+    assert client.get("/api/model-benchmark").json()["benchmark"]["stale"] is True

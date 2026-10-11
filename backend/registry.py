@@ -105,6 +105,36 @@ class SkuCreate(SkuFields):
         return value
 
 
+UPLOAD_LOGIN = "Entre com seu usuário para atualizar a base."
+LOGIN_UNAVAILABLE = "Login não configurado nesta publicação (AUTH_SECRET ausente ou curto)."
+
+
+def login_user(request: Request, users: Callable[[], UserStore], production: Callable[[], bool]) -> dict[str, str]:
+    """Login sempre exigido (upload da planilha, D2+D6), mesmo com AUTH_REQUIRED=false: 503 sem AUTH_SECRET, 401 sem Bearer válido."""
+    signing_secret = auth_secret(production())
+    if signing_secret is None:
+        raise HTTPException(503, LOGIN_UNAVAILABLE)
+    scheme, _, token = request.headers.get("authorization", "").partition(" ")
+    if scheme.lower() != "bearer" or not token.strip():
+        raise HTTPException(401, UPLOAD_LOGIN, headers={"WWW-Authenticate": "Bearer"})
+    try:
+        claims = read_token(signing_secret, token.strip())
+    except InvalidToken as error:
+        raise HTTPException(401, UNAUTHORIZED, headers={"WWW-Authenticate": "Bearer"}) from error
+    user = users().active_user(claims["sub"])
+    if user is None:
+        raise HTTPException(401, UNAUTHORIZED, headers={"WWW-Authenticate": "Bearer"})
+    return user
+
+
+def optional_user(request: Request, users: Callable[[], UserStore], production: Callable[[], bool]) -> dict[str, str] | None:
+    """O usuário do Bearer, se houver um válido; nunca levanta erro (serve para mostrar se o upload está liberado)."""
+    try:
+        return login_user(request, users, production)
+    except HTTPException:
+        return None
+
+
 def _error_key(error: dict) -> tuple:
     return (error.get("code"), error.get("sheet") or error.get("child_sheet"), error.get("column") or error.get("child_column"))
 

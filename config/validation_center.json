@@ -1,6 +1,7 @@
 {
   "frozen_at": "2026-10-05",
   "frozen_source_sha256": "03fa0ed400aa3f8e14de8f8232cd12727a54c85089a36672f009cae37b78803f",
+  "frozen_base_label": "base de 14/09/2026",
   "policy": "Casos definidos a partir da especificação das regras e do PRD, antes de comparar os resultados. Não são usados para ajustar pesos, limiares ou modelos. Qualquer alteração nesta lista deve ser registrada no histórico de ajustes.",
   "company_baseline": [
     {
@@ -731,6 +732,13 @@
       "change": "VC-32, VC-33 e VC-34 liberados (pending_until removido), com as expectativas gravadas em 16.0. Novo tipo de caso allocation: na base lê a alocação do pipeline (sem ela, recalcula o SKU pelo mesmo build_allocation sobre o plano e os pares parceiro–SKU); no sintético roda build_allocation sobre a entrada. A entrada sintética de VC-34 ganhou reference_date (2026-09-14, a referência da base) e partner_coverage_days de KA-T1 (60 dias, entre os limites de cobertura baixa e alta).",
       "reason": "Etapas 16.2 e 16.3: o código que atende os casos existe. A alocação só lê o sinal de estoque acumulando quando o par tem sell-out suficiente com cobertura estimada (dado ausente não vira ponto); sem a cobertura, o sinal de VC-34 seria ignorado. Os 60 dias não pontuam como cobertura baixa nem alta, então só o sinal decide o desempate.",
       "evidence": "docs/discovery-etapa-16.md; .omc/plans/etapa-16-plano.md (T0, T2Z)",
+      "changed_weights_or_models": false
+    },
+    {
+      "date": "2026-10-11",
+      "change": "Quando a base ativa (após upload) difere da congelada, os casos de origem base aparecem como \"base anterior\" (status base_anterior), não são avaliados e saem de passed, failed e pending; o resumo traz previous_base com a contagem. Os casos sintéticos continuam avaliados e contados. Nova chave frozen_base_label nomeia a base congelada no rótulo.",
+      "reason": "Os casos de base foram congelados sobre a planilha de 14/09/2026; avaliá-los sobre outra base daria falhas que não são regressão. Os casos não são recongelados (D8).",
+      "evidence": "docs/discovery-upload-planilha.md (D8); .omc/plans/upload-plano.md (U1C)",
       "changed_weights_or_models": false
     }
   ]

@@ -25,8 +25,8 @@ const inputNames: Record<string, string> = {
   estimated_stock: 'Estoque estimado do parceiro', average_monthly_sell_out: 'Sell-out médio mensal', coverage_days: 'Cobertura no parceiro (dias)',
   age_months: 'Idade do dado (meses)', backlog_quantity: 'Carteira do par',
 };
-const resultLabel: Record<FrozenCase['result'], string> = { passou: 'Passou', falhou: 'Falhou', nao_encontrado: 'Não encontrado', pendente: 'Pendente' };
-const resultTone: Record<FrozenCase['result'], string> = { passou: 'good', falhou: 'critical', nao_encontrado: 'medium', pendente: 'neutral' };
+const resultLabel: Record<FrozenCase['result'], string> = { passou: 'Passou', falhou: 'Falhou', nao_encontrado: 'Não encontrado', pendente: 'Pendente', base_anterior: 'Base anterior' };
+const resultTone: Record<FrozenCase['result'], string> = { passou: 'good', falhou: 'critical', nao_encontrado: 'medium', pendente: 'neutral', base_anterior: 'neutral' };
 const safeLabel: Record<SafeBehaviorCheck['status'], string> = { aprovado: 'Aprovado', reprovado: 'Reprovado', coberto_por_teste: 'Coberto por teste' };
 const safeTone: Record<SafeBehaviorCheck['status'], string> = { aprovado: 'good', reprovado: 'critical', coberto_por_teste: 'neutral' };
 const roleTone: Record<string, string> = { candidato: 'neutral', selecionado: 'good', baseline: 'medium' };
@@ -123,6 +123,7 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
   const safeExecuted = data.safe_behavior.filter((check) => check.status !== 'coberto_por_teste');
   const safeFailed = safeExecuted.filter((check) => check.status === 'reprovado').length;
   const notBeating = forecast.items.filter((item) => item.outcome !== 'superou');
+  const previousBase = cases.previous_base ?? 0;
   const casesOk = cases.failed === 0 && cases.not_found === 0;
   const rolling = forecast.method === 'rolante';
   // Os avisos de "caso com entrada sintética" são um só fato: viram uma linha.
@@ -140,7 +141,7 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
     </section>
 
     <div className="metrics-grid">
-      <MetricCard label="Casos de teste aprovados" value={`${cases.passed} de ${cases.total - (cases.pending ?? 0)}`} detail={`${cases.synthetic} com entrada sintética${cases.pending ? ` · ${cases.pending} pendentes` : ''}`} tone={casesOk ? 'green' : 'red'} icon="validation" />
+      <MetricCard label="Casos de teste aprovados" value={`${cases.passed} de ${cases.total - (cases.pending ?? 0) - previousBase}`} detail={`${cases.synthetic} com entrada sintética${cases.pending ? ` · ${cases.pending} pendentes` : ''}${previousBase ? ` · ${previousBase} da base anterior fora da conta` : ''}`} tone={casesOk ? 'green' : 'red'} icon="validation" />
       <MetricCard label="Erro médio da previsão (WAPE)" value={displayPercent(selected?.weighted_wape)} detail={rolling ? `normais ${displayPercent(selected?.normal_weighted_wape)} · pico ${displayPercent(selected?.peak_weighted_wape)}` : `previsão simples: ${displayPercent(baseline?.weighted_wape)}`} tone="blue" icon="forecasts" />
       <MetricCard label="Modelo pior que a baseline" value={`${forecast.did_not_beat_baseline_skus} de ${forecast.eligible_skus}`} detail={`SKUs · melhor em ${forecast.beat_baseline_skus}`} tone={forecast.did_not_beat_baseline_skus ? 'amber' : 'green'} icon="forecasts" />
       {data.addressed_value && <AddressedValueCard value={data.addressed_value} />}
@@ -190,6 +191,20 @@ export function ValidationContent({ data, error = '', onRetry, refreshToken = 0 
   </div>;
 }
 
+/** Um caso congelado, com entrada, esperado × obtido e limitação. */
+function FrozenCaseCard({ item }: { item: FrozenCase }) {
+  return <details key={item.id} className={`validation-case is-${item.result}`} open={item.result === 'falhou' || item.result === 'nao_encontrado'}>
+    <summary><span className="validation-case-title"><span className="eyebrow">{item.id} · {item.kind === 'commercial' ? 'comercial' : 'operacional'}</span><strong>{item.title}</strong></span>
+      <span className="validation-case-badges">{item.origin === 'synthetic' ? <Badge tone="medium">entrada sintética</Badge> : <Badge tone="neutral">base real</Badge>}<Badge tone={resultTone[item.result]}>{resultLabel[item.result]}</Badge></span></summary>
+    <p className="validation-case-origin">{item.origin === 'synthetic' ? item.origin_reason : <>{item.partner ? `${item.partner} · ` : ''}{item.sku && <Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link>}</>}</p>
+    <div className="validation-case-body">
+      <div><h5>Entrada</h5><InputList input={item.input} /></div>
+      <div><h5>Esperado × obtido</h5>{item.checks.length ? <CheckList checks={item.checks} /> : <span className="validation-muted">Sem saída obtida.</span>}</div>
+    </div>
+    <footer><p><strong>Limitação:</strong> {item.limitation}</p><p><strong>Ajuste realizado:</strong> {item.adjustment}</p></footer>
+  </details>;
+}
+
 /** Bloco recolhido da Auditoria: o título e uma nota curta ficam visíveis; o conteúdo abre sob demanda. */
 function AuditBlock({ title, note, children }: { title: string; note: string; children: ReactNode }) {
   return <details className="detail-block audit-block"><summary>{title}<small>{note}</small></summary>{children}</details>;
@@ -198,21 +213,18 @@ function AuditBlock({ title, note, children }: { title: string; note: string; ch
 /** Material de auditoria (não é tela de decisão): casos congelados, verificações, limitações, ajustes e origem dos dados. */
 export function AuditoriaContent({ data, method, coverage }: { data: ValidationSummary; method?: ReactNode; coverage?: ReactNode }) {
   const { frozen_cases: cases, forecast_evaluation: forecast } = data;
+  const current = cases.items.filter((item) => item.result !== 'base_anterior');
+  const previous = cases.items.filter((item) => item.result === 'base_anterior');
   return <div className="validation-page">
     <PageIntro title="Auditoria: como os resultados foram testados" />
     {coverage}
     <AuditBlock title="Casos de teste congelados" note={`${cases.total} casos, congelados em ${formatDate(cases.frozen_at)}`}>
       <p className="fact-line">{cases.policy}</p>
-      <div className="validation-cases">{cases.items.map((item) => <details key={item.id} className={`validation-case is-${item.result}`} open={item.result === 'falhou' || item.result === 'nao_encontrado'}>
-        <summary><span className="validation-case-title"><span className="eyebrow">{item.id} · {item.kind === 'commercial' ? 'comercial' : 'operacional'}</span><strong>{item.title}</strong></span>
-          <span className="validation-case-badges">{item.origin === 'synthetic' ? <Badge tone="medium">entrada sintética</Badge> : <Badge tone="neutral">base real</Badge>}<Badge tone={resultTone[item.result]}>{resultLabel[item.result]}</Badge></span></summary>
-        <p className="validation-case-origin">{item.origin === 'synthetic' ? item.origin_reason : <>{item.partner ? `${item.partner} · ` : ''}{item.sku && <Link to={`/skus/${encodeURIComponent(item.sku)}`}>{item.sku}</Link>}</>}</p>
-        <div className="validation-case-body">
-          <div><h5>Entrada</h5><InputList input={item.input} /></div>
-          <div><h5>Esperado × obtido</h5>{item.checks.length ? <CheckList checks={item.checks} /> : <span className="validation-muted">Sem saída obtida.</span>}</div>
-        </div>
-        <footer><p><strong>Limitação:</strong> {item.limitation}</p><p><strong>Ajuste realizado:</strong> {item.adjustment}</p></footer>
-      </details>)}</div>
+      <div className="validation-cases">{current.map((item) => <FrozenCaseCard key={item.id} item={item} />)}</div>
+      {previous.length > 0 && <details className="validation-details previous-base-cases"><summary>Referem-se à base anterior (fora da contagem)</summary>
+        <p className="fact-line">{previous[0].status_label ?? 'Refere-se à base anterior'}. Foram congelados sobre a planilha anterior; não são avaliados nem contados como aprovados ou reprovados com a base ativa.</p>
+        <div className="validation-cases">{previous.map((item) => <FrozenCaseCard key={item.id} item={item} />)}</div>
+      </details>}
     </AuditBlock>
     <AuditBlock title="Comportamento seguro" note={`${data.safe_behavior.length} verificações`}>
       <p className="fact-line">Verificações executadas a cada consulta com entradas controladas, além das cobertas por testes automatizados.</p>

@@ -22,6 +22,7 @@ Todos os cálculos são determinísticos, partem da planilha somente leitura e m
 | Visibilidade de sell-out | existe ao menos um parceiro com sell-out para o SKU | `Sell_Out` |
 | Capacidade familiar | primeira semana disponível e médias de ocupação no horizonte | `Capacidade_Semanal` |
 
+- **Só o que está aberto conta** em `Pedidos em carteira`, `Produção em ordem`, `Primeira conclusão`, `Lacuna operacional` e `Data crítica`: OPs com status concluída/concluído e pedidos encerrados (cancelado, entregue, faturado, encerrada) ficam de fora, os mesmos status do plano de suprimento. Depois de um envio de planilha com referência posterior, uma OP concluída em setembro não é mais somada como produção aberta nem vira data crítica vencida (no pacote de exemplo, 23 casos de data crítica no passado viram 0). A base empacotada não muda: não tem OPs concluídas.
 - `has_sell_out = false` significa ausência de observação. O sell-out fica `null` e `missing_data` inclui `sell_out_quantity`.
 - A **lacuna operacional** é uma quantidade para análise, não uma ordem recomendada.
 - A **capacidade** média por família continua como contexto; a viabilidade das ordens vem da alocação semanal (seção 4.1).
@@ -145,7 +146,7 @@ Recomendar recompra = ação comercial "monitorar" E sell-out recente positivo E
   | 11 | demais | Sem ação necessária | `nenhuma` |
 
 - **`decide_by`:** data da decisão (liberação da ordem urgente, data prometida do pedido, fim da janela de decisão ou data do evento), nunca anterior à data de planejamento (prazo vencido → "decidir hoje"). Alimenta "Decisões de hoje" (`decide_by` até a referência + 7 dias).
-- **Distribuição na base atual** (50 SKUs): Monitorar 30%, Produzir 26%, Priorizar produção 24%, Priorizar parceiro 10%, Investigar 10%. Nenhum rótulo passa de 30%; o teto exigido era 40%. Descontinuados (CI-0047, CI-0050) nunca saem como Priorizar produção nem Produzir.
+- **Distribuição na base atual** (50 SKUs): Priorizar produção 22, Monitorar 12, Produzir 6, Priorizar parceiro 5, Investigar 5. O teto de 40% é medido sobre a **fila** (43 SKUs), como o teste de alocação declara: Priorizar produção tem 16 (37,2%). Antes de a referência única chegar aos eventos (R1, [decisions.md](decisions.md)), eram 12 de 50 (24%) e nenhum rótulo passava de 30%; o "Lançamento Coleção Primavera" (15/10) passou a cair na janela de 30 dias a partir de 14/09 e levou 10 SKUs a Priorizar produção. Descontinuados (CI-0047, CI-0050) nunca saem como Priorizar produção nem Produzir.
 - **Precedência:** dado insuficiente, antigo ou divergente vence tudo e vira "Investigar"; depois, risco/urgência; depois, oportunidade; por último, monitorar.
 - **Sem inferência:** parceiro sem sell-out suficiente nunca recebe "Repor", "Recomendar recompra" ou "Priorizar parceiro". "Ampliar mix" e "Reativar" só saem dos canais diretos, onde a ausência de faturamento é observada; na base atual não há lacuna de faturamento, então não disparam (a explicação está em `/api/rules/coverage`, com os casos VC-14, VC-15 e VC-16 como prova de que a regra funciona). Linhas de canal direto têm ação `canal_direto` (venda observada, sem estoque intermediário), que não é dado insuficiente.
 - **Evidência:** cada rótulo traz os valores usados (posição na fila, cobertura, último sell-in, etc.), as limitações e `requires_human_review`.
@@ -189,7 +190,7 @@ Base atual: 328.111 un. faturadas, 246.389 com venda observada (**75,1%**) e 81.
 
 ## 4. Plano de suprimento e recomendação operacional (`supply_plan.py`, `recommendations.py`)
 
-Projeção **diária** de 14/09/2026 (`config/supply_plan.json → reference_date`) até o fim da previsão (28/02/2027), resumida por semana:
+Projeção **diária** a partir da **data de planejamento**, até o fim da previsão (28/02/2027), resumida por semana. A data é derivada dos dados: `config/supply_plan.json → reference_date = "auto"` usa a **primeira `Semana inicial` de `Capacidade_Semanal`**, que precisa ser segunda-feira (na base empacotada, 14/09/2026; depois do pacote de exemplo, 12/10/2026). A mesma data vale para capacidade, alocação, eventos, `decide_by` e "Decisões de hoje". O fim do último mês de vendas (`sales_last_month`) não define a data. Uma data `AAAA-MM-DD` no arquivo de configuração continua valendo como sobrescrita:
 
 ```text
 demanda do dia     = carteira na data prometida (vencida → primeiro dia)

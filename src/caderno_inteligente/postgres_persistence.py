@@ -144,10 +144,10 @@ class PostgresPersistence:
         )
         return cursor.fetchone() is not None
 
-    def create_run(self, source: str | Path, weights: dict, thresholds: dict, quality: dict, ranking: list[dict], comparison: dict | None = None) -> int:
+    def create_run(self, source: str | Path, weights: dict, thresholds: dict, quality: dict, ranking: list[dict], comparison: dict | None = None, source_hash: str | None = None) -> int:
         from psycopg.types.json import Jsonb
 
-        source_hash = hashlib.sha256(Path(source).read_bytes()).hexdigest()
+        source_hash = source_hash or hashlib.sha256(Path(source).read_bytes()).hexdigest()  # hash da base ativa quando vier (upload)
         with self._connect() as connection:
             with connection.cursor() as cursor:
                 if comparison is not None and self._has_comparison_column(cursor):

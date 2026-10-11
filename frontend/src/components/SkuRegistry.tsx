@@ -51,7 +51,7 @@ export function useSkuRegistry(enabled: boolean, refreshToken: number, authRequi
   return { session, active, token, authRequired, registry, error, expire, signIn, signOut, reload: () => setReloadToken((current) => current + 1) };
 }
 
-export function LoginForm({ onSubmit, disabled }: { onSubmit: (email: string, password: string) => Promise<void>; disabled: boolean }) {
+export function LoginForm({ onSubmit, disabled, label = 'Entrar para cadastrar SKUs' }: { onSubmit: (email: string, password: string) => Promise<void>; disabled: boolean; label?: string }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -62,7 +62,7 @@ export function LoginForm({ onSubmit, disabled }: { onSubmit: (email: string, pa
     setError('');
     try { await onSubmit(email, password); } catch (caught) { setError(messageOf(caught)); setPassword(''); } finally { setBusy(false); }
   };
-  return <form className="form-layout login-form" aria-label="Entrar para cadastrar SKUs" onSubmit={(event) => void submit(event)}>
+  return <form className="form-layout login-form" aria-label={label} onSubmit={(event) => void submit(event)}>
     <label>E-mail<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>
     <label>Senha<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} /></label>
     <div className="form-actions">{error && <span className="form-message form-error" role="alert">{error}</span>}<button className="primary-button" disabled={busy || disabled}>{busy ? 'Entrando…' : 'Entrar'}</button></div>
