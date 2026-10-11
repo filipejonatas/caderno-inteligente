@@ -2,10 +2,10 @@
   "description": "Orçamento de volume por tela (docs/historico.md, enxugamento). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
   "routes": {
     "/": {
-      "fixed": 250,
+      "fixed": 290,
       "perRow": 12,
       "perEvidence": 90,
-      "numbers": 32,
+      "numbers": 36,
       "blocks": 8,
       "columns": 5,
       "alerts": 1
@@ -182,5 +182,5 @@
       "alerts": 1
     }
   },
-  "journey_note": "Jornada (docs/discovery-navegacao-dashboard.md, T4/T5/T7): o Início ganha o caminho em cinco passos (+35 palavras, +12 números) e cada página da jornada (/fila, /capacidade, /parceiros, /faturamento, /validacao) ganha um rodapé 'Próximo passo' (+1 bloco, ~15 palavras). Os tetos sobem só o necessário."
+  "journey_note": "Jornada (docs/discovery-navegacao-dashboard.md, T4/T5/T7): o Início ganha o caminho em cinco passos (+35 palavras, +12 números) e cada página da jornada (/fila, /capacidade, /parceiros, /faturamento, /validacao) ganha um rodapé 'Próximo passo' (+1 bloco, ~15 palavras). Os tetos sobem só o necessário. Mapa de regiões no Início (docs/discovery-navegacao-dashboard.md, evolução): +~35 palavras e +~2 números; /: fixed 290, numbers 36."
 }
