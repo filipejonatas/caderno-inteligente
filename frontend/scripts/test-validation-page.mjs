@@ -54,10 +54,12 @@ const fixture = {
   },
   frozen_cases: {
     frozen_at: '2026-10-05', frozen_source_sha256: 'outro', source_matches_frozen: false, source_note: 'A planilha mudou desde o congelamento.', policy: 'Política de teste.',
-    total: 2, passed: 1, failed: 1, not_found: 0, synthetic: 1,
+    total: 3, passed: 1, failed: 1, not_found: 0, previous_base: 1, synthetic: 1,
     items: [
       { id: 'VC-T1', title: 'Caso aprovado', kind: 'operational', origin: 'synthetic', origin_reason: 'Sem exemplo na base.', sku: 'SINT', partner: null, limitation: 'Limitação A', input: { current_stock: 50 }, expected: { action: 'produzir' }, obtained: { action: 'produzir' }, checks: [{ field: 'action', expected: 'produzir', obtained: 'produzir', passed: true }], result: 'passou', adjustment: 'Nenhum ajuste.' },
       { id: 'VC-T2', title: 'Caso reprovado', kind: 'commercial', origin: 'base', origin_reason: null, sku: 'TEST / 2', partner: 'KA-T', limitation: 'Limitação B', input: { estimated_stock: null }, expected: { coverage_days: { is_null: true } }, obtained: { coverage_days: 0 }, checks: [{ field: 'coverage_days', expected: 'nulo (não disponível)', obtained: 0, passed: false }], result: 'falhou', adjustment: 'Nenhum ajuste.' },
+      // Upload (D8): caso de origem base congelado sobre a base anterior; fora da contagem, sem checks nem obtido.
+      { id: 'VC-T3', title: 'Caso da base anterior', kind: 'operational', origin: 'base', origin_reason: null, sku: 'TEST-3', partner: null, limitation: 'Limitação C', input: null, expected: { ranked: true }, obtained: null, checks: [], result: 'base_anterior', status: 'base_anterior', status_label: 'Refere-se à base anterior (base de 14/09/2026)', adjustment: 'Não avaliado com a base ativa.' },
     ],
   },
   safe_behavior: [
@@ -100,4 +102,12 @@ test('CSV export keeps sections, natures and escapes separators without inventin
   assert.ok(csv.includes('"Ajuste de teste; com aspas ""x"""'));
   assert.ok(csv.includes('VC-T2;Caso reprovado;base;'));
   assert.ok(csv.includes(';falhou;'));
+});
+
+test('base_anterior cases render on the audit page and keep their result in the CSV', () => {
+  assert.ok(renderAudit().includes('Caso da base anterior'));
+  assert.doesNotThrow(render);
+  const csv = validationCsv(fixture);
+  assert.ok(csv.includes('VC-T3;Caso da base anterior;base;'));
+  assert.ok(csv.includes(';base_anterior;'));
 });

@@ -15,6 +15,7 @@ const ROUTES: Array<[string, string, string]> = [
   ['/previsoes', 'Fila operacional', 'Qual SKU analisar, o que fazer e quanto'],
   ['/casos', 'Casos', 'Casos em acompanhamento'],
   ['/qualidade', 'Dados da planilha', 'Posso confiar na planilha?'],
+  ['/dados/atualizar', 'Atualizar dados', 'Atualizar a base pela planilha'],
   ['/parceiros', 'Oportunidades', 'Onde há oportunidade de reposição'],
   ['/carteira', 'Parceiros', 'Parceiros e cobertura de dados'],
   ['/canais', 'Canais diretos', 'Canais diretos: faturamento observado'],

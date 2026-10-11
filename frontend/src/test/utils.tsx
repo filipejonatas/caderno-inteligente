@@ -4,14 +4,22 @@ import { vi } from 'vitest';
 import App from '../App';
 import * as fx from './fixtures';
 
-export interface Failure { __failure: true; status: number; detail: string }
-export const fail = (status: number, detail: string): Failure => ({ __failure: true, status, detail });
+/** `body`: campos extras no JSON de erro (ex.: `{ preview }` no 422 da prévia de upload, `{ code }` no arquivo recusado). */
+export interface Failure { __failure: true; status: number; detail: string; body?: Record<string, unknown> }
+export const fail = (status: number, detail: string, body?: Record<string, unknown>): Failure => ({ __failure: true, status, detail, body });
 /** A response that never resolves, to observe loading states. */
 export const pending = () => new Promise<never>(() => {});
 
 type Value = unknown | ((url: URL, init?: RequestInit) => unknown);
 
 const ROUTES: Array<[string, RegExp]> = [
+  ['datasetVersionRestore', /^\/api\/dataset\/versions\/\d+\/restore$/],
+  ['datasetVersions', /^\/api\/dataset\/versions$/],
+  ['datasetPreview', /^\/api\/dataset\/preview$/],
+  ['datasetApply', /^\/api\/dataset\/apply$/],
+  ['datasetRestoreOriginal', /^\/api\/dataset\/restore-original$/],
+  ['datasetTemplate', /^\/api\/dataset\/template$/],
+  ['dataset', /^\/api\/dataset$/],
   ['validation', /^\/api\/validation\/summary$/],
   ['forecastLab', /^\/api\/forecast-lab$/],
   ['modelBenchmark', /^\/api\/model-benchmark$/],
@@ -64,6 +72,11 @@ const DEFAULTS: Record<string, Value> = {
   'PUT sku': (url: URL) => ({ sku: decodeURIComponent(url.pathname.split('/').pop() ?? ''), version: 2 }),
   // Sem .at(): o tsconfig usa lib ES2020, e .at() só passava localmente por tipos de outros pacotes.
   'POST skuAction': (url: URL) => { const parts = url.pathname.split('/'); return { sku: decodeURIComponent(parts[parts.length - 2] ?? ''), version: 2 }; },
+  dataset: fx.datasetOriginal, datasetVersions: fx.datasetVersions,
+  datasetTemplate: () => new Response(new Blob(['modelo sintético']), { headers: { 'Content-Disposition': 'attachment; filename="modelo-caderno-inteligente-2026-09-14.xlsx"' } }),
+  'POST datasetPreview': fx.datasetPreviewOk, 'POST datasetApply': fx.datasetApplyResult,
+  'POST datasetVersionRestore': (url: URL) => ({ ...fx.datasetApplyResult, version: 3, version_id: 3, restored_from: Number(url.pathname.split('/')[4]) }),
+  'POST datasetRestoreOriginal': { ...fx.datasetApplyResult, version: 3, version_id: 3, reference_date: '2026-09-14', sales_last_month: '2026-08', content_sha256: fx.datasetOriginal.content_sha256, restored_from: null },
   'POST runs': { id: 3 }, 'PUT case': { status: 'updated' }, 'POST cases': { id: 1 }, 'POST feedback': { status: 'created' },
   'POST scenario': { is_simulation: true, warning: 'Cenário hipotético.', weights: fx.config.weights, thresholds: fx.config.thresholds, ranking: fx.priorities },
 };
@@ -76,7 +89,8 @@ export function mockApi(overrides: Record<string, Value> = {}) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input), 'http://localhost');
     const method = (init?.method ?? 'GET').toUpperCase();
-    calls.push({ method, path: `${url.pathname}${url.search}`, body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined, headers: { ...(init?.headers as Record<string, string> | undefined) } });
+    // Corpo JSON vira objeto; corpo bruto (File do upload) fica como veio.
+    calls.push({ method, path: `${url.pathname}${url.search}`, body: typeof init?.body === 'string' ? JSON.parse(init.body) : init?.body ?? undefined, headers: { ...(init?.headers as Record<string, string> | undefined) } });
     const name = ROUTES.find(([, pattern]) => pattern.test(url.pathname))?.[0];
     if (!name) return { ok: false, status: 404, json: async () => ({ detail: `Rota não simulada: ${url.pathname}` }) };
     const key = method === 'GET' ? name : `${method} ${name}`;
@@ -84,8 +98,9 @@ export function mockApi(overrides: Record<string, Value> = {}) {
     const value = typeof entry === 'function' ? await (entry as (url: URL, init?: RequestInit) => unknown)(url, init) : await entry;
     if (value && typeof value === 'object' && '__failure' in value) {
       const failure = value as Failure;
-      return { ok: false, status: failure.status, json: async () => ({ detail: failure.detail }) };
+      return { ok: false, status: failure.status, json: async () => ({ ...structuredClone(failure.body), detail: failure.detail }) };
     }
+    if (value instanceof Response) return value; // download (blob + cabeçalhos)
     return { ok: true, status: 200, json: async () => structuredClone(value) };
   });
   vi.stubGlobal('fetch', fetchMock);

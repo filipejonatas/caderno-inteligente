@@ -46,7 +46,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 /** Título (h1 e aba do navegador) de cada rota. Um nome só por página. */
-export const navigation: Array<{ id: PageId; path: string; label: string; description: string }> = [
+export const navigation: Array<{ id: PageId | 'dataset'; path: string; label: string; description: string }> = [
   { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
   { id: 'overview', path: '/', label: 'Início', description: 'Indicadores' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
@@ -55,6 +55,7 @@ export const navigation: Array<{ id: PageId; path: string; label: string; descri
   { id: 'capacity', path: '/capacidade', label: 'Capacidade', description: 'Onde a produção planejada não cabe' },
   { id: 'cases', path: '/casos', label: 'Casos', description: 'Acompanhamento' },
   { id: 'quality', path: '/qualidade', label: 'Dados da planilha', description: 'Integridade e lacunas' },
+  { id: 'dataset', path: '/dados/atualizar', label: 'Atualizar dados', description: 'Enviar planilha, prévia e versões da base' },
   { id: 'b2b', path: '/parceiros', label: 'Oportunidades', description: 'Onde repor, por parceiro e SKU' },
   { id: 'partners', path: '/carteira', label: 'Parceiros', description: 'Cobertura de dados por parceiro' },
   { id: 'channels', path: '/canais', label: 'Canais diretos', description: 'Faturamento observado' },
@@ -75,12 +76,12 @@ export const menuGroups: Array<{ id: string; label: string; to: string; paths: s
   { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'] },
   { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'] },
   { id: 'trust', label: 'Confiança', to: '/validacao', paths: ['/validacao', '/modelo'] },
-  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade'] },
+  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade', '/dados/atualizar'] },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
   partners: [{ label: 'Oportunidades', to: '/parceiros' }, { label: 'Parceiros', to: '/carteira' }, { label: 'Canais diretos', to: '/canais' }],
-  backstage: [{ label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }, { label: 'Dados da planilha', to: '/qualidade' }],
+  backstage: [{ label: 'Auditoria', to: '/auditoria' }, { label: 'Execuções', to: '/execucoes' }, { label: 'Dados da planilha', to: '/qualidade' }, { label: 'Atualizar dados', to: '/dados/atualizar' }],
   decisions: [{ label: 'Casos', to: '/casos' }, { label: 'Histórico de decisões', to: '/decisoes' }],
   trust: [{ label: 'Validação', to: '/validacao' }, { label: 'Modelo de previsão', to: '/modelo' }],
 };

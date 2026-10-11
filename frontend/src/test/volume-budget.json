@@ -171,6 +171,15 @@
       "blocks": 5,
       "columns": 4,
       "alerts": 1
+    },
+    "/dados/atualizar": {
+      "fixed": 90,
+      "perRow": 14,
+      "perEvidence": 90,
+      "numbers": 10,
+      "blocks": 3,
+      "columns": 5,
+      "alerts": 1
     }
   }
 }

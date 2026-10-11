@@ -32,6 +32,7 @@ const ModelPage = lazy(() => import('./pages/ModelPage'));
 const SkuDetailPage = lazy(() => import('./pages/SkuDetailPage'));
 const SkuListPage = lazy(() => import('./pages/SkuListPage'));
 const AuditoriaPage = lazy(() => import('./pages/AuditoriaPage'));
+const DatasetUpdatePage = lazy(() => import('./pages/DatasetUpdatePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 const PAGE_FIELDS = {
@@ -132,6 +133,8 @@ function App() {
             <Route path="/validacao" element={<ValidationPage refreshToken={refreshToken} />} />
             <Route path="/modelo" element={<ModelPage refreshToken={refreshToken} />} />
             <Route path="/auditoria" element={<AuditoriaPage refreshToken={refreshToken} />} />
+            {/* Depois de aplicar ou restaurar, o refresh do app recarrega a própria tela e as demais (que releem a API ao abrir). */}
+            <Route path="/dados/atualizar" element={<DatasetUpdatePage refreshToken={refreshToken} onChanged={refresh} />} />
             <Route path="/skus" element={<SkuListPage refreshToken={refreshToken} />} />
             <Route path="/skus/:sku"element={<SkuDetailPage key={location.pathname} refreshToken={refreshToken} />} />
             <Route path="*" element={<NotFoundPage />} />
