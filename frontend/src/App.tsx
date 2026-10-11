@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { matchPath, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { PageResource } from './components/PageResource';
+import { NextStep } from './components/NextStep';
 import { RouteErrorBoundary } from './components/RouteErrorBoundary';
 import { LoadingState, RuleLine, Sidebar, SubNav, SystemBanner, Topbar, navigation, showsRule } from './components';
 import type { SelectedSku } from './types';
@@ -148,6 +149,7 @@ function Shell({ user, onSignOut }: { user: string; onSignOut: () => void }) {
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense></RouteErrorBoundary>
+        <NextStep pathname={location.pathname} />
       </div>
     </main>
   </div></PageLoadContext.Provider></SystemInfoContext.Provider>;

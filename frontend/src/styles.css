@@ -640,8 +640,22 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 .page-content :where(.page-intro, .attention-focus, .answer-card, .verdict, .filter-bar, .kpi-cards, .section-card, .ui-alert):nth-child(n+5) { animation-delay: 200ms; }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
+/* ------------------------------------------------------------------ jornada */
+.journey { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-3); margin: 0 0 var(--space-4); padding: 0; list-style: none; }
+.journey-step { --bar: var(--graphite); display: flex; flex-direction: column; gap: var(--space-1); height: 100%; padding: var(--space-3); border: 1px solid var(--rule); border-top: 6px solid var(--bar); border-radius: var(--radius-md); background: var(--sheet); color: var(--ink); text-decoration: none; }
+.journey-step:hover { border-color: var(--bar); }
+.journey-urgent { --bar: var(--urgent-bar); }
+.journey-review { --bar: var(--review-bar); }
+.journey-verb { font-size: var(--text-lead); font-weight: 800; font-stretch: 70%; }
+.journey-question { color: var(--graphite); font-size: var(--text-meta); font-weight: 600; }
+.journey-value { margin-top: var(--space-2); font-stretch: 70%; letter-spacing: var(--tight); font-size: var(--text-page); font-weight: 800; line-height: 1.05; overflow-wrap: anywhere; }
+.journey-detail { color: var(--graphite); font-size: var(--text-meta); }
+.next-step { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); margin-top: var(--space-5); padding-top: var(--space-3); border-top: 2px solid var(--ink); }
+.next-step p { max-width: var(--measure); margin: 0; font-weight: 600; }
+
 /* -------------------------------------------------------------- responsivo */
 @media (max-width: 1180px) {
+  .journey { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   /* Os oito grupos do menu cabem na faixa até 821 px; abaixo disso o menu vira gaveta. */
   .kpi-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sidebar { gap: var(--space-3); }
@@ -657,6 +671,7 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 }
 
 @media (max-width: 820px) {
+  .journey { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-mosaic { grid-template-columns: 1fr; }
   .sidebar { position: fixed; inset: 0 auto 0 0; width: min(300px, 86vw); flex-direction: column; align-items: stretch; gap: 0; padding: var(--space-3); border-right: 3px solid var(--ink); border-bottom: 0; transform: translateX(-102%); transition: transform .2s ease; }
   .sidebar.is-open { transform: translateX(0); box-shadow: 16px 0 40px rgba(23, 28, 43, .25); }
@@ -853,3 +868,5 @@ details.validation-case[open] > summary { border-bottom: 1px solid var(--rule); 
 .user-menu-list { position: absolute; right: 0; top: calc(100% + var(--space-1)); z-index: 40; display: flex; flex-direction: column; min-width: 160px; padding: var(--space-1); border: 1px solid var(--ink); border-radius: var(--radius-sm); background: var(--sheet); box-shadow: 3px 3px 0 var(--ink); }
 .user-menu-list :where(a, button) { display: block; min-height: 40px; padding: 8px 12px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--ink); font: inherit; font-weight: 600; text-align: left; text-decoration: none; }
 .user-menu-list :where(a, button):hover { background: var(--paper); }
+
+@media (max-width: 480px) { .journey { grid-template-columns: 1fr; } }

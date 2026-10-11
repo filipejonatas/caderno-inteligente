@@ -2,10 +2,10 @@
   "description": "Orçamento de volume por tela (docs/historico.md, enxugamento). fixed = palavras fora de tabelas e evidências; perRow = palavras por linha de lista; perEvidence = palavras por evidência aberta; numbers = números fora de tabelas e evidências; blocks = blocos de primeiro nível; columns = colunas visíveis por tabela; alerts = avisos.",
   "routes": {
     "/": {
-      "fixed": 215,
+      "fixed": 250,
       "perRow": 12,
       "perEvidence": 90,
-      "numbers": 20,
+      "numbers": 32,
       "blocks": 8,
       "columns": 5,
       "alerts": 1
@@ -29,11 +29,11 @@
       "alerts": 0
     },
     "/fila": {
-      "fixed": 140,
+      "fixed": 155,
       "perRow": 18,
       "perEvidence": 90,
       "numbers": 13,
-      "blocks": 4,
+      "blocks": 5,
       "columns": 5,
       "alerts": 1
     },
@@ -51,7 +51,7 @@
       "perRow": 14,
       "perEvidence": 90,
       "numbers": 6,
-      "blocks": 3,
+      "blocks": 4,
       "columns": 5,
       "alerts": 1
     },
@@ -146,7 +146,7 @@
       "alerts": 0
     },
     "/validacao": {
-      "fixed": 300,
+      "fixed": 306,
       "perRow": 25,
       "perEvidence": 90,
       "numbers": 20,
@@ -181,5 +181,6 @@
       "columns": 5,
       "alerts": 1
     }
-  }
+  },
+  "journey_note": "Jornada (docs/discovery-navegacao-dashboard.md, T4/T5/T7): o Início ganha o caminho em cinco passos (+35 palavras, +12 números) e cada página da jornada (/fila, /capacidade, /parceiros, /faturamento, /validacao) ganha um rodapé 'Próximo passo' (+1 bloco, ~15 palavras). Os tetos sobem só o necessário."
 }

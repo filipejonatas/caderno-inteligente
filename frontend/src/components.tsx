@@ -48,7 +48,7 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 /** Título (h1 e aba do navegador) de cada rota. Um nome só por página. */
 export const navigation: Array<{ id: PageId | 'dataset' | 'users'; path: string; label: string; description: string }> = [
   { id: 'guide', path: '/guia', label: 'Guia de uso', description: 'Como usar o protótipo' },
-  { id: 'overview', path: '/', label: 'Início', description: 'Indicadores' },
+  { id: 'overview', path: '/', label: 'Início', description: 'O que olho primeiro' },
   { id: 'queue', path: '/fila', label: 'Fila operacional', description: 'Qual SKU analisar, o que fazer e quanto' },
   { id: 'skus', path: '/skus', label: 'SKUs', description: 'Lista completa de SKUs' },
   { id: 'revenue', path: '/faturamento', label: 'Faturamento previsto', description: 'Estimativa em reais para três meses' },
@@ -69,15 +69,15 @@ export const navigation: Array<{ id: PageId | 'dataset' | 'users'; path: string;
 ];
 
 /** Menu principal: 8 entradas (a Ajuda fica na barra superior). As rotas agrupadas continuam abrindo por URL e aparecem como abas (SubNav). */
-export const menuGroups: Array<{ id: string; label: string; to: string; paths: string[] }> = [
-  { id: 'home', label: 'Início', to: '/', paths: ['/'] },
-  { id: 'production', label: 'Planejamento', to: '/fila', paths: ['/fila', '/capacidade', '/cenarios', '/prioridades', '/previsoes'] },
-  { id: 'skus', label: 'SKUs', to: '/skus', paths: ['/skus'] },
-  { id: 'finance', label: 'Financeiro', to: '/faturamento', paths: ['/faturamento'] },
-  { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'] },
-  { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'] },
-  { id: 'trust', label: 'Confiança', to: '/validacao', paths: ['/validacao', '/modelo'] },
-  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade', '/dados/atualizar', '/usuarios'] },
+export const menuGroups: Array<{ id: string; label: string; to: string; paths: string[]; hint: string }> = [
+  { id: 'home', label: 'Início', to: '/', paths: ['/'], hint: 'O que olho primeiro?' },
+  { id: 'production', label: 'Planejamento', to: '/fila', paths: ['/fila', '/capacidade', '/cenarios', '/prioridades', '/previsoes'], hint: 'Qual SKU, quanto produzir e se cabe na linha' },
+  { id: 'partners', label: 'Comercial', to: '/parceiros', paths: ['/parceiros', '/carteira', '/canais'], hint: 'Quem recebe primeiro e onde repor' },
+  { id: 'finance', label: 'Financeiro', to: '/faturamento', paths: ['/faturamento'], hint: 'Quanto se estima faturar' },
+  { id: 'skus', label: 'SKUs', to: '/skus', paths: ['/skus'], hint: 'A lista completa de SKUs' },
+  { id: 'decisions', label: 'Acompanhamento', to: '/casos', paths: ['/decisoes', '/casos'], hint: 'O que foi decidido e o que segue aberto' },
+  { id: 'trust', label: 'Confiança', to: '/validacao', paths: ['/validacao', '/modelo'], hint: 'Quanto confiar nas recomendações' },
+  { id: 'backstage', label: 'Bastidores', to: '/auditoria', paths: ['/auditoria', '/execucoes', '/qualidade', '/dados/atualizar', '/usuarios'], hint: 'Auditoria, base de dados e usuários' },
 ];
 
 export const subNavigation: Record<string, Array<{ label: string; to: string }>> = {
@@ -114,7 +114,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
       <nav aria-label="Navegação principal">
         {menuGroups.map((item) => {
           const active = inGroup(pathname, item.paths);
-          return <Link key={item.id} to={item.to} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={onClose}>
+          return <Link key={item.id} to={item.to} title={item.hint} className={active ? 'active' : ''} aria-current={active ? 'page' : undefined} onClick={onClose}>
             <strong>{item.label}</strong>
           </Link>;
         })}
